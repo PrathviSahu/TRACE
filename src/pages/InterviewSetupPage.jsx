@@ -7,7 +7,9 @@ import { useSearchParams, useNavigate, Link } from "react-router-dom";
 import { COMPANY_DATA, COMPANIES } from "../data/companyData.js";
 import { DSA_TOPICS, DSA_PATTERNS, DSA_PATTERN_FAMILIES } from "../data/patternMapping.js";
 import { SUPPORTED_LANGUAGES } from "../services/aiService.js";
+import { generateDailyPlan } from "../services/dailyPlanGenerator.js";
 import {
+  saveDailyPlan,
   PREPARATION_LEVELS,
   PREPARATION_GOALS,
   WEEK_DAYS,
@@ -162,9 +164,15 @@ export default function InterviewSetupPage() {
     }
     try {
       const res = saveProfile(currentDraft);
+      try {
+        const generated = generateDailyPlan(res.profile);
+        saveDailyPlan(generated);
+      } catch (genErr) {
+        console.warn("Could not generate daily plan immediately:", genErr);
+      }
       setSaveStatus({
         type: "success",
-        message: `Plan activated! Version ${res.planningState.planVersion} for ${selectedCompany.name}.`
+        message: `Plan activated! Version ${res.planningState.planVersion} for ${selectedCompany.name}. Ready for daily practice.`
       });
       setTimeout(() => setSaveStatus(null), 6000);
     } catch (err) {
@@ -824,6 +832,27 @@ export default function InterviewSetupPage() {
               >
                 💾 Save & Activate Interview Plan
               </button>
+
+              <Link
+                to="/interview/plan"
+                id="view-daily-plan-btn"
+                style={{
+                  width: "100%",
+                  padding: "0.75rem",
+                  borderRadius: "6px",
+                  fontSize: "0.9rem",
+                  fontWeight: 700,
+                  textAlign: "center",
+                  textDecoration: "none",
+                  display: "block",
+                  boxSizing: "border-box",
+                  border: "1px solid var(--accent-indigo, #6366f1)",
+                  background: "rgba(99, 102, 241, 0.15)",
+                  color: "var(--accent-cyan, #38bdf8)"
+                }}
+              >
+                🚀 View Daily Study Plan →
+              </Link>
 
               <div style={{ display: "flex", gap: "0.5rem" }}>
                 <button

@@ -10,6 +10,7 @@ import { SUPPORTED_LANGUAGES } from "./aiService.js";
 
 export const PROFILE_STORAGE_KEY = "trace_interview_profile";
 export const PLANNING_STATE_KEY = "trace_planning_state";
+export const DAILY_PLAN_STORAGE_KEY = "trace_daily_plan";
 
 export const PREPARATION_LEVELS = [
   "Beginner",
@@ -346,5 +347,85 @@ export function useInterviewProfile() {
     saveProfile: save,
     updatePlanningState: updatePlan,
     clearProfile: clear
+  };
+}
+
+/**
+ * Reads persistent GeneratedPlan from localStorage
+ */
+export function getDailyPlan() {
+  try {
+    if (typeof localStorage === "undefined" || !localStorage) return null;
+    const raw = localStorage.getItem(DAILY_PLAN_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (err) {
+    console.warn("Failed to load daily plan:", err);
+    return null;
+  }
+}
+
+/**
+ * Saves GeneratedPlan and updates PlanningState.lastGeneratedAt
+ */
+export function saveDailyPlan(plan) {
+  if (!plan) return null;
+  try {
+    localStorage.setItem(DAILY_PLAN_STORAGE_KEY, JSON.stringify(plan));
+    updatePlanningState({
+      lastGeneratedAt: plan.generatedAt || new Date().toISOString(),
+      planVersion: plan.planVersion || 1,
+    });
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("trace_daily_plan_updated", {
+        detail: { plan }
+      }));
+    }
+  } catch (err) {
+    console.error("Failed to save daily plan:", err);
+  }
+  return plan;
+}
+
+/**
+ * Clears stored GeneratedPlan
+ */
+export function clearDailyPlan() {
+  try {
+    localStorage.removeItem(DAILY_PLAN_STORAGE_KEY);
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("trace_daily_plan_updated", {
+        detail: { plan: null }
+      }));
+    }
+  } catch (err) {
+    console.error("Failed to clear daily plan:", err);
+  }
+}
+
+/**
+ * React hook to subscribe to reactive GeneratedPlan updates
+ */
+export function useDailyPlan() {
+  const [dailyPlan, setDailyPlan] = useState(() => getDailyPlan());
+
+  useEffect(() => {
+    function handleUpdate() {
+      setDailyPlan(getDailyPlan());
+    }
+    window.addEventListener("trace_daily_plan_updated", handleUpdate);
+    window.addEventListener("storage", handleUpdate);
+    return () => {
+      window.removeEventListener("trace_daily_plan_updated", handleUpdate);
+      window.removeEventListener("storage", handleUpdate);
+    };
+  }, []);
+
+  const save = useCallback((p) => saveDailyPlan(p), []);
+  const clear = useCallback(() => clearDailyPlan(), []);
+
+  return {
+    dailyPlan,
+    saveDailyPlan: save,
+    clearDailyPlan: clear
   };
 }
