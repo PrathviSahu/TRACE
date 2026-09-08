@@ -2,10 +2,18 @@ import { useState, useMemo, useCallback } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useTraceStore } from "../store/traceStore.js";
 import { getCompanyFullDetails, DATA_TRUST_INFO, getProblemKey } from "../data/companyUtils.js";
+import { getProblemPatternDetails, computeCompanyPatternStats, PATTERN_SOURCE_LABEL } from "../data/patternMapping.js";
+import {
+  calculatePriorityScore,
+  calculateCompanyReadiness,
+  detectFocusAreas,
+  generateMockInterviewSet
+} from "../services/intelligenceService.js";
 import { PRESET_SOLUTIONS, getProblemTemplate } from "../data/problemTemplates.js";
 import { getProblemDescription } from "../data/problemDescriptions.js";
 import { useAllProgress, updateProblemProgress } from "../services/progressStore.js";
 import ProblemModal from "../components/ProblemModal.jsx";
+import CompanyComparisonModal from "../components/CompanyComparisonModal.jsx";
 
 const DIFF_COLORS = { Easy: "#00b8a3", Medium: "#ffa116", Hard: "#ef4743" };
 const DIFF_BG = { Easy: "rgba(0,184,163,0.1)", Medium: "rgba(255,161,22,0.1)", Hard: "rgba(239,71,67,0.1)" };
@@ -17,6 +25,14 @@ const STATUS_CONFIG = {
   forgot_approach: { label: "Forgot Approach", icon: "⚠️", color: "#ef4743", bg: "rgba(239,71,67,0.15)" },
 };
 
+const PRACTICE_MODES = [
+  { id: "smart",      icon: "🎯", label: "Smart Practice",     desc: "Ranked by personalized priority formula" },
+  { id: "frequent",   icon: "📈", label: "Frequently Asked",   desc: "Top historical interview frequency" },
+  { id: "recent",     icon: "🔥", label: "Recent (30 Days)",   desc: "Active 30-day telemetry" },
+  { id: "revision",   icon: "⚡", label: "Revision Queue",     desc: "Need Revision + Forgot Approach" },
+  { id: "mock",       icon: "🎲", label: "Random Mock Set",    desc: "Balanced 3-problem interview simulation" },
+];
+
 export default function CompanyDetailPage() {
   const { companyId } = useParams();
   const navigate = useNavigate();
@@ -27,19 +43,23 @@ export default function CompanyDetailPage() {
   const { setCode, setInputs, setLanguage } = useTraceStore();
   const currentStoreLang = useTraceStore(s => s.language) || "java";
 
-  // Filter & Search states
+  // Mode & Filter states
+  const [practiceMode, setPracticeMode] = useState("smart");
   const [search, setSearch] = useState("");
   const [diffFilter, setDiffFilter] = useState("All");
-  const [topicFilter, setTopicFilter] = useState("All");
+  const [patternFilter, setPatternFilter] = useState("All");
   const [recencyFilter, setRecencyFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
-  const [queueTab, setQueueTab] = useState("all"); // all | high_priority | frequent | unsolved | need_revision
-  const [sortBy, setSortBy] = useState("frequency_desc");
+  const [sortBy, setSortBy] = useState("priority_desc");
 
-  // Modal states
+  // Mock interview set seed trigger
+  const [mockSeed, setMockSeed] = useState(0);
+
+  // Modals
   const [modalProblem, setModalProblem] = useState(null);
   const [modalDesc, setModalDesc] = useState(null);
   const [showTrustModal, setShowTrustModal] = useState(false);
+  const [showCompareModal, setShowCompareModal] = useState(false);
 
   if (!details) {
     return (
@@ -53,17 +73,11 @@ export default function CompanyDetailPage() {
             height: calc(100vh - 60px);
             background: #0d1117;
             color: #c9d1d9;
-            font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
           }
           .cnf-title { font-size: 22px; font-weight: 700; margin-bottom: 12px; }
           .cnf-btn {
-            background: #238636;
-            color: #fff;
-            padding: 8px 16px;
-            border-radius: 6px;
-            text-decoration: none;
-            font-size: 13px;
-            font-weight: 600;
+            background: #238636; color: #fff; padding: 8px 16px; border-radius: 6px;
+            text-decoration: none; font-size: 13px; font-weight: 600;
           }
         `}</style>
         <div className="cnf-title">Company Not Found</div>
@@ -75,23 +89,51 @@ export default function CompanyDetailPage() {
 
   const { company, metrics, problems } = details;
 
-  // Filtered and sorted problems
+  // Pattern statistics (curated DSA patterns)
+  const patternStats = useMemo(() => {
+    return computeCompanyPatternStats(problems);
+  }, [problems]);
+
+  // Company Readiness Score & Breakdown
+  const readiness = useMemo(() => {
+    return calculateCompanyReadiness(companyId, problems, progress);
+  }, [companyId, problems, progress]);
+
+  // Focus Areas & Weakness detection
+  const focusAreas = useMemo(() => {
+    return detectFocusAreas(problems, progress);
+  }, [problems, progress]);
+
+  // Priority scores cache for all problems
+  const priorityMap = useMemo(() => {
+    const map = new Map();
+    for (const p of problems) {
+      const key = getProblemKey(p);
+      map.set(key, calculatePriorityScore(p, progress[key]));
+    }
+    return map;
+  }, [problems, progress]);
+
+  // Mock interview 3-question set
+  const mockProblems = useMemo(() => {
+    if (practiceMode !== "mock") return [];
+    return generateMockInterviewSet(problems);
+  }, [practiceMode, problems, mockSeed]);
+
+  // Filtered & Sorted problem list
   const filteredProblems = useMemo(() => {
+    if (practiceMode === "mock") return mockProblems;
+
     let list = [...problems];
 
-    // Practice Queue filter
-    if (queueTab === "high_priority") {
-      list = list.filter(p => p.frequency >= 75 || p.recency === "30 Days");
-    } else if (queueTab === "frequent") {
-      list = list.filter(p => p.frequency >= 50);
-    } else if (queueTab === "unsolved") {
+    // Mode-specific filtering
+    if (practiceMode === "frequent") {
+      list = list.filter(p => (p.frequency || 0) >= 50);
+    } else if (practiceMode === "recent") {
+      list = list.filter(p => p.recency === "30 Days");
+    } else if (practiceMode === "revision") {
       list = list.filter(p => {
-        const st = progress[getProblemKey(p)]?.status || "unsolved";
-        return st === "unsolved";
-      });
-    } else if (queueTab === "need_revision") {
-      list = list.filter(p => {
-        const st = progress[getProblemKey(p)]?.status || "unsolved";
+        const st = progress[getProblemKey(p)]?.status;
         return st === "need_revision" || st === "forgot_approach";
       });
     }
@@ -101,9 +143,12 @@ export default function CompanyDetailPage() {
       list = list.filter(p => p.difficulty === diffFilter);
     }
 
-    // Topic / Pattern filter
-    if (topicFilter !== "All") {
-      list = list.filter(p => (p.topics || []).includes(topicFilter));
+    // Pattern filter
+    if (patternFilter !== "All") {
+      list = list.filter(p => {
+        const { patterns } = getProblemPatternDetails(p);
+        return patterns.includes(patternFilter);
+      });
     }
 
     // Recency filter
@@ -111,7 +156,7 @@ export default function CompanyDetailPage() {
       list = list.filter(p => p.recency === recencyFilter);
     }
 
-    // Solved status filter
+    // Status filter
     if (statusFilter !== "All") {
       list = list.filter(p => {
         const st = progress[getProblemKey(p)]?.status || "unsolved";
@@ -125,15 +170,27 @@ export default function CompanyDetailPage() {
       list = list.filter(p => {
         const matchTitle = (p.title || "").toLowerCase().includes(q);
         const matchId = String(p.id || "").includes(q);
-        const matchTopic = (p.topics || []).some(t => t.toLowerCase().includes(q));
-        return matchTitle || matchId || matchTopic;
+        const { patterns, topic } = getProblemPatternDetails(p);
+        const matchPat = patterns.some(pt => pt.toLowerCase().includes(q));
+        const matchTopic = topic.toLowerCase().includes(q);
+        return matchTitle || matchId || matchPat || matchTopic;
       });
     }
 
     // Sorting
     list.sort((a, b) => {
+      const keyA = getProblemKey(a);
+      const keyB = getProblemKey(b);
+      const scoreA = priorityMap.get(keyA)?.score || 0;
+      const scoreB = priorityMap.get(keyB)?.score || 0;
+
+      if (practiceMode === "smart" && sortBy === "priority_desc") {
+        return scoreB - scoreA;
+      }
+      if (sortBy === "priority_desc") return scoreB - scoreA;
+      if (sortBy === "priority_asc")  return scoreA - scoreB;
       if (sortBy === "frequency_desc") return (b.frequency || 0) - (a.frequency || 0);
-      if (sortBy === "frequency_asc") return (a.frequency || 0) - (b.frequency || 0);
+      if (sortBy === "frequency_asc")  return (a.frequency || 0) - (b.frequency || 0);
       if (sortBy === "diff_asc") {
         const order = { Easy: 1, Medium: 2, Hard: 3 };
         return (order[a.difficulty] || 2) - (order[b.difficulty] || 2);
@@ -143,30 +200,19 @@ export default function CompanyDetailPage() {
         return (order[b.difficulty] || 2) - (order[a.difficulty] || 2);
       }
       if (sortBy === "id_asc") return (a.id || 0) - (b.id || 0);
-      if (sortBy === "id_desc") return (b.id || 0) - (a.id || 0);
       if (sortBy === "acceptance_desc") return (b.acceptance || 0) - (a.acceptance || 0);
-      if (sortBy === "revision_priority") {
-        const pKeyA = getProblemKey(a);
-        const pKeyB = getProblemKey(b);
-        const stA = progress[pKeyA]?.status || "unsolved";
-        const stB = progress[pKeyB]?.status || "unsolved";
-        const priorityScore = { forgot_approach: 4, need_revision: 3, unsolved: 2, solved: 1 };
-        return (priorityScore[stB] || 0) - (priorityScore[stA] || 0);
-      }
       return 0;
     });
 
     return list;
-  }, [problems, queueTab, diffFilter, topicFilter, recencyFilter, statusFilter, search, sortBy, progress]);
+  }, [practiceMode, mockProblems, problems, diffFilter, patternFilter, recencyFilter, statusFilter, search, sortBy, progress, priorityMap]);
 
   // Overall User Progress statistics for this company
   const companyProgressStats = useMemo(() => {
     let solvedCount = 0;
     let revisionCount = 0;
     let forgotCount = 0;
-    let easySolved = 0;
-    let medSolved = 0;
-    let hardSolved = 0;
+    let easySolved = 0, medSolved = 0, hardSolved = 0;
 
     for (const p of problems) {
       const key = getProblemKey(p);
@@ -209,13 +255,11 @@ export default function CompanyDetailPage() {
     const lang = currentStoreLang;
     setLanguage(lang);
 
-    // 1. Check executable preset
     const preset = pid ? PRESET_SOLUTIONS[pid] : null;
     if (preset && lang === "java") {
       setCode(preset.code);
       if (preset.inputs) setInputs(preset.inputs);
     } else {
-      // 2. Generate clean starter code
       const template = getProblemTemplate({ id: pid, name: p.title, difficulty: p.difficulty, url: p.url, topic: p.topics?.[0] });
       if (template?.code && lang === "java") {
         setCode(template.code);
@@ -240,6 +284,7 @@ export default function CompanyDetailPage() {
   // Open Practice modal
   const handleOpenPracticeModal = useCallback((p) => {
     const pid = p.id || null;
+    const { patterns, topic } = getProblemPatternDetails(p);
     setModalProblem({
       id: pid,
       name: p.title,
@@ -248,7 +293,7 @@ export default function CompanyDetailPage() {
       url: p.url,
       frequency: p.frequency,
       recency: p.recency,
-      topics: p.topics,
+      topics: [topic, ...patterns],
       otherCompanies: p.otherCompanies,
     });
     setModalDesc(pid ? getProblemDescription(pid) : null);
@@ -274,11 +319,7 @@ export default function CompanyDetailPage() {
           color: #8b949e;
           margin-bottom: 16px;
         }
-        .cd-breadcrumb a {
-          color: #79a8ff;
-          text-decoration: none;
-          transition: color 0.15s;
-        }
+        .cd-breadcrumb a { color: #79a8ff; text-decoration: none; }
         .cd-breadcrumb a:hover { text-decoration: underline; }
 
         /* ── Header Box ──────────────────────────────────────── */
@@ -316,7 +357,6 @@ export default function CompanyDetailPage() {
           align-items: center;
           justify-content: center;
           font-size: 28px;
-          box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
         }
         .cd-company-name {
           font-size: 26px;
@@ -358,207 +398,206 @@ export default function CompanyDetailPage() {
           padding: 3px 10px;
           border-radius: 20px;
           cursor: pointer;
-          transition: all 0.15s;
         }
-        .cd-trust-badge:hover {
-          background: rgba(0, 184, 163, 0.2);
-          border-color: #00b8a3;
-        }
-
-        /* ── Header Right: Metrics Row ───────────────────────── */
-        .cd-header-stats {
-          display: flex;
-          align-items: center;
-          gap: 28px;
-        }
-        .cd-stat-col {
-          display: flex;
-          flex-direction: column;
-          align-items: flex-end;
-        }
-        .cd-stat-val {
-          font-size: 26px;
-          font-weight: 800;
-          color: #f0f6fc;
-          font-family: var(--font-mono, ui-monospace, monospace);
-        }
-        .cd-stat-lbl {
-          font-size: 11px;
-          color: #8b949e;
-          text-transform: uppercase;
-          letter-spacing: 0.04em;
-          margin-top: 2px;
-        }
-
-        /* ── Interview Prep Section ──────────────────────────── */
-        .cd-prep-card {
-          background: #0d1117;
-          border: 1px solid rgba(255,255,255,0.08);
-          border-radius: 12px;
-          padding: 20px 24px;
-          margin-bottom: 24px;
-        }
-        .cd-prep-top {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          border-bottom: 1px solid rgba(255,255,255,0.06);
-          padding-bottom: 14px;
-          margin-bottom: 16px;
-        }
-        .cd-prep-title {
-          font-size: 14px;
-          font-weight: 700;
-          text-transform: uppercase;
-          letter-spacing: 0.06em;
-          color: #f0f6fc;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
-        .cd-prep-progress-pct {
-          font-family: var(--font-mono, monospace);
-          font-size: 13px;
-          color: #00b8a3;
-          font-weight: 600;
-        }
-
-        .cd-prep-grid {
-          display: grid;
-          grid-template-columns: 320px 1fr;
-          gap: 32px;
-        }
-        @media (max-width: 992px) {
-          .cd-prep-grid { grid-template-columns: 1fr; }
-        }
-
-        /* ── Progress Bar & Counters ─────────────────────────── */
-        .cd-progress-bar-wrap {
-          margin-bottom: 14px;
-        }
-        .cd-progress-bar {
-          height: 8px;
-          background: rgba(255,255,255,0.06);
-          border-radius: 4px;
-          overflow: hidden;
-          display: flex;
-        }
-        .cd-progress-fill-solved { background: #00b8a3; height: 100%; transition: width 0.3s; }
-        .cd-progress-fill-rev    { background: #ffa116; height: 100%; transition: width 0.3s; }
-        .cd-progress-fill-forgot { background: #ef4743; height: 100%; transition: width 0.3s; }
-
-        .cd-diff-distribution {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          font-size: 11.5px;
-          margin-top: 10px;
-        }
-        .cd-diff-count-badge {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          font-weight: 600;
-        }
-        .cd-dot { width: 8px; height: 8px; border-radius: 50%; }
-
-        /* ── Top Patterns Interactive Chips ──────────────────── */
-        .cd-patterns-box {
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-        }
-        .cd-patterns-lbl {
-          font-size: 12px;
-          color: #8b949e;
-          font-weight: 600;
-          text-transform: uppercase;
-          letter-spacing: 0.04em;
-        }
-        .cd-patterns-list {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 6px;
-        }
-        .cd-pattern-chip {
+        .cd-compare-btn {
           display: inline-flex;
           align-items: center;
           gap: 6px;
-          font-size: 11.5px;
-          background: rgba(255,255,255,0.04);
-          border: 1px solid rgba(255,255,255,0.08);
-          color: #c9d1d9;
-          padding: 4px 10px;
-          border-radius: 6px;
-          cursor: pointer;
-          transition: all 0.15s;
-        }
-        .cd-pattern-chip:hover {
-          background: rgba(255,255,255,0.08);
-          border-color: rgba(255,255,255,0.18);
-        }
-        .cd-pattern-chip.active {
-          background: rgba(88,166,255,0.15);
-          border-color: rgba(88,166,255,0.4);
-          color: #79a8ff;
-          font-weight: 600;
-        }
-        .cd-pattern-count {
-          font-size: 10px;
-          background: rgba(255,255,255,0.08);
-          padding: 1px 5px;
-          border-radius: 10px;
-          color: #8b949e;
-        }
-
-        /* ── Practice Queues Tabs ────────────────────────────── */
-        .cd-queue-tabs {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          border-bottom: 1px solid rgba(255,255,255,0.08);
-          margin-bottom: 16px;
-          padding-bottom: 12px;
-          overflow-x: auto;
-        }
-        .cd-queue-btn {
-          background: transparent;
-          border: 1px solid rgba(255,255,255,0.07);
-          color: #8b949e;
           font-size: 12px;
           font-weight: 600;
+          background: rgba(88, 166, 255, 0.1);
+          color: #79a8ff;
+          border: 1px solid rgba(88, 166, 255, 0.3);
           padding: 6px 14px;
-          border-radius: 6px;
+          border-radius: 8px;
+          cursor: pointer;
+          transition: all 0.15s;
+        }
+        .cd-compare-btn:hover {
+          background: rgba(88, 166, 255, 0.2);
+          color: #fff;
+        }
+
+        /* ── Readiness & Analytics Row ───────────────────────── */
+        .cd-analytics-grid {
+          display: grid;
+          grid-template-columns: 320px 1fr;
+          gap: 20px;
+          margin-bottom: 24px;
+        }
+        @media (max-width: 992px) {
+          .cd-analytics-grid { grid-template-columns: 1fr; }
+        }
+
+        /* Readiness Card */
+        .cd-readiness-card {
+          background: #0d1117;
+          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 12px;
+          padding: 20px;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+        }
+        .cd-readiness-top {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          margin-bottom: 12px;
+        }
+        .cd-readiness-score-box {
+          display: flex;
+          align-items: baseline;
+          gap: 6px;
+        }
+        .cd-readiness-num {
+          font-size: 38px;
+          font-weight: 900;
+          color: #f0f6fc;
+          font-family: var(--font-mono, monospace);
+        }
+        .cd-readiness-sub {
+          font-size: 14px;
+          color: #8b949e;
+          font-weight: 600;
+        }
+
+        .cd-readiness-bars {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          margin-top: 14px;
+        }
+        .cd-readiness-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          font-size: 11.5px;
+          color: #8b949e;
+        }
+        .cd-readiness-mini-fill {
+          height: 4px;
+          background: rgba(255,255,255,0.08);
+          border-radius: 2px;
+          overflow: hidden;
+          margin-top: 3px;
+        }
+
+        /* Focus Areas Banner */
+        .cd-focus-card {
+          background: #0d1117;
+          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 12px;
+          padding: 20px;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+        }
+        .cd-focus-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 12px;
+        }
+        .cd-focus-items {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+          gap: 12px;
+        }
+        .cd-focus-item-box {
+          background: rgba(255,255,255,0.02);
+          border: 1px solid rgba(255,255,255,0.06);
+          border-radius: 8px;
+          padding: 12px;
+        }
+
+        /* ── Practice Modes Bar ──────────────────────────────── */
+        .cd-modes-bar {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          background: #0d1117;
+          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 12px;
+          padding: 8px 12px;
+          margin-bottom: 20px;
+          overflow-x: auto;
+        }
+        .cd-mode-btn {
+          background: transparent;
+          border: 1px solid transparent;
+          color: #8b949e;
+          font-size: 12.5px;
+          font-weight: 600;
+          padding: 8px 16px;
+          border-radius: 8px;
           cursor: pointer;
           display: flex;
           align-items: center;
-          gap: 6px;
-          transition: all 0.15s;
+          gap: 8px;
           white-space: nowrap;
+          transition: all 0.15s;
         }
-        .cd-queue-btn:hover {
+        .cd-mode-btn:hover {
           background: rgba(255,255,255,0.04);
           color: #c9d1d9;
         }
-        .cd-queue-btn.active {
-          background: rgba(88,166,255,0.12);
+        .cd-mode-btn.active {
+          background: rgba(88,166,255,0.15);
           border-color: #58a6ff;
           color: #58a6ff;
         }
 
-        /* ── Controls / Filter Bar ───────────────────────────── */
+        /* ── Patterns Row ────────────────────────────────────── */
+        .cd-patterns-card {
+          background: #0d1117;
+          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 12px;
+          padding: 16px 20px;
+          margin-bottom: 20px;
+        }
+        .cd-patterns-title-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 10px;
+        }
+        .cd-pattern-chips-wrap {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 6px;
+        }
+        .cd-pat-chip {
+          background: rgba(255,255,255,0.04);
+          border: 1px solid rgba(255,255,255,0.08);
+          color: #c9d1d9;
+          font-size: 11.5px;
+          padding: 4px 10px;
+          border-radius: 6px;
+          cursor: pointer;
+          transition: all 0.15s;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+        .cd-pat-chip:hover {
+          background: rgba(255,255,255,0.08);
+          border-color: rgba(255,255,255,0.18);
+        }
+        .cd-pat-chip.active {
+          background: rgba(88,166,255,0.15);
+          border-color: #58a6ff;
+          color: #58a6ff;
+          font-weight: 600;
+        }
+
+        /* ── Table & Filters ─────────────────────────────────── */
         .cd-filter-bar {
           display: flex;
           align-items: center;
           justify-content: space-between;
           gap: 12px;
           margin-bottom: 16px;
-          flex-wrap: wrap;
-        }
-        .cd-filter-left {
-          display: flex;
-          align-items: center;
-          gap: 10px;
           flex-wrap: wrap;
         }
         .cd-input-search {
@@ -570,7 +609,6 @@ export default function CompanyDetailPage() {
           border-radius: 6px;
           width: 220px;
           outline: none;
-          transition: border-color 0.15s;
         }
         .cd-input-search:focus { border-color: #58a6ff; }
         .cd-select {
@@ -583,9 +621,6 @@ export default function CompanyDetailPage() {
           outline: none;
           cursor: pointer;
         }
-        .cd-select:focus { border-color: #58a6ff; }
-
-        /* ── Table Styling ───────────────────────────────────── */
         .cd-table-card {
           background: #0d1117;
           border: 1px solid rgba(255,255,255,0.08);
@@ -596,7 +631,6 @@ export default function CompanyDetailPage() {
           width: 100%;
           border-collapse: collapse;
           font-size: 12.5px;
-          text-align: left;
         }
         .cd-table th {
           background: rgba(255,255,255,0.02);
@@ -605,16 +639,31 @@ export default function CompanyDetailPage() {
           font-weight: 700;
           text-transform: uppercase;
           letter-spacing: 0.05em;
-          padding: 12px 16px;
+          padding: 12px 14px;
           border-bottom: 1px solid rgba(255,255,255,0.08);
+          text-align: left;
         }
         .cd-table td {
-          padding: 12px 16px;
+          padding: 12px 14px;
           border-bottom: 1px solid rgba(255,255,255,0.04);
           vertical-align: middle;
         }
         .cd-table tr:hover td {
           background: rgba(255,255,255,0.02);
+        }
+
+        /* Priority Tag Pill */
+        .cd-priority-pill {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          font-size: 10px;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.04em;
+          padding: 2px 7px;
+          border-radius: 4px;
+          border: 1px solid;
         }
 
         .cd-prob-title {
@@ -628,52 +677,6 @@ export default function CompanyDetailPage() {
           text-decoration: underline;
         }
 
-        .cd-tag {
-          font-size: 10px;
-          background: rgba(255,255,255,0.04);
-          border: 1px solid rgba(255,255,255,0.08);
-          color: #8b949e;
-          padding: 1px 6px;
-          border-radius: 3px;
-        }
-        .cd-recency-badge {
-          font-size: 10.5px;
-          font-weight: 600;
-          padding: 2px 7px;
-          border-radius: 12px;
-          background: rgba(255,255,255,0.05);
-          color: #8b949e;
-          border: 1px solid rgba(255,255,255,0.08);
-        }
-        .cd-recency-badge.recent-30d {
-          background: rgba(255, 99, 71, 0.12);
-          color: #ff7f6e;
-          border-color: rgba(255, 99, 71, 0.3);
-        }
-
-        /* ── Progress Status Selector Dropdown ───────────────── */
-        .cd-status-select {
-          background: transparent;
-          border: 1px solid transparent;
-          font-size: 11.5px;
-          font-weight: 600;
-          padding: 3px 8px;
-          border-radius: 6px;
-          cursor: pointer;
-          outline: none;
-          transition: all 0.15s;
-        }
-        .cd-status-select:hover {
-          border-color: rgba(255,255,255,0.15);
-        }
-
-        /* ── Action Buttons ──────────────────────────────────── */
-        .cd-actions-cell {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          justify-content: flex-end;
-        }
         .cd-btn-action {
           display: inline-flex;
           align-items: center;
@@ -684,7 +687,6 @@ export default function CompanyDetailPage() {
           border-radius: 6px;
           cursor: pointer;
           text-decoration: none;
-          transition: all 0.15s;
           border: 1px solid transparent;
         }
         .cd-btn-practice {
@@ -692,69 +694,13 @@ export default function CompanyDetailPage() {
           border-color: rgba(255,255,255,0.1);
           color: #c9d1d9;
         }
-        .cd-btn-practice:hover {
-          background: rgba(255,255,255,0.1);
-          color: #fff;
-        }
+        .cd-btn-practice:hover { background: rgba(255,255,255,0.1); color: #fff; }
         .cd-btn-visualize {
           background: rgba(88,166,255,0.12);
           border-color: rgba(88,166,255,0.3);
           color: #79a8ff;
         }
-        .cd-btn-visualize:hover {
-          background: #1f6feb;
-          border-color: #388bfd;
-          color: #fff;
-        }
-        .cd-btn-lc {
-          background: transparent;
-          border-color: rgba(255,255,255,0.08);
-          color: #8b949e;
-          padding: 4px 8px;
-        }
-        .cd-btn-lc:hover {
-          color: #f0f6fc;
-          border-color: rgba(255,255,255,0.2);
-        }
-
-        /* ── Frequency Bar ───────────────────────────────────── */
-        .cd-freq-wrap {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
-        .cd-freq-bar-bg {
-          width: 50px;
-          height: 4px;
-          background: rgba(255,255,255,0.08);
-          border-radius: 2px;
-          overflow: hidden;
-        }
-        .cd-freq-bar-fill {
-          height: 100%;
-          background: #58a6ff;
-          border-radius: 2px;
-        }
-
-        /* ── Trust Modal ─────────────────────────────────────── */
-        .cd-modal-overlay {
-          position: fixed;
-          inset: 0;
-          background: rgba(0,0,0,0.7);
-          backdrop-filter: blur(4px);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          z-index: 1000;
-        }
-        .cd-modal-card {
-          background: #161b22;
-          border: 1px solid rgba(255,255,255,0.12);
-          border-radius: 12px;
-          padding: 24px 28px;
-          max-width: 500px;
-          width: 90%;
-        }
+        .cd-btn-visualize:hover { background: #1f6feb; color: #fff; }
       `}</style>
 
       {/* Breadcrumb Navigation */}
@@ -767,7 +713,7 @@ export default function CompanyDetailPage() {
       {/* Header Box */}
       <div className="cd-header">
         <div className="cd-header-left">
-          <div className="cd-icon-box">{company.icon}</div>
+          <div className="cd-icon-box">{company.icon || "🏢"}</div>
           <div>
             <div className="cd-company-name">
               {company.name}
@@ -784,167 +730,225 @@ export default function CompanyDetailPage() {
           </div>
         </div>
 
-        <div className="cd-header-stats">
-          <div className="cd-stat-col">
-            <span className="cd-stat-val">{metrics.totalProblems}</span>
-            <span className="cd-stat-lbl">Unique Questions</span>
-          </div>
-          <div className="cd-stat-col">
-            <span className="cd-stat-val" style={{ color: "#ff7f6e" }}>{metrics.thirtyDaysCount}</span>
-            <span className="cd-stat-lbl">30-Day Recency</span>
-          </div>
-          <div className="cd-stat-col">
-            <span className="cd-stat-val" style={{ color: "#79a8ff" }}>{metrics.sixMonthsCount}</span>
-            <span className="cd-stat-lbl">6-Month Archive</span>
-          </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <button className="cd-compare-btn" onClick={() => setShowCompareModal(true)}>
+            <span>⚖️</span> Compare with Another Company
+          </button>
         </div>
       </div>
 
-      {/* Interview Preparation Area */}
-      <div className="cd-prep-card">
-        <div className="cd-prep-top">
-          <div className="cd-prep-title">
-            <span>🎯</span>
-            <span>Interview Preparation Tracker</span>
-          </div>
-          <div className="cd-prep-progress-pct">
-            {companyProgressStats.solvedCount} / {companyProgressStats.total} Solved ({companyProgressStats.pct}%)
-          </div>
-        </div>
-
-        <div className="cd-prep-grid">
+      {/* Interview Readiness & Focus Areas Analytics */}
+      <div className="cd-analytics-grid">
+        {/* TRACE Interview Readiness */}
+        <div className="cd-readiness-card">
           <div>
-            <div className="cd-progress-bar-wrap">
-              <div className="cd-progress-bar">
-                <div
-                  className="cd-progress-fill-solved"
-                  style={{ width: `${(companyProgressStats.solvedCount / Math.max(1, companyProgressStats.total)) * 100}%` }}
-                  title="Solved"
-                />
-                <div
-                  className="cd-progress-fill-rev"
-                  style={{ width: `${(companyProgressStats.revisionCount / Math.max(1, companyProgressStats.total)) * 100}%` }}
-                  title="Needs Revision"
-                />
-                <div
-                  className="cd-progress-fill-forgot"
-                  style={{ width: `${(companyProgressStats.forgotCount / Math.max(1, companyProgressStats.total)) * 100}%` }}
-                  title="Forgot Approach"
-                />
+            <div className="cd-readiness-top">
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "#8b949e" }}>
+                  TRACE Interview Readiness
+                </div>
+                <div style={{ fontSize: 11, color: "#6e7681", marginTop: 2 }}>
+                  Multi-metric preparation telemetry
+                </div>
+              </div>
+              <span style={{
+                fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 12,
+                background: readiness.overall >= 60 ? "rgba(0,184,163,0.15)" : "rgba(255,161,22,0.15)",
+                color: readiness.overall >= 60 ? "#00b8a3" : "#ffa116"
+              }}>
+                {readiness.label}
+              </span>
+            </div>
+
+            <div className="cd-readiness-score-box">
+              <span className="cd-readiness-num">{readiness.overall}%</span>
+              <span className="cd-readiness-sub">overall</span>
+            </div>
+          </div>
+
+          <div className="cd-readiness-bars">
+            <div>
+              <div className="cd-readiness-row">
+                <span>Problem Coverage</span>
+                <span style={{ fontFamily: "var(--font-mono, monospace)" }}>{readiness.problemCoverage}%</span>
+              </div>
+              <div className="cd-readiness-mini-fill">
+                <div style={{ width: `${readiness.problemCoverage}%`, height: "100%", background: "#58a6ff" }} />
               </div>
             </div>
 
-            <div className="cd-diff-distribution">
-              <span className="cd-diff-count-badge" style={{ color: DIFF_COLORS.Easy }}>
-                <span className="cd-dot" style={{ background: DIFF_COLORS.Easy }} />
-                Easy: {companyProgressStats.easySolved} / {metrics.easyCount}
-              </span>
-              <span className="cd-diff-count-badge" style={{ color: DIFF_COLORS.Medium }}>
-                <span className="cd-dot" style={{ background: DIFF_COLORS.Medium }} />
-                Med: {companyProgressStats.medSolved} / {metrics.medCount}
-              </span>
-              <span className="cd-diff-count-badge" style={{ color: DIFF_COLORS.Hard }}>
-                <span className="cd-dot" style={{ background: DIFF_COLORS.Hard }} />
-                Hard: {companyProgressStats.hardSolved} / {metrics.hardCount}
-              </span>
+            <div>
+              <div className="cd-readiness-row">
+                <span>Pattern Coverage</span>
+                <span style={{ fontFamily: "var(--font-mono, monospace)" }}>{readiness.patternCoverage}%</span>
+              </div>
+              <div className="cd-readiness-mini-fill">
+                <div style={{ width: `${readiness.patternCoverage}%`, height: "100%", background: "#00b8a3" }} />
+              </div>
+            </div>
+
+            <div>
+              <div className="cd-readiness-row">
+                <span>Revision Health</span>
+                <span style={{ fontFamily: "var(--font-mono, monospace)" }}>{readiness.revisionHealth}%</span>
+              </div>
+              <div className="cd-readiness-mini-fill">
+                <div style={{ width: `${readiness.revisionHealth}%`, height: "100%", background: "#ffa116" }} />
+              </div>
+            </div>
+
+            <div>
+              <div className="cd-readiness-row">
+                <span>Difficulty Coverage</span>
+                <span style={{ fontFamily: "var(--font-mono, monospace)" }}>{readiness.difficultyCoverage}%</span>
+              </div>
+              <div className="cd-readiness-mini-fill">
+                <div style={{ width: `${readiness.difficultyCoverage}%`, height: "100%", background: "#c792ea" }} />
+              </div>
             </div>
           </div>
+        </div>
 
-          <div className="cd-patterns-box">
-            <div className="cd-patterns-lbl">Top Interview Patterns (From Actual Dataset):</div>
-            <div className="cd-patterns-list">
-              <button
-                className={`cd-pattern-chip ${topicFilter === "All" ? "active" : ""}`}
-                onClick={() => setTopicFilter("All")}
-              >
-                All Patterns
-              </button>
-              {metrics.topPatterns.slice(0, 8).map(tp => (
-                <button
-                  key={tp.name}
-                  className={`cd-pattern-chip ${topicFilter === tp.name ? "active" : ""}`}
-                  onClick={() => setTopicFilter(topicFilter === tp.name ? "All" : tp.name)}
-                >
-                  <span>{tp.name}</span>
-                  <span className="cd-pattern-count">{tp.count}</span>
-                </button>
-              ))}
+        {/* Focus Areas */}
+        <div className="cd-focus-card">
+          <div className="cd-focus-header">
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "#f0f6fc" }}>
+                Target Focus Areas
+              </div>
+              <div style={{ fontSize: 11.5, color: "#8b949e", marginTop: 2 }}>
+                Identified from unattempted patterns and revision status
+              </div>
             </div>
+            {focusAreas.revisionRequiredCount > 0 && (
+              <span style={{
+                fontSize: 11, fontWeight: 700, background: "rgba(239,71,67,0.15)", color: "#ef4743",
+                padding: "3px 8px", borderRadius: 6
+              }}>
+                ⚡ {focusAreas.revisionRequiredCount} Need Revision
+              </span>
+            )}
+          </div>
+
+          <div className="cd-focus-items">
+            {focusAreas.weakPatterns.length > 0 ? (
+              focusAreas.weakPatterns.slice(0, 3).map(wp => (
+                <div key={wp.pattern} className="cd-focus-item-box">
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#8b949e", marginBottom: 4 }}>
+                    <span style={{ fontWeight: 700, color: "#c9d1d9" }}>{wp.pattern}</span>
+                    <span>{wp.solved}/{wp.total}</span>
+                  </div>
+                  <div style={{ fontSize: 11, color: "#79a8ff", cursor: "pointer", fontWeight: 600 }}
+                       onClick={() => handleOpenPracticeModal(wp.recommendedProblem)}>
+                    → Practice: {wp.recommendedProblem.title}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div style={{ fontSize: 12, color: "#00b8a3" }}>✓ Excellent pattern coverage across all core techniques.</div>
+            )}
+
+            {focusAreas.weakDifficulty && (
+              <div className="cd-focus-item-box">
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#ef4743", marginBottom: 4 }}>
+                  Hard Difficulty Gap
+                </div>
+                <div style={{ fontSize: 11, color: "#8b949e" }}>
+                  {focusAreas.weakDifficulty.solved}/{focusAreas.weakDifficulty.total} solved ({focusAreas.weakDifficulty.pct}%)
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Practice Queues */}
-      <div className="cd-queue-tabs">
-        <button
-          className={`cd-queue-btn ${queueTab === "all" ? "active" : ""}`}
-          onClick={() => setQueueTab("all")}
-        >
-          <span>📋</span> All Problems ({problems.length})
-        </button>
-        <button
-          className={`cd-queue-btn ${queueTab === "high_priority" ? "active" : ""}`}
-          onClick={() => setQueueTab("high_priority")}
-        >
-          <span>🔥</span> High Priority ({problems.filter(p => p.frequency >= 75 || p.recency === "30 Days").length})
-        </button>
-        <button
-          className={`cd-queue-btn ${queueTab === "frequent" ? "active" : ""}`}
-          onClick={() => setQueueTab("frequent")}
-        >
-          <span>📈</span> Frequently Asked ({problems.filter(p => p.frequency >= 50).length})
-        </button>
-        <button
-          className={`cd-queue-btn ${queueTab === "unsolved" ? "active" : ""}`}
-          onClick={() => setQueueTab("unsolved")}
-        >
-          <span>○</span> Unsolved ({companyProgressStats.total - companyProgressStats.solvedCount})
-        </button>
-        <button
-          className={`cd-queue-btn ${queueTab === "need_revision" ? "active" : ""}`}
-          onClick={() => setQueueTab("need_revision")}
-        >
-          <span>⚡</span> Needs Revision ({companyProgressStats.revisionCount + companyProgressStats.forgotCount})
-        </button>
+      {/* Practice Modes Selector Bar */}
+      <div className="cd-modes-bar">
+        {PRACTICE_MODES.map(m => (
+          <button
+            key={m.id}
+            className={`cd-mode-btn ${practiceMode === m.id ? "active" : ""}`}
+            onClick={() => setPracticeMode(m.id)}
+            title={m.desc}
+          >
+            <span>{m.icon}</span>
+            <span>{m.label}</span>
+          </button>
+        ))}
+
+        {practiceMode === "mock" && (
+          <button
+            style={{
+              marginLeft: "auto", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
+              color: "#c9d1d9", fontSize: 11.5, padding: "5px 12px", borderRadius: 6, cursor: "pointer"
+            }}
+            onClick={() => setMockSeed(s => s + 1)}
+          >
+            🎲 Reroll Mock Set
+          </button>
+        )}
+      </div>
+
+      {/* Curated Pattern Layer */}
+      <div className="cd-patterns-card">
+        <div className="cd-patterns-title-row">
+          <div style={{ fontSize: 12, fontWeight: 700, color: "#f0f6fc", display: "flex", alignItems: "center", gap: 8 }}>
+            <span>Top Algorithmic Patterns</span>
+            <span style={{ fontSize: 10, color: "#8b949e", fontWeight: 400 }}>({PATTERN_SOURCE_LABEL})</span>
+          </div>
+          <button
+            style={{ background: "transparent", border: "none", color: "#79a8ff", fontSize: 11, cursor: "pointer" }}
+            onClick={() => setPatternFilter("All")}
+          >
+            Clear filter
+          </button>
+        </div>
+
+        <div className="cd-pattern-chips-wrap">
+          <button
+            className={`cd-pat-chip ${patternFilter === "All" ? "active" : ""}`}
+            onClick={() => setPatternFilter("All")}
+          >
+            All Patterns
+          </button>
+          {patternStats.patterns.slice(0, 10).map(p => (
+            <button
+              key={p.pattern}
+              className={`cd-pat-chip ${patternFilter === p.pattern ? "active" : ""}`}
+              onClick={() => setPatternFilter(patternFilter === p.pattern ? "All" : p.pattern)}
+            >
+              <span>{p.pattern}</span>
+              <span style={{ fontSize: 10, opacity: 0.7 }}>({p.count})</span>
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Filter and Search Bar */}
       <div className="cd-filter-bar">
-        <div className="cd-filter-left">
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
           <input
             type="text"
             className="cd-input-search"
-            placeholder="Search problems or ID..."
+            placeholder="Search problems, pattern, or ID..."
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
 
-          <select
-            className="cd-select"
-            value={diffFilter}
-            onChange={e => setDiffFilter(e.target.value)}
-          >
+          <select className="cd-select" value={diffFilter} onChange={e => setDiffFilter(e.target.value)}>
             <option value="All">All Difficulties</option>
             <option value="Easy">Easy</option>
             <option value="Medium">Medium</option>
             <option value="Hard">Hard</option>
           </select>
 
-          <select
-            className="cd-select"
-            value={recencyFilter}
-            onChange={e => setRecencyFilter(e.target.value)}
-          >
+          <select className="cd-select" value={recencyFilter} onChange={e => setRecencyFilter(e.target.value)}>
             <option value="All">All Recency</option>
             <option value="30 Days">Last 30 Days</option>
             <option value="6 Months">Last 6 Months</option>
           </select>
 
-          <select
-            className="cd-select"
-            value={statusFilter}
-            onChange={e => setStatusFilter(e.target.value)}
-          >
+          <select className="cd-select" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
             <option value="All">All Statuses</option>
             <option value="unsolved">○ Unsolved</option>
             <option value="solved">✓ Solved</option>
@@ -955,18 +959,13 @@ export default function CompanyDetailPage() {
 
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <span style={{ fontSize: 12, color: "#8b949e" }}>Sort by:</span>
-          <select
-            className="cd-select"
-            value={sortBy}
-            onChange={e => setSortBy(e.target.value)}
-          >
+          <select className="cd-select" value={sortBy} onChange={e => setSortBy(e.target.value)}>
+            <option value="priority_desc">Priority Score (Highest)</option>
             <option value="frequency_desc">Frequency (Highest)</option>
-            <option value="frequency_asc">Frequency (Lowest)</option>
             <option value="diff_asc">Difficulty (Easy → Hard)</option>
             <option value="diff_desc">Difficulty (Hard → Easy)</option>
             <option value="id_asc">LeetCode # (Ascending)</option>
             <option value="acceptance_desc">Acceptance Rate</option>
-            <option value="revision_priority">Revision Priority</option>
           </select>
 
           <span style={{ fontSize: 12, color: "#8b949e", marginLeft: 8 }}>
@@ -980,20 +979,21 @@ export default function CompanyDetailPage() {
         <table className="cd-table">
           <thead>
             <tr>
-              <th style={{ width: 140 }}>Status</th>
-              <th style={{ width: 60 }}>#</th>
+              <th style={{ width: 130 }}>Priority</th>
+              <th style={{ width: 130 }}>Status</th>
+              <th style={{ width: 55 }}>#</th>
               <th>Problem Title</th>
-              <th style={{ width: 100 }}>Difficulty</th>
-              <th style={{ width: 110 }}>Recency</th>
-              <th style={{ width: 140 }}>Frequency</th>
-              <th style={{ width: 90 }}>Acceptance</th>
-              <th style={{ width: 180, textAlign: "right" }}>Actions</th>
+              <th style={{ width: 90 }}>Difficulty</th>
+              <th style={{ width: 100 }}>Recency</th>
+              <th style={{ width: 110 }}>Frequency</th>
+              <th style={{ width: 120 }}>Coverage</th>
+              <th style={{ width: 160, textAlign: "right" }}>Actions</th>
             </tr>
           </thead>
           <tbody>
             {filteredProblems.length === 0 ? (
               <tr>
-                <td colSpan={8} style={{ textAlign: "center", padding: "48px 0", color: "#8b949e" }}>
+                <td colSpan={9} style={{ textAlign: "center", padding: "48px 0", color: "#8b949e" }}>
                   <div style={{ fontSize: 24, marginBottom: 8 }}>🔍</div>
                   <div style={{ fontWeight: 600 }}>No problems match your current filter criteria</div>
                 </td>
@@ -1003,15 +1003,42 @@ export default function CompanyDetailPage() {
                 const pKey = getProblemKey(p);
                 const prog = progress[pKey] || { status: "unsolved" };
                 const stConfig = STATUS_CONFIG[prog.status] || STATUS_CONFIG.unsolved;
+                const prio = priorityMap.get(pKey) || { score: 50, tier: "Medium", color: "#79a8ff", reason: "Standard" };
+                const { patterns, topic } = getProblemPatternDetails(p);
 
                 return (
                   <tr key={pKey}>
+                    {/* Priority Tier & Score */}
+                    <td>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                        <span
+                          className="cd-priority-pill"
+                          style={{ borderColor: prio.color, color: prio.color, background: `${prio.color}15` }}
+                          title={prio.reason}
+                        >
+                          {prio.tier} · {prio.score}
+                        </span>
+                        <span style={{ fontSize: 10, color: "#6e7681", whiteSpace: "nowrap" }}>
+                          {prio.reason.split("•")[0]}
+                        </span>
+                      </div>
+                    </td>
+
                     {/* Status Dropdown */}
                     <td>
                       <select
-                        className="cd-status-select"
+                        style={{
+                          background: "transparent",
+                          color: stConfig.color,
+                          border: "1px solid rgba(255,255,255,0.1)",
+                          fontSize: 11.5,
+                          fontWeight: 600,
+                          padding: "3px 6px",
+                          borderRadius: 6,
+                          cursor: "pointer",
+                          outline: "none"
+                        }}
                         value={prog.status}
-                        style={{ color: stConfig.color, background: stConfig.bg }}
                         onChange={e => updateProgress(pKey, { status: e.target.value })}
                       >
                         <option value="unsolved">○ Unsolved</option>
@@ -1026,14 +1053,11 @@ export default function CompanyDetailPage() {
                       #{p.id || "—"}
                     </td>
 
-                    {/* Title + Metadata */}
+                    {/* Title + Topic & Patterns */}
                     <td>
                       <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          <span
-                            className="cd-prob-title"
-                            onClick={() => handleOpenPracticeModal(p)}
-                          >
+                          <span className="cd-prob-title" onClick={() => handleOpenPracticeModal(p)}>
                             {p.title}
                           </span>
                           {PRESET_SOLUTIONS[p.id] && (
@@ -1047,20 +1071,22 @@ export default function CompanyDetailPage() {
                           )}
                         </div>
 
-                        {/* Topics & Multi-company indicators */}
+                        {/* Pattern tags */}
                         <div style={{ display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap" }}>
-                          {(p.topics || []).slice(0, 3).map(t => (
-                            <span key={t} className="cd-tag">{t}</span>
-                          ))}
-                          {p.otherCompanies && p.otherCompanies.length > 0 && (
-                            <span
-                              className="cd-tag"
-                              style={{ color: "#79a8ff", borderColor: "rgba(88,166,255,0.25)" }}
-                              title={`Also asked by: ${p.otherCompanies.map(c => c.name).join(", ")}`}
-                            >
-                              +{p.otherCompanies.length} companies
+                          <span style={{
+                            fontSize: 10, background: "rgba(255,255,255,0.06)", color: "#8b949e",
+                            padding: "1px 5px", borderRadius: 3
+                          }}>
+                            {topic}
+                          </span>
+                          {patterns.slice(0, 2).map(pat => (
+                            <span key={pat} style={{
+                              fontSize: 10, background: "rgba(88,166,255,0.08)", color: "#79a8ff",
+                              border: "1px solid rgba(88,166,255,0.2)", padding: "1px 5px", borderRadius: 3
+                            }}>
+                              {pat}
                             </span>
-                          )}
+                          ))}
                         </div>
                       </div>
                     </td>
@@ -1078,31 +1104,47 @@ export default function CompanyDetailPage() {
 
                     {/* Recency */}
                     <td>
-                      <span className={`cd-recency-badge ${p.recency === "30 Days" ? "recent-30d" : ""}`}>
+                      <span style={{
+                        fontSize: 10.5, fontWeight: 600, padding: "2px 7px", borderRadius: 12,
+                        background: p.recency === "30 Days" ? "rgba(255, 99, 71, 0.12)" : "rgba(255,255,255,0.05)",
+                        color: p.recency === "30 Days" ? "#ff7f6e" : "#8b949e",
+                        border: p.recency === "30 Days" ? "1px solid rgba(255, 99, 71, 0.3)" : "1px solid rgba(255,255,255,0.08)"
+                      }}>
                         {p.recency}
                       </span>
                     </td>
 
                     {/* Frequency */}
                     <td>
-                      <div className="cd-freq-wrap">
-                        <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: 11, width: 34 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: 11, width: 32 }}>
                           {p.frequency}%
                         </span>
-                        <div className="cd-freq-bar-bg">
-                          <div className="cd-freq-bar-fill" style={{ width: `${Math.min(100, p.frequency)}%` }} />
+                        <div style={{ width: 40, height: 4, background: "rgba(255,255,255,0.08)", borderRadius: 2, overflow: "hidden" }}>
+                          <div style={{ height: "100%", width: `${Math.min(100, p.frequency)}%`, background: "#58a6ff" }} />
                         </div>
                       </div>
                     </td>
 
-                    {/* Acceptance */}
-                    <td style={{ fontFamily: "var(--font-mono, monospace)", fontSize: 11, color: "#8b949e" }}>
-                      {typeof p.acceptance === "number" ? `${p.acceptance}%` : "—"}
+                    {/* Company Coverage */}
+                    <td>
+                      <span
+                        style={{
+                          fontSize: 11, color: "#79a8ff", fontWeight: 600, cursor: "pointer"
+                        }}
+                        title={p.otherCompanies ? `Prepares for: ${company.name}, ${p.otherCompanies.map(c => c.name).join(", ")}` : "Prepares for this company"}
+                      >
+                        {p.otherCompanies && p.otherCompanies.length > 0 ? (
+                          `${p.otherCompanies.length + 1} companies`
+                        ) : (
+                          `1 company`
+                        )}
+                      </span>
                     </td>
 
                     {/* Actions */}
                     <td>
-                      <div className="cd-actions-cell">
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, justifyContent: "flex-end" }}>
                         <button
                           className="cd-btn-action cd-btn-practice"
                           onClick={() => handleOpenPracticeModal(p)}
@@ -1117,15 +1159,6 @@ export default function CompanyDetailPage() {
                         >
                           ▶ Visualize
                         </button>
-                        <a
-                          href={p.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="cd-btn-action cd-btn-lc"
-                          title="Open on LeetCode"
-                        >
-                          ↗
-                        </a>
                       </div>
                     </td>
                   </tr>
@@ -1145,10 +1178,26 @@ export default function CompanyDetailPage() {
         />
       )}
 
+      {/* Company Comparison Modal */}
+      {showCompareModal && (
+        <CompanyComparisonModal
+          initialCompanyId={companyId}
+          onClose={() => setShowCompareModal(false)}
+          onPractice={p => handleOpenPracticeModal(p)}
+          onVisualize={p => handleVisualizeCode(p)}
+        />
+      )}
+
       {/* Data Trust & Verification Modal */}
       {showTrustModal && (
-        <div className="cd-modal-overlay" onClick={() => setShowTrustModal(false)}>
-          <div className="cd-modal-card" onClick={e => e.stopPropagation()}>
+        <div style={{
+          position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)",
+          display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000
+        }} onClick={() => setShowTrustModal(false)}>
+          <div style={{
+            background: "#161b22", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 12,
+            padding: "24px 28px", maxWidth: 500, width: "90%"
+          }} onClick={e => e.stopPropagation()}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
               <span style={{ fontSize: 24 }}>🛡️</span>
               <div style={{ fontSize: 17, fontWeight: 700, color: "#f0f6fc" }}>

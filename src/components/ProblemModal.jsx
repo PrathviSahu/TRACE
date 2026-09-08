@@ -5,6 +5,8 @@ import { getProblemTemplate, PRESET_SOLUTIONS } from '../data/problemTemplates.j
 import { getProblemDescription } from '../data/problemDescriptions.js';
 import { getProblemSolutions } from '../data/problemSolutions.js';
 import { getProblemCompanyCrossref } from '../data/companyUtils.js';
+import { getProblemPatternDetails, PATTERN_SOURCE_LABEL } from '../data/patternMapping.js';
+import { calculatePriorityScore } from '../services/intelligenceService.js';
 import { useProblemProgress, updateProblemProgress } from '../services/progressStore.js';
 import { useMemo } from 'react';
 import {
@@ -52,6 +54,8 @@ export default function ProblemModal({ problem, onClose }) {
   const [generatingDesc, setGeneratingDesc] = useState(false);
   const [prog, setProg] = useProblemProgress(problem?.id);
   const crossref = useMemo(() => problem ? getProblemCompanyCrossref(problem.id) : null, [problem]);
+  const patternData = useMemo(() => problem ? getProblemPatternDetails(problem) : null, [problem]);
+  const priority = useMemo(() => problem ? calculatePriorityScore(problem, prog) : null, [problem, prog]);
   const [genDescError, setGenDescError] = useState('');
 
   // AI Tutor states inside modal
@@ -440,7 +444,43 @@ Guidelines:
                   </div>
                 )}
               </div>
-              {desc?.category && <div style={{ marginTop:4, fontSize:12, color:'#6e7681' }}>{desc.category}</div>}
+              {/* Topic, Patterns & Coverage Bar */}
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
+                {priority && (
+                  <span style={{
+                    fontSize: 10.5, fontWeight: 700, padding: "2px 8px", borderRadius: 4,
+                    border: "1px solid " + priority.color, color: priority.color, background: priority.color + "15"
+                  }}>
+                    {priority.tier} Priority ({priority.score})
+                  </span>
+                )}
+                {patternData && (
+                  <>
+                    <span style={{
+                      fontSize: 11, background: "rgba(255,255,255,0.06)", color: "#8b949e",
+                      padding: "2px 7px", borderRadius: 4
+                    }}>
+                      Topic: {patternData.topic}
+                    </span>
+                    {patternData.patterns.map(pat => (
+                      <span key={pat} style={{
+                        fontSize: 11, background: "rgba(88,166,255,0.1)", color: "#79a8ff",
+                        border: "1px solid rgba(88,166,255,0.25)", padding: "2px 7px", borderRadius: 4
+                      }} title={PATTERN_SOURCE_LABEL}>
+                        Pattern: {pat}
+                      </span>
+                    ))}
+                  </>
+                )}
+                {crossref && crossref.companies && crossref.companies.length > 0 && (
+                  <span style={{
+                    fontSize: 11, background: "rgba(0,184,163,0.1)", color: "#00b8a3",
+                    border: "1px solid rgba(0,184,163,0.25)", padding: "2px 8px", borderRadius: 12
+                  }}>
+                    🛡️ Prepares for {crossref.companies.length} Companies
+                  </span>
+                )}
+              </div>
             </div>
             <button onClick={onClose} className="pm-btn pm-btn-close" style={{ padding:'6px 12px', flexShrink:0 }}>✕</button>
           </div>
