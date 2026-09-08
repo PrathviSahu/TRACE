@@ -1,6 +1,7 @@
 // ─────────────────────────────────────────────────────────────
 //  TRACE — Daily Interview Plan Dashboard
 //  Phase 3.2: Deterministic day-by-day study roadmap interface.
+//  Phase 3.3: Adaptive Feedback Loop integration.
 // ─────────────────────────────────────────────────────────────
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -16,6 +17,9 @@ import { useAllProgress, updateProblemProgress, getProblemKey } from "../service
 import { getProblemDescription } from "../data/problemDescriptions.js";
 import { PRESET_SOLUTIONS, getProblemTemplate } from "../data/problemTemplates.js";
 import ProblemModal from "../components/ProblemModal.jsx";
+import AdaptiveInsightsPanel from "../components/AdaptiveInsightsPanel.jsx";
+import { buildAdaptiveState, adaptFutureDays, canAdaptNow } from "../services/adaptiveEngine.js";
+import { useAdaptiveState, saveAdaptiveState } from "../services/adaptiveStore.js";
 
 const DIFF_COLORS = { Easy: "#00b8a3", Medium: "#ffa116", Hard: "#ef4743" };
 const DIFF_BG = { Easy: "rgba(0,184,163,0.12)", Medium: "rgba(255,161,22,0.12)", Hard: "rgba(239,71,67,0.12)" };
@@ -35,6 +39,7 @@ export default function InterviewPlanPage() {
   const { setCode, setInputs, setLanguage } = useTraceStore();
   const currentStoreLang = useTraceStore(s => s.language) || "java";
 
+  const { adaptiveState, saveAdaptiveState: persistAdaptive } = useAdaptiveState();
   const [modalProblem, setModalProblem] = useState(null);
   const [modalDesc, setModalDesc] = useState(null);
   const [selectedDayFilter, setSelectedDayFilter] = useState("all");
@@ -60,6 +65,31 @@ export default function InterviewPlanPage() {
       setStatusNotification({ type: "error", message: err.message });
     }
   }, [profile, progress, persistPlan]);
+
+  // Adapt future days based on current performance (Phase 3.3)
+  // DISTINCT from handleGeneratePlan: mutates future days, never re-runs full generator
+  const handleAdaptPlan = useCallback(() => {
+    if (!profile || !dailyPlan) return;
+    const nowMs = Date.now();
+    if (!canAdaptNow(adaptiveState?.lastEvaluatedAt, nowMs)) {
+      setStatusNotification({ type: "info", message: "Plan was adapted recently. Please wait 30 minutes before adapting again." });
+      setTimeout(() => setStatusNotification(null), 4000);
+      return;
+    }
+    try {
+      const newAdaptiveState = buildAdaptiveState(profile, dailyPlan, progress, adaptiveState, nowMs);
+      const result = adaptFutureDays(dailyPlan, newAdaptiveState, profile, progress, nowMs);
+      persistPlan(result.adaptedPlan);
+      persistAdaptive(result.finalAdaptiveState);
+      const firstReason = result.finalAdaptiveState.adaptationReasons[0] || "Future days updated based on your performance.";
+      setStatusNotification({ type: "success", message: "Plan adapted: " + firstReason });
+      setTimeout(() => setStatusNotification(null), 7000);
+    } catch (err) {
+      console.error("Adaptation failed:", err);
+      setStatusNotification({ type: "error", message: "Adaptation failed: " + err.message });
+      setTimeout(() => setStatusNotification(null), 5000);
+    }
+  }, [profile, dailyPlan, progress, adaptiveState, persistPlan, persistAdaptive]);
 
   // If profile exists but no plan has been generated yet, auto-generate initial plan
   useEffect(() => {
@@ -238,6 +268,27 @@ export default function InterviewPlanPage() {
               <span>🔄</span> Regenerate Plan
             </button>
 
+            <button
+              id="adapt-plan-btn"
+              type="button"
+              onClick={handleAdaptPlan}
+              style={{
+                padding: "0.65rem 1.1rem",
+                borderRadius: "6px",
+                border: "1px solid rgba(16, 185, 129, 0.5)",
+                background: "rgba(16, 185, 129, 0.12)",
+                color: "#10b981",
+                fontSize: "0.85rem",
+                fontWeight: 600,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "0.4rem"
+              }}
+            >
+              <span>🧠</span> Adapt Plan
+            </button>
+
             <Link
               to="/interview/setup"
               style={{
@@ -308,6 +359,15 @@ export default function InterviewPlanPage() {
             <span style={statSubStyle}>{planCompletion.solved} of {planCompletion.total} problems completed</span>
           </div>
         </div>
+
+        {/* ── Adaptive Insights Panel (Phase 3.3) ─────────────────── */}
+        {adaptiveState && (
+          <AdaptiveInsightsPanel
+            adaptiveState={adaptiveState}
+            planDelta={adaptiveState.planDelta}
+            lastAdaptedAt={dailyPlan?.lastAdaptedAt}
+          />
+        )}
 
         {/* ── Pattern Family Coverage Bar ──────────────────────── */}
         {dailyPlan?.patternFamilyCoverage && Object.keys(dailyPlan.patternFamilyCoverage).length > 0 && (
