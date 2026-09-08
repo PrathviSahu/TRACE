@@ -7,6 +7,7 @@ import ProblemsPage from "./pages/ProblemsPage.jsx";
 import DataStructuresPage from "./pages/DataStructuresPage.jsx";
 import CompaniesPage from "./pages/CompaniesPage.jsx";
 import CompanyDetailPage from "./pages/CompanyDetailPage.jsx";
+import InterviewSetupPage from "./pages/InterviewSetupPage.jsx";
 import LearnPage from "./pages/LearnPage.jsx";
 
 export default function App() {
@@ -20,6 +21,7 @@ export default function App() {
         <Route path="/data-structures"          element={<DataStructuresPage />} />
         <Route path="/companies"                element={<CompaniesPage />} />
         <Route path="/companies/:companyId"     element={<CompanyDetailPage />} />
+        <Route path="/interview/setup"          element={<InterviewSetupPage />} />
         <Route path="/learn"                    element={<LearnPage />} />
       </Routes>
       <DSABrain />

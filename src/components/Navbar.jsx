@@ -38,6 +38,9 @@ export default function Navbar() {
         <Link to="/companies" className={`nav-item ${loc.pathname.startsWith('/companies') ? 'active-pill' : ''}`}>
           Companies
         </Link>
+        <Link to="/interview/setup" className={`nav-item ${loc.pathname.startsWith('/interview') ? 'active-pill' : ''}`}>
+          Interview Plan
+        </Link>
         <Link to="/learn" className={`nav-item ${loc.pathname === '/learn' ? 'active-pill' : ''}`}>
           Learn
         </Link>

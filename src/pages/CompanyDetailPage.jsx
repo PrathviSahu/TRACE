@@ -730,7 +730,10 @@ export default function CompanyDetailPage() {
           </div>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <Link to={`/interview/setup?companyId=${companyId}`} className="cd-compare-btn" style={{ textDecoration: "none", background: "linear-gradient(135deg, rgba(99, 102, 241, 0.25), rgba(124, 58, 237, 0.25))", borderColor: "var(--accent-indigo, #6366f1)", color: "var(--txt-bright, #f8fafc)" }}>
+            <span>🎯</span> Target & Interview Plan
+          </Link>
           <button className="cd-compare-btn" onClick={() => setShowCompareModal(true)}>
             <span>⚖️</span> Compare with Another Company
           </button>
