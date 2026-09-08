@@ -8,7 +8,27 @@ import { getProblemPatternDetails, computeCompanyPatternStats } from "../data/pa
 import { COMPANY_DATA } from "../data/companyData.js";
 
 /**
- * Calculates a deterministic practice priority score (0–100) for a problem
+ * Calculates a deterministic practice priority score (0–100) for a problem.
+ *
+ * Scoring Architecture:
+ * ─────────────────────────────────────────────────────────────
+ * BASE SCORE (Up to 100 points):
+ *   1. Frequency:  up to 40 pts  (historical interview frequency normalized to 40)
+ *   2. Recency:    up to 25 pts  (30 Days = 25 pts, 6 Months = 15 pts)
+ *   3. Status:     up to 25 pts  (forgot_approach = 25, need_revision = 22, unsolved = 18, solved = 2)
+ *   4. Difficulty: up to 10 pts  (Medium = 10, Hard = 8, Easy = 5)
+ *
+ * DYNAMIC MODIFIERS (Applied on top of Base Score):
+ *   5. Confidence Modifier:
+ *      - Low Confidence:  +8 pts
+ *      - Medium:          +2 pts
+ *      - High Confidence: -8 pts (or -20 pts if solved to de-prioritize mastered items)
+ *   6. Spaced-Repetition Decay:
+ *      - Up to +5 pts if revision item has been unattempted for > 7 days
+ *
+ * Final score is clamped to [5, 100].
+ * Priority Tiers: Critical (>= 80), High (65-79), Medium (45-64), Low (< 45).
+ * ─────────────────────────────────────────────────────────────
  */
 export function calculatePriorityScore(problem, progressEntry) {
   const status = progressEntry?.status || "unsolved";
