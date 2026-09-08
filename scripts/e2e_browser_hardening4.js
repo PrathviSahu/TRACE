@@ -3,7 +3,7 @@ import path from 'path';
 
 async function runBrowserE2E() {
   console.log('========================================================');
-  console.log('TRACE Hardening #4: Chrome CDP E2E Automation');
+  console.log('TRACE Hardening #4.1: Chrome CDP E2E Verification Suite');
   console.log('========================================================\n');
 
   const res = await fetch('http://127.0.0.1:9222/json');
@@ -69,7 +69,9 @@ async function runBrowserE2E() {
     return new Promise(r => setTimeout(r, ms));
   }
 
+  // ───────────────────────────────────────────────────────────
   // TEST 1: Array Mutation
+  // ───────────────────────────────────────────────────────────
   console.log('\n--- TEST 1: Array Mutation ---');
   const code1 = 'int[] nums = {10, 20, 30};\nnums[1] = 99;\nprintln(nums[1]);';
   await evaluate('window.__traceStore.getState().setLanguage("java"); window.__traceStore.getState().setCode(' + JSON.stringify(code1) + '); window.__traceStore.getState().run();');
@@ -109,7 +111,9 @@ async function runBrowserE2E() {
   await captureScreenshot('hardening4_array_mutation_step2.png');
   console.log('✓ TEST 1 PASSED: Real array rendered [10, 99, 30], output is 99, navigation restored state!');
 
+  // ───────────────────────────────────────────────────────────
   // TEST 2: Java Object Graph
+  // ───────────────────────────────────────────────────────────
   console.log('\n--- TEST 2: Java Object Graph ---');
   const objCode = 'class ListNode {\n    int val;\n    ListNode next;\n}\n\nListNode a = new ListNode();\na.val = 10;\na.next = new ListNode();\na.next.val = 20;\n\nprintln(a.next.val);';
   await evaluate('window.__traceStore.getState().setCode(' + JSON.stringify(objCode) + '); window.__traceStore.getState().run();');
@@ -124,13 +128,18 @@ async function runBrowserE2E() {
     throw new Error('Object program output does not contain 20! Got: ' + objInfo.output);
   }
   const treeText = objInfo.treeRows.join(' | ');
-  const hasVal10 = treeText.includes('val: 10') || treeText.includes('val:10'); const hasVal20 = treeText.includes('val: 20') || treeText.includes('val:20'); const hasNextNull = treeText.includes('next: null') || treeText.includes('next:null'); if (!hasVal10 || !hasVal20 || !hasNextNull) {
+  const hasVal10 = treeText.includes('val: 10') || treeText.includes('val:10');
+  const hasVal20 = treeText.includes('val: 20') || treeText.includes('val:20');
+  const hasNextNull = treeText.includes('next: null') || treeText.includes('next:null');
+  if (!hasVal10 || !hasVal20 || !hasNextNull) {
     throw new Error('Object tree missing expected hierarchy! Got: ' + treeText);
   }
   await captureScreenshot('hardening4_object_graph.png');
   console.log('✓ TEST 2 PASSED: Real object graph rendered ListNode hierarchy (val=10, next.val=20, next.next=null)!');
 
+  // ───────────────────────────────────────────────────────────
   // TEST 3: Scalar Variables & Honest Empty State
+  // ───────────────────────────────────────────────────────────
   console.log('\n--- TEST 3: Scalar Variables & Honest Empty State ---');
   const loopCode = 'int sum = 0;\nfor (int i = 0; i < 3; i++) {\n    sum += i;\n}\nprintln(sum);';
   await evaluate('window.__traceStore.getState().setCode(' + JSON.stringify(loopCode) + '); window.__traceStore.getState().run();');
@@ -153,8 +162,52 @@ async function runBrowserE2E() {
   await captureScreenshot('hardening4_scalar_empty_state.png');
   console.log('✓ TEST 3 PASSED: Honest empty state shown for scalar loop, variables table reflects sum=3, zero fake arrays!');
 
-  // TEST 4: Two Sum Regression
-  console.log('\n--- TEST 4: Two Sum Regression ---');
+  // ───────────────────────────────────────────────────────────
+  // TEST 4: Running Sum (Non-Two-Sum Dynamic Program)
+  // ───────────────────────────────────────────────────────────
+  console.log('\n--- TEST 4: Running Sum ---');
+  const runningSumCode = 'int[] nums = {1, 2, 3, 4};\nfor (int i = 1; i < nums.length; i++) {\n    nums[i] += nums[i - 1];\n}\nprintln(nums[nums.length - 1]);';
+  await evaluate('window.__traceStore.getState().setCode(' + JSON.stringify(runningSumCode) + '); window.__traceStore.getState().run();');
+  await sleep(400);
+
+  await evaluate('window.__traceStore.getState().last()');
+  await sleep(200);
+
+  const runningSumInfo = await evaluate('({ output: document.querySelector(".terminal-output-text")?.textContent?.trim(), cells: Array.from(document.querySelectorAll(".array-val-cell")).map(c => c.textContent.trim()) })');
+  console.log('Running Sum DOM info:', runningSumInfo);
+  if (!runningSumInfo.output.includes('10')) {
+    throw new Error('Running sum output does not contain 10! Got: ' + runningSumInfo.output);
+  }
+  const expectedArray = ['1', '3', '6', '10'];
+  if (JSON.stringify(runningSumInfo.cells) !== JSON.stringify(expectedArray)) {
+    throw new Error('Running sum final array does not match [1, 3, 6, 10]! Got: ' + JSON.stringify(runningSumInfo.cells));
+  }
+  await captureScreenshot('hardening4_running_sum.png');
+  console.log('✓ TEST 4 PASSED: Running Sum rendered [1, 3, 6, 10] with output 10!');
+
+  // ───────────────────────────────────────────────────────────
+  // TEST 5: Binary Search (Non-Two-Sum with Pointers)
+  // ───────────────────────────────────────────────────────────
+  console.log('\n--- TEST 5: Binary Search ---');
+  const binarySearchCode = 'int[] nums = {2, 5, 8, 12, 16, 23, 38, 56, 72, 91};\nint target = 23;\nint left = 0;\nint right = nums.length - 1;\nint found = -1;\nwhile (left <= right) {\n    int mid = (left + right) / 2;\n    if (nums[mid] == target) {\n        found = mid;\n        break;\n    } else if (nums[mid] < target) {\n        left = mid + 1;\n    } else {\n        right = mid - 1;\n    }\n}\nprintln(found);';
+  await evaluate('window.__traceStore.getState().setCode(' + JSON.stringify(binarySearchCode) + '); window.__traceStore.getState().run();');
+  await sleep(400);
+
+  await evaluate('window.__traceStore.getState().last()');
+  await sleep(200);
+
+  const binSearchInfo = await evaluate('({ output: document.querySelector(".terminal-output-text")?.textContent?.trim(), pointers: Array.from(document.querySelectorAll(".pointer-badge")).map(p => p.textContent.trim()) })');
+  console.log('Binary Search DOM info:', binSearchInfo);
+  if (!binSearchInfo.output.includes('5')) {
+    throw new Error('Binary search output does not contain 5! Got: ' + binSearchInfo.output);
+  }
+  await captureScreenshot('hardening4_binary_search.png');
+  console.log('✓ TEST 5 PASSED: Binary Search found index 5 for target 23 with active pointers!');
+
+  // ───────────────────────────────────────────────────────────
+  // TEST 6: Two Sum Regression
+  // ───────────────────────────────────────────────────────────
+  console.log('\n--- TEST 6: Two Sum Regression ---');
   const twoSumCode = 'class Solution {\n    public int[] twoSum(int[] nums, int target) {\n        for (int i = 0; i < nums.length; i++) {\n            for (int j = i + 1; j < nums.length; j++) {\n                if (nums[i] + nums[j] == target) {\n                    return new int[]{i, j};\n                }\n            }\n        }\n        return new int[]{};\n    }\n}';
   await evaluate('window.__traceStore.getState().setInputs({ nums: "[2, 7, 11, 15]", target: "9" }); window.__traceStore.getState().setCode(' + JSON.stringify(twoSumCode) + '); window.__traceStore.getState().run();');
   await sleep(400);
@@ -164,7 +217,7 @@ async function runBrowserE2E() {
   if (JSON.stringify(twoSumRet) !== JSON.stringify([0, 1])) {
     throw new Error('Two sum returned incorrect value! Got: ' + JSON.stringify(twoSumRet));
   }
-  console.log('✓ TEST 4 PASSED: Two Sum regression intact, returned [0, 1]!');
+  console.log('✓ TEST 6 PASSED: Two Sum regression intact, returned [0, 1]!');
 
   console.log('\nConsole errors during run:', consoleErrors);
   if (consoleErrors.length > 0) {
@@ -173,7 +226,7 @@ async function runBrowserE2E() {
 
   ws.close();
   console.log('\n========================================================');
-  console.log('ALL BROWSER E2E TESTS PASSED SUCCESSFULLY! 🚀');
+  console.log('ALL 6 BROWSER E2E TESTS PASSED SUCCESSFULLY! 🚀');
   console.log('========================================================');
 }
 

@@ -202,4 +202,6 @@ setTimeout(() => {
   useTraceStore.getState().run();
 }, 0);
 
-if (typeof window !== "undefined") window.__traceStore = useTraceStore;
+if (import.meta.env.DEV && typeof window !== "undefined") {
+  window.__traceStore = useTraceStore;
+}
