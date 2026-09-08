@@ -7,7 +7,11 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 5174;
 const DIST_DIR = path.join(__dirname, 'dist');
 
-// Read .env if present
+const ALLOWED_MODELS = new Set(['gemini-3.6-flash', 'gemini-2.5-flash', 'gemini-1.5-flash']);
+const MAX_REQUEST_BYTES = 1024 * 1024; // 1MB max request size
+const REQUEST_TIMEOUT_MS = 30000;      // 30 seconds timeout
+
+// Load .env strictly server-side
 function loadDotEnv() {
   const envPath = path.join(__dirname, '.env');
   if (fs.existsSync(envPath)) {
@@ -48,47 +52,105 @@ const MIME_TYPES = {
 const server = http.createServer(async (req, res) => {
   // ── Handle /api/gemini proxy ──
   if (req.url === '/api/gemini') {
+    // 1. Method verification: POST only
     if (req.method !== 'POST') {
       res.writeHead(405, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: { message: 'Method Not Allowed' } }));
+      res.end(JSON.stringify({ error: { code: 405, message: 'Method Not Allowed. POST is required.' } }));
       return;
     }
 
     let body = '';
-    req.on('data', chunk => { body += chunk; });
+    let byteLength = 0;
+    let isTooLarge = false;
+
+    // 2. Request-size limit (max 1MB)
+    req.on('data', chunk => {
+      if (isTooLarge) return;
+      byteLength += chunk.length;
+      if (byteLength > MAX_REQUEST_BYTES) {
+        isTooLarge = true;
+        res.writeHead(413, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: { code: 413, message: 'Payload Too Large (max 1MB).' } }));
+        req.destroy();
+        return;
+      }
+      body += chunk;
+    });
+
     req.on('end', async () => {
+      if (isTooLarge) return;
+
+      // 3. JSON body validation
+      let parsedBody;
       try {
-        const apiKey = process.env.GEMINI_API_KEY;
-        if (!apiKey) {
-          res.writeHead(401, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({
-            error: {
-              code: 401,
-              message: 'Gemini API key not configured on server. Add GEMINI_API_KEY to your server .env file.'
-            }
-          }));
-          return;
-        }
+        parsedBody = JSON.parse(body || '{}');
+      } catch (e) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: { code: 400, message: 'Malformed JSON in request body.' } }));
+        return;
+      }
 
-        const parsed = JSON.parse(body || '{}');
-        const model = parsed.model || 'gemini-3.6-flash';
-        const payload = parsed.payload || parsed;
-        delete payload.model;
+      const payload = parsedBody.payload || parsedBody;
+      if (!payload || !Array.isArray(payload.contents) || payload.contents.length === 0) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: { code: 400, message: 'Invalid payload: "contents" array is required.' } }));
+        return;
+      }
 
+      const requestedModel = parsedBody.model || 'gemini-3.6-flash';
+      const model = ALLOWED_MODELS.has(requestedModel) ? requestedModel : 'gemini-3.6-flash';
+      delete payload.model;
+
+      // 4. Server environment key check
+      const apiKey = process.env.GEMINI_API_KEY;
+      if (!apiKey) {
+        res.writeHead(401, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          error: {
+            code: 401,
+            message: 'Gemini API key not configured on server. Add GEMINI_API_KEY to your server .env file.'
+          }
+        }));
+        return;
+      }
+
+      // 5. Upstream call with timeout and sanitized error handling
+      try {
         const targetUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-
         const apiRes = await fetch(targetUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
+          body: JSON.stringify(payload),
+          signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
         });
 
-        const data = await apiRes.text();
-        res.writeHead(apiRes.status, { 'Content-Type': 'application/json' });
-        res.end(data);
+        const dataText = await apiRes.text();
+        let jsonResponse;
+        try {
+          jsonResponse = JSON.parse(dataText);
+        } catch {
+          jsonResponse = { error: { message: 'Invalid JSON from upstream AI service.' } };
+        }
+
+        if (!apiRes.ok) {
+          const rawMsg = jsonResponse?.error?.message || `Upstream API error (${apiRes.status})`;
+          const sanitizedMsg = rawMsg.replace(/key=[^&\s]+/g, 'key=[REDACTED]');
+          res.writeHead(apiRes.status, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: { code: apiRes.status, message: sanitizedMsg } }));
+          return;
+        }
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(jsonResponse));
       } catch (err) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: { message: err.message || 'Internal proxy error' } }));
+        const isTimeout = err.name === 'TimeoutError';
+        res.writeHead(isTimeout ? 504 : 500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          error: {
+            code: isTimeout ? 504 : 500,
+            message: isTimeout ? 'Request timed out after 30 seconds.' : 'Internal proxy communication error.'
+          }
+        }));
       }
     });
     return;
@@ -98,12 +160,10 @@ const server = http.createServer(async (req, res) => {
   let reqPath = req.url.split('?')[0];
   let filePath = path.join(DIST_DIR, reqPath);
 
-  // If path is a directory, serve index.html inside it
   if (fs.existsSync(filePath) && fs.statSync(filePath).isDirectory()) {
     filePath = path.join(filePath, 'index.html');
   }
 
-  // If file doesn't exist, SPA fallback to dist/index.html
   if (!fs.existsSync(filePath)) {
     filePath = path.join(DIST_DIR, 'index.html');
   }
