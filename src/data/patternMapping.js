@@ -55,6 +55,7 @@ export const DSA_PATTERNS = [
   // Hash Tables & Lookup
   "Complement Lookup",
   "Frequency Counting",
+  "Hash Set / Sequence Expansion",
   "Anagram Grouping",
   "Hash Table Design",
   "Hash Table + Array Swap",
@@ -81,6 +82,7 @@ export const DSA_PATTERNS = [
   "BST Search",
   "BST Inorder",
   "Lowest Common Ancestor",
+  "Path Tracking",
   "Tree DP",
   "Trie Design",
 
@@ -114,6 +116,7 @@ export const DSA_PATTERNS = [
 
   // Dynamic Programming
   "1D State DP",
+  "2D State DP",
   "2D Grid DP",
   "Knapsack / Subset Sum",
   "Sequence DP",
@@ -165,7 +168,7 @@ export const CURATED_PROBLEM_PATTERNS = {
   "167": { topic: "Array", patterns: ["Two Pointers", "Binary Search"] },
   "169": { topic: "Array", patterns: ["Boyer-Moore Voting", "Frequency Counting"] },
   "189": { topic: "Array", patterns: ["In-place Reversal"] },
-  "209": { topic: "Array", patterns: ["Sliding Window", "Prefix Sum"] },
+  "209": { topic: "Array", patterns: ["Sliding Window"] },
   "238": { topic: "Array", patterns: ["Prefix/Suffix Technique"] },
   "283": { topic: "Array", patterns: ["Two Pointers"] },
   "344": { topic: "String", patterns: ["Two Pointers"] },
@@ -194,7 +197,7 @@ export const CURATED_PROBLEM_PATTERNS = {
 
   // ── Hash Table & Design
   "49":  { topic: "Hash Table", patterns: ["Anagram Grouping", "Frequency Counting"] },
-  "128": { topic: "Hash Table", patterns: ["Union-Find (DSU)", "Frequency Counting"] },
+  "128": { topic: "Hash Table", patterns: ["Hash Set / Sequence Expansion"] },
   "217": { topic: "Hash Table", patterns: ["Frequency Counting"] },
   "242": { topic: "Hash Table", patterns: ["Frequency Counting"] },
   "380": { topic: "Hash Table", patterns: ["Hash Table + Array Swap"] },
@@ -234,7 +237,7 @@ export const CURATED_PROBLEM_PATTERNS = {
   "105": { topic: "Tree", patterns: ["Tree DFS / Recursion", "Divide and Conquer"] },
   "110": { topic: "Tree", patterns: ["Tree DFS / Recursion", "Tree DP"] },
   "112": { topic: "Tree", patterns: ["Tree DFS / Recursion"] },
-  "113": { topic: "Tree", patterns: ["Tree DFS / Recursion", "Backtracking"] },
+  "113": { topic: "Tree", patterns: ["Tree DFS / Recursion", "Path Tracking"] },
   "114": { topic: "Tree", patterns: ["Tree DFS / Recursion"] },
   "124": { topic: "Tree", patterns: ["Tree DFS / Recursion", "Tree DP"] },
   "208": { topic: "Tree", patterns: ["Trie Design"] },
@@ -282,7 +285,7 @@ export const CURATED_PROBLEM_PATTERNS = {
   "322": { topic: "Dynamic Programming", patterns: ["Knapsack / Subset Sum", "1D State DP"] },
   "416": { topic: "Dynamic Programming", patterns: ["Knapsack / Subset Sum"] },
   "518": { topic: "Dynamic Programming", patterns: ["Knapsack / Subset Sum"] },
-  "1143":{ topic: "Dynamic Programming", patterns: ["2D Grid DP", "Sequence DP"] },
+  "1143":{ topic: "Dynamic Programming", patterns: ["Sequence DP", "2D State DP"] },
 
   // ── Matrix
   "48":  { topic: "Matrix", patterns: ["Matrix In-place Transpose"] },
@@ -380,4 +383,122 @@ export function computeCompanyPatternStats(problems) {
     topics: sortedTopics,
     source: PATTERN_SOURCE_LABEL
   };
+}
+
+
+// ─────────────────────────────────────────────────────────────
+// Pattern Families (Grouping granular techniques into parent families)
+// ─────────────────────────────────────────────────────────────
+export const DSA_PATTERN_FAMILIES = {
+  "Two Pointers & Sliding Window": [
+    "Two Pointers",
+    "Sliding Window",
+    "Fast & Slow Pointers",
+    "Expand Around Center",
+    "Dutch National Flag"
+  ],
+  "Array Optimization & Prefix Techniques": [
+    "Prefix Sum",
+    "Prefix/Suffix Technique",
+    "Prefix Sum + HashMap",
+    "Single Pass / Running Minimum",
+    "Single Pass / Running Extremes",
+    "Kadane's Algorithm",
+    "Boyer-Moore Voting"
+  ],
+  "Binary Search": [
+    "Binary Search",
+    "Binary Search on Partition"
+  ],
+  "Intervals & Sweep Line": [
+    "Interval Merging",
+    "Sweep Line"
+  ],
+  "Hash Tables & Lookup": [
+    "Complement Lookup",
+    "Frequency Counting",
+    "Hash Set / Sequence Expansion",
+    "Anagram Grouping",
+    "Hash Table Design",
+    "Hash Table + Array Swap"
+  ],
+  "Linked List Techniques": [
+    "Linked List Traversal",
+    "In-place Reversal",
+    "Merge Two Lists",
+    "K-way Merge",
+    "Dummy Node",
+    "Doubly Linked List + HashMap"
+  ],
+  "Stack & Monotonic Techniques": [
+    "Matching Parentheses",
+    "Monotonic Stack",
+    "Monotonic Queue / Deque",
+    "Min/Max Stack",
+    "Expression Parsing",
+    "Stack Traversal"
+  ],
+  "Trees & BST": [
+    "Tree DFS / Recursion",
+    "Tree BFS / Level Order",
+    "BST Search",
+    "BST Inorder",
+    "Lowest Common Ancestor",
+    "Path Tracking",
+    "Tree DP",
+    "Trie Design"
+  ],
+  "Graphs & Grid Traversal": [
+    "Graph BFS",
+    "Graph DFS",
+    "Grid DFS",
+    "Grid BFS",
+    "Multi-Source BFS",
+    "Connected Components",
+    "Shortest Path",
+    "Dijkstra / Shortest Path",
+    "Topological Sort",
+    "Cycle Detection",
+    "Union-Find (DSU)"
+  ],
+  "Heap & Selection": [
+    "Top K Elements",
+    "Two Heaps",
+    "Min Heap",
+    "Max Heap",
+    "Quickselect"
+  ],
+  "Backtracking": [
+    "Backtracking",
+    "Subsets",
+    "Permutations",
+    "Combination Sum",
+    "Grid Backtracking",
+    "Constraint Search"
+  ],
+  "Dynamic Programming": [
+    "1D State DP",
+    "2D State DP",
+    "2D Grid DP",
+    "Knapsack / Subset Sum",
+    "Sequence DP",
+    "Interval DP"
+  ],
+  "General & Foundations": [
+    "Greedy",
+    "Sorting",
+    "Divide and Conquer",
+    "Bit Manipulation (XOR)",
+    "Matrix In-place Transpose",
+    "Boundary Traversal",
+    "General Technique",
+    "Unclassified"
+  ]
+};
+
+export function getPatternFamily(patternName) {
+  for (const [family, patterns] of Object.entries(DSA_PATTERN_FAMILIES)) {
+    if (patterns.includes(patternName)) return family;
+  }
+  return "General & Foundations";
 }
