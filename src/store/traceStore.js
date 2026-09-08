@@ -96,12 +96,12 @@ export const useTraceStore = create((set, get) => ({
   setOutputTab: (outputTab) => set({ outputTab }),
 
   // ── Execution state
-  status: 'done',   // idle | running | done | error
+  status: 'idle',   // idle | running | done | error
   error: null,
   trace: [],
-  currentStep: 2,   // Step 3 of 8 (0-indexed 2) to match screenshot default!
-  returnValue: [0, 1],
-  outputs: ['[0, 1]'],
+  currentStep: 0,
+  returnValue: undefined,
+  outputs: [],
 
   // ── Playback
   isPlaying: false,
@@ -116,7 +116,8 @@ export const useTraceStore = create((set, get) => ({
     setTimeout(() => {
       try {
         let result;
-        if (language === 'python' || code.includes('def ') || code.includes('print(')) {
+        const isPython = language === 'python' || (!code.includes('class ') && !code.includes(';') && (code.includes('def ') || code.startsWith('nums =')));
+        if (isPython) {
           result = runPython(code, inputText);
         } else {
           result = runJava(code, inputs);
@@ -127,8 +128,7 @@ export const useTraceStore = create((set, get) => ({
           outputs: result.output || [],
           returnValue: result.returnValue,
           status: 'done',
-          // If two-sum, start at step index 2 (Step 3) like in the screenshot
-          currentStep: result.trace.length > 2 ? 2 : 0,
+          currentStep: 0,
         });
       } catch (e) {
         set({ status: 'error', error: e.message });
@@ -201,3 +201,5 @@ export const useTraceStore = create((set, get) => ({
 setTimeout(() => {
   useTraceStore.getState().run();
 }, 0);
+
+if (typeof window !== "undefined") window.__traceStore = useTraceStore;

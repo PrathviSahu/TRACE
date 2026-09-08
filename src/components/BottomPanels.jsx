@@ -15,18 +15,11 @@ export default function BottomPanels() {
 
   const stepData = trace && trace[currentStep] ? trace[currentStep] : null;
 
-  // Variables table data
-  const varsObj = stepData?.variables || {
-    self: { value: '<object>', type: 'Solution' },
-    nums: { value: [2, 7, 11, 15], type: 'list' },
-    target: { value: 9, type: 'int' },
-    map: { value: { 2: 0 }, type: 'dict' },
-    i: { value: 0, type: 'int' },
-    complement: { value: 7, type: 'int' }
-  };
+  // Variables table data - honest reflection of current step variables, zero fake demo data
+  const varsObj = stepData?.variables || {};
 
-  // Call stack data
-  const callStack = stepData?.callStack || ['twoSum(nums, target)', '<module>', '<built-in>'];
+  // Call stack data - honest reflection of current step call stack, zero fake frames
+  const callStack = stepData?.callStack || [];
 
   return (
     <div className="bottom-cards-grid">
@@ -71,20 +64,40 @@ export default function BottomPanels() {
               </tr>
             </thead>
             <tbody>
-              {Object.entries(varsObj).map(([name, info]) => {
-                let displayVal = typeof info.value === 'object' ? JSON.stringify(info.value) : String(info.value);
-                if (displayVal && displayVal.startsWith('{')) {
-                  // Format dict like {2: 0}
-                  displayVal = displayVal.replace(/"/g, '');
-                }
-                return (
-                  <tr key={name}>
-                    <td className="var-name">{name}</td>
-                    <td className="var-type">{info.type || 'var'}</td>
-                    <td className="var-val">{displayVal}</td>
-                  </tr>
-                );
-              })}
+              {Object.keys(varsObj).length > 0 ? (
+                Object.entries(varsObj).map(([name, info]) => {
+                  let displayVal;
+                  if (info?.value === null) {
+                    displayVal = 'null';
+                  } else if (info?.value === undefined) {
+                    displayVal = 'undefined';
+                  } else if (typeof info?.value === 'object') {
+                    if (info.value.__type) {
+                      displayVal = info.value.__type + ' (ref)';
+                    } else {
+                      displayVal = JSON.stringify(info.value);
+                    }
+                  } else {
+                    displayVal = String(info?.value);
+                  }
+                  if (displayVal && displayVal.startsWith('{') && !displayVal.includes('__type')) {
+                    displayVal = displayVal.replace(/"/g, '');
+                  }
+                  return (
+                    <tr key={name}>
+                      <td className="var-name">{name}</td>
+                      <td className="var-type">{info?.type || 'var'}</td>
+                      <td className="var-val">{displayVal}</td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td colSpan="3" style={{ textAlign: 'center', opacity: 0.5, padding: '16px 8px' }}>
+                    {trace && trace.length > 0 ? 'No variables in scope' : 'Run code to inspect variables'}
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -96,14 +109,20 @@ export default function BottomPanels() {
           <span className="card-main-title">Call Stack</span>
         </div>
         <div className="card-scroll-body stack-frames-list">
-          {callStack.map((frame, idx) => (
-            <div
-              key={idx}
-              className={`stack-frame-item ${idx === 0 ? 'active-frame' : 'inactive-frame'}`}
-            >
-              {frame}
+          {callStack.length > 0 ? (
+            callStack.map((frame, idx) => (
+              <div
+                key={idx}
+                className={'stack-frame-item ' + (idx === 0 ? 'active-frame' : 'inactive-frame')}
+              >
+                {frame}
+              </div>
+            ))
+          ) : (
+            <div style={{ fontSize: 12, opacity: 0.5, padding: '12px 8px', textAlign: 'center' }}>
+              {trace && trace.length > 0 ? 'No active stack frames' : 'Ready'}
             </div>
-          ))}
+          )}
         </div>
       </div>
 
@@ -111,17 +130,19 @@ export default function BottomPanels() {
       <div className="studio-card output-card">
         <div className="card-header-bar output-tabs-header">
           <button
-            className={`out-tab-btn ${outputTab === 'output' ? 'active' : ''}`}
+            className={'out-tab-btn ' + (outputTab === 'output' ? 'active' : '')}
             onClick={() => setOutputTab('output')}
           >
             Output
-          </button>
+          </button
+          >
           <button
-            className={`out-tab-btn ${outputTab === 'logs' ? 'active' : ''}`}
+            className={'out-tab-btn ' + (outputTab === 'logs' ? 'active' : '')}
             onClick={() => setOutputTab('logs')}
           >
             Logs
-          </button>
+          </button
+          >
         </div>
         <div className="card-scroll-body terminal-body">
           {outputTab === 'output' ? (
@@ -133,14 +154,21 @@ export default function BottomPanels() {
               ) : returnValue !== undefined ? (
                 <div className="terminal-line">{JSON.stringify(returnValue)}</div>
               ) : (
-                <div className="terminal-empty">[0, 1]</div>
+                <div className="terminal-empty" style={{ opacity: 0.5 }}>
+                  {trace && trace.length > 0 ? 'No output generated' : 'Run program to view output'}
+                </div>
               )}
             </div>
           ) : (
             <div className="terminal-logs-text">
-              <div className="log-line">Trace initialized successfully.</div>
-              <div className="log-line">Memory allocated: 24MB</div>
-              <div className="log-line">Execution finished in 4ms</div>
+              <div className="log-line">
+                Execution status: {trace && trace.length > 0 ? (trace.length + ' steps recorded') : 'Ready'}
+              </div>
+              {stepData && (
+                <div className="log-line">
+                  Current step: {currentStep + 1} ({stepData.statement || stepData.type})
+                </div>
+              )}
             </div>
           )}
         </div>

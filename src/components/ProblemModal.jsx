@@ -9,6 +9,7 @@ import { getProblemPatternDetails, PATTERN_SOURCE_LABEL } from '../data/patternM
 import { calculatePriorityScore } from '../services/intelligenceService.js';
 import { useProblemProgress, updateProblemProgress } from '../services/progressStore.js';
 import { useMemo } from 'react';
+import { renderSafeMarkdown, sanitizeHtml } from '../utils/sanitize.js';
 import {
   generateProblemSolutions,
   generateProblemDescription,
@@ -504,7 +505,7 @@ Guidelines:
               <>
                 <div style={{ marginBottom:22 }}>
                   <p className="pm-section-title">Problem</p>
-                  <div style={{ fontSize:14, lineHeight:1.75, color:'#c9d1d9' }} dangerouslySetInnerHTML={{ __html: desc.description }} />
+                  <div style={{ fontSize:14, lineHeight:1.75, color:'#c9d1d9' }} dangerouslySetInnerHTML={{ __html: sanitizeHtml(desc.description) }} />
                 </div>
                 {desc.examples?.length > 0 && (
                   <div style={{ marginBottom:22 }}>
@@ -825,22 +826,5 @@ Guidelines:
 }
 
 function RenderInlineMarkdown({ text }) {
-  const html = text
-    .replace(/```(\w*)\n?([\s\S]*?)```/g, (_, lang, code) =>
-      `<pre style="background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:8px 10px;overflow-x:auto;margin:6px 0;font-size:11px;"><code>${escapeHtml(code.trim())}</code></pre>`
-    )
-    .replace(/`([^`]+)`/g, '<code style="background:rgba(0,0,0,0.3);padding:1px 5px;border-radius:3px;font-size:11.5px;color:#79a8ff;">$1</code>')
-    .replace(/\*\*([^*]+)\*\*/g, '<strong style="color:#fff;">$1</strong>')
-    .replace(/\*([^*]+)\*/g, '<em>$1</em>')
-    .replace(/^- (.+)$/gm, '<li style="margin-bottom:2px;">$1</li>')
-    .replace(/^\* (.+)$/gm, '<li style="margin-bottom:2px;">$1</li>')
-    .replace(/(<li[^>]*>[\s\S]*?<\/li>)/g, '<ul style="padding-left:18px;margin:3px 0;">$1</ul>')
-    .replace(/\n\n/g, '<br/><br/>')
-    .replace(/\n/g, '<br/>');
-
-  return <div dangerouslySetInnerHTML={{ __html: html }} />;
-}
-
-function escapeHtml(str) {
-  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return <div dangerouslySetInnerHTML={{ __html: renderSafeMarkdown(text) }} />;
 }

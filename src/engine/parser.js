@@ -30,33 +30,85 @@ class Parser {
   // ── Top level ────────────────────────────────────────────────
   parse() {
     const prog = { kind:'Program', body:[], line:1 };
-    // skip class wrapper if present
-    while (MOD_KW.has(this.cur().type)) this.advance();
-    if (this.check(T.CLASS)) {
-      this.advance(); // class
-      this.advance(); // ClassName
-      if (this.check(T.LBRACE)) { this.advance(); }
-      while (!this.check(T.EOF) && !this.check(T.RBRACE))
-        prog.body.push(this.parseMethodOrField());
-      if (this.check(T.RBRACE)) this.advance();
-    } else {
-      while (!this.check(T.EOF)) prog.body.push(this.parseStatement());
+    while (!this.check(T.EOF)) {
+      while (MOD_KW.has(this.cur().type)) this.advance();
+      if (this.check(T.EOF)) break;
+
+      if (this.check(T.CLASS)) {
+        prog.body.push(this.parseClassDecl());
+      } else {
+        prog.body.push(this.parseTopLevelItem());
+      }
     }
     return prog;
   }
 
-  parseMethodOrField() {
+  parseClassDecl() {
+    const ln = this.ln();
+    this.advance(); // class
+    const className = this.expect(T.ID, 'class name').value;
+    // skip extends/implements
+    if (this.cur().value === 'extends' || this.cur().value === 'implements') {
+      this.advance();
+      this.advance();
+    }
+    this.expect(T.LBRACE, '{');
+    const fields = [];
+    const constructors = [];
+    const methods = [];
+    while (!this.check(T.EOF) && !this.check(T.RBRACE)) {
+      while (MOD_KW.has(this.cur().type)) this.advance();
+      if (this.check(T.RBRACE) || this.check(T.EOF)) break;
+      const member = this.parseMethodOrField(className);
+      if (!member) continue;
+      if (member.kind === 'VarDecl') fields.push(member);
+      else if (member.kind === 'ConstructorDecl') constructors.push(member);
+      else if (member.kind === 'MethodDecl') methods.push(member);
+      else methods.push(member);
+    }
+    if (this.check(T.RBRACE)) this.advance();
+    return { kind:'ClassDecl', name:className, fields, constructors, methods, line:ln };
+  }
+
+  parseTopLevelItem() {
     const ln = this.ln();
     while (MOD_KW.has(this.cur().type)) this.advance();
-    // return type
+    const savedP = this.p;
+    const typeExpr = this.parseTypeExpr();
+    if (typeExpr && this.check(T.ID) && this.peek(1).type === T.LPAREN) {
+      const name = this.advance().value;
+      this.advance(); // ('(')
+      const params = this.parseParams();
+      this.expect(T.RPAREN, ')');
+      const body = this.parseBlock();
+      return { kind:'MethodDecl', name, params, retType:typeExpr, body, line:ln };
+    }
+    this.p = savedP;
+    return this.parseStatement();
+  }
+
+  parseMethodOrField(enclosingClassName) {
+    const ln = this.ln();
+    while (MOD_KW.has(this.cur().type)) this.advance();
+    // return type or constructor name
     const retType = this.parseTypeExpr();
     if (!retType) return this.parseStatement();
-    const name = this.expect(T.ID, 'method name').value;
+
+    // Check if constructor: ClassName(...) { ... }
+    if (this.check(T.LPAREN)) {
+      this.advance();
+      const params = this.parseParams();
+      this.expect(T.RPAREN, ')');
+      const body = this.parseBlock();
+      return { kind:'ConstructorDecl', name:retType.base, params, body, line:ln };
+    }
+
+    const name = this.expect(T.ID, 'method or field name').value;
     if (this.check(T.LPAREN)) {
       // method declaration
       this.advance();
       const params = this.parseParams();
-      this.expect(T.RPAREN,')')
+      this.expect(T.RPAREN, ')');
       const body = this.parseBlock();
       return { kind:'MethodDecl', name, params, retType, body, line:ln };
     }
@@ -136,7 +188,7 @@ class Parser {
   }
 
   isVarDecl() {
-    if (PRIM_TYPES.has(this.cur().type)) return true;
+    if (PRIM_TYPES.has(this.cur().type) && this.cur().type !== T.VOID) return true;
     // ClassName varName — two consecutive identifiers
     if (this.cur().type === T.ID && this.peek(1).type === T.ID) return true;
     // ClassName<...> varName

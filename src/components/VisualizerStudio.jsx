@@ -1,4 +1,6 @@
-import { useTraceStore } from '../store/traceStore.js';
+import { useEffect } from "react";
+import { useTraceStore } from "../store/traceStore.js";
+import { normalizeStepData, formatObjectTree } from "../utils/visualizerAdapter.js";
 
 export default function VisualizerStudio() {
   const {
@@ -8,6 +10,9 @@ export default function VisualizerStudio() {
     currentStep,
     next,
     prev,
+    first,
+    last,
+    reset,
     play,
     isPlaying,
     goToStep
@@ -16,51 +21,46 @@ export default function VisualizerStudio() {
   const totalSteps = trace ? trace.length : 0;
   const currentStepNum = totalSteps > 0 ? currentStep + 1 : 0;
   const stepData = trace && trace[currentStep] ? trace[currentStep] : null;
+  const prevStepData = trace && currentStep > 0 ? trace[currentStep - 1] : null;
 
-  // Extract array data
-  const arrayData = stepData?.dataStructures?.array || {
-    name: 'nums',
-    values: [2, 7, 11, 15],
-    pointers: [{ name: 'i', index: 0 }]
-  };
+  // Normalized visualizer state derived directly from engine trace
+  const normalized = normalizeStepData(stepData, prevStepData);
+  const { hasData, arrays, collections, objects, explanation } = normalized;
 
-  // Extract hashmap data
-  const mapData = stepData?.dataStructures?.hashmap || {
-    name: 'map',
-    entries: [{ key: '2', value: 0 }]
-  };
-
-  // Extract explanation data
-  const explanation = stepData?.explanation || {
-    lineText: 'Line 5: for i in range(len(nums))',
-    summary: 'We start the loop with i = 0 to iterate through the array.',
-    bullets: [
-      'len(nums) = 4',
-      'range(4) → 0, 1, 2, 3',
-      'Current value: nums[0] = 2'
-    ],
-    why: 'We use a loop to check each number and find its complement.'
-  };
+  // Global keyboard navigation
+  useEffect(() => {
+    function onKeyDown(e) {
+      if (e.target.tagName === "TEXTAREA" || e.target.tagName === "INPUT") return;
+      if (e.key === "ArrowRight") { e.preventDefault(); next(); }
+      if (e.key === "ArrowLeft") { e.preventDefault(); prev(); }
+      if (e.key === "Home") { e.preventDefault(); first && first(); }
+      if (e.key === "End") { e.preventDefault(); last && last(); }
+      if (e.key === " ") { e.preventDefault(); play(); }
+      if (e.key === "r" || e.key === "R") { e.preventDefault(); reset && reset(); }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [next, prev, first, last, play, reset]);
 
   return (
     <div className="viz-studio-card">
       {/* ── Top View Mode Tabs ────────────────────────────────── */}
       <div className="viz-tabs-row">
         <button
-          className={`viz-tab-btn ${viewMode === 'visualization' ? 'active' : ''}`}
-          onClick={() => setViewMode('visualization')}
+          className={`viz-tab-btn ${viewMode === "visualization" ? "active" : ""}`}
+          onClick={() => setViewMode("visualization")}
         >
           Visualization
         </button>
         <button
-          className={`viz-tab-btn ${viewMode === 'dry-run' ? 'active' : ''}`}
-          onClick={() => setViewMode('dry-run')}
+          className={`viz-tab-btn ${viewMode === "dry-run" ? "active" : ""}`}
+          onClick={() => setViewMode("dry-run")}
         >
           Dry Run
         </button>
         <button
-          className={`viz-tab-btn ${viewMode === 'code-flow' ? 'active' : ''}`}
-          onClick={() => setViewMode('code-flow')}
+          className={`viz-tab-btn ${viewMode === "code-flow" ? "active" : ""}`}
+          onClick={() => setViewMode("code-flow")}
         >
           Code Flow
         </button>
@@ -69,15 +69,27 @@ export default function VisualizerStudio() {
       {/* ── Execution Controls Bar ────────────────────────────── */}
       <div className="viz-controls-row">
         <div className="step-counter-badge">
-          Step {currentStepNum} of {totalSteps || 8}
+          Step {currentStepNum} of {totalSteps}
         </div>
 
         <div className="playback-btns">
           <button
             className="ctrl-icon-btn"
+            onClick={first}
+            disabled={currentStep <= 0}
+            title="First step (Home)"
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+              <rect x="3" y="4" width="3" height="16" />
+              <polygon points="21 19 9 12 21 5 21 19" />
+            </svg>
+          </button>
+
+          <button
+            className="ctrl-icon-btn"
             onClick={prev}
             disabled={currentStep <= 0}
-            title="Previous step"
+            title="Previous step (←)"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
               <polygon points="11 19 2 12 11 5 11 19" />
@@ -88,7 +100,7 @@ export default function VisualizerStudio() {
           <button
             className="play-pause-btn"
             onClick={play}
-            title={isPlaying ? 'Pause execution' : 'Play execution'}
+            title={isPlaying ? "Pause execution (Space)" : "Play execution (Space)"}
           >
             {isPlaying ? (
               <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
@@ -106,11 +118,34 @@ export default function VisualizerStudio() {
             className="ctrl-icon-btn"
             onClick={next}
             disabled={totalSteps === 0 || currentStep >= totalSteps - 1}
-            title="Next step"
+            title="Next step (→)"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
               <polygon points="13 19 22 12 13 5 13 19" />
               <polygon points="2 19 11 12 2 5 2 19" />
+            </svg>
+          </button>
+
+          <button
+            className="ctrl-icon-btn"
+            onClick={last}
+            disabled={totalSteps === 0 || currentStep >= totalSteps - 1}
+            title="Last step (End)"
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+              <polygon points="3 19 15 12 3 5 3 19" />
+              <rect x="18" y="4" width="3" height="16" />
+            </svg>
+          </button>
+
+          <button
+            className="ctrl-icon-btn"
+            onClick={reset}
+            disabled={totalSteps === 0}
+            title="Reset (R)"
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46A7.93 7.93 0 0020 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74A7.93 7.93 0 004 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/>
             </svg>
           </button>
         </div>
@@ -131,70 +166,204 @@ export default function VisualizerStudio() {
       <div className="viz-body-split">
         {/* Left Canvas: Data Structures */}
         <div className="ds-canvas">
-          {/* Array Visualizer */}
-          <div className="ds-block">
-            <div className="ds-title">Array: {arrayData.name}</div>
-            <div className="array-boxes-wrap">
-              <div className="array-indices-row">
-                {arrayData.values.map((_, idx) => (
-                  <div key={idx} className="array-idx-cell">{idx}</div>
-                ))}
-              </div>
-              <div className="array-cells-row">
-                {arrayData.values.map((val, idx) => {
-                  const hasPointer = arrayData.pointers?.some(p => p.index === idx);
-                  return (
-                    <div
-                      key={idx}
-                      className={`array-val-cell ${hasPointer ? 'active-cell' : ''}`}
-                    >
-                      {val}
-                    </div>
-                  );
-                })}
-              </div>
-              {/* Pointer Arrows */}
-              <div className="array-pointers-row">
-                {arrayData.values.map((_, idx) => {
-                  const pt = arrayData.pointers?.find(p => p.index === idx);
-                  return (
-                    <div key={idx} className="pointer-slot">
-                      {pt && (
-                        <div className="pointer-arrow-wrap">
-                          <span className="pointer-arrow">↑</span>
-                          <span className="pointer-label">{pt.name} = {pt.index}</span>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-
-          {/* HashMap Visualizer */}
-          <div className="ds-block" style={{ marginTop: 24 }}>
-            <div className="ds-title">HashMap: {mapData.name}</div>
-            <div className="hashmap-table-wrap">
-              <div className="hashmap-hd-row">
-                <div className="hashmap-th">Key</div>
-                <div className="hashmap-th">Value</div>
-              </div>
-              {mapData.entries && mapData.entries.length > 0 ? (
-                mapData.entries.map((ent, idx) => (
-                  <div key={idx} className="hashmap-row">
-                    <div className="hashmap-td key-td">{ent.key}</div>
-                    <div className="hashmap-td val-td">{ent.value}</div>
+          {hasData ? (
+            <>
+              {/* 1. Arrays */}
+              {arrays.map((arr) => (
+                <div key={arr.name} className="ds-block" style={{ marginBottom: 20 }}>
+                  <div className="ds-title">
+                    Array: {arr.name} <span style={{ fontSize: 11, opacity: 0.6 }}>({arr.type})</span>
                   </div>
-                ))
-              ) : (
-                <div className="hashmap-row empty-map-row">
-                  <div className="hashmap-td key-td" style={{ opacity: 0.5 }}>—</div>
-                  <div className="hashmap-td val-td" style={{ opacity: 0.5 }}>—</div>
+                  <div className="array-boxes-wrap">
+                    <div className="array-indices-row">
+                      {arr.values.map((_, idx) => (
+                        <div key={idx} className="array-idx-cell">{idx}</div>
+                      ))}
+                    </div>
+                    <div className="array-cells-row">
+                      {arr.values.map((val, idx) => {
+                        const hasPointer = arr.pointers?.some(p => p.index === idx);
+                        const changed = arr.prevValues && arr.prevValues[idx] !== val;
+                        return (
+                          <div
+                            key={idx}
+                            className={`array-val-cell ${hasPointer ? "active-cell" : ""} ${changed ? "modified-cell" : ""}`}
+                            title={changed ? `Changed: ${arr.prevValues[idx]} → ${val}` : undefined}
+                          >
+                            {String(val ?? "")}
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {/* Pointer Arrows */}
+                    {arr.pointers && arr.pointers.length > 0 && (
+                      <div className="array-pointers-row">
+                        {arr.values.map((_, idx) => {
+                          const pt = arr.pointers.find(p => p.index === idx);
+                          return (
+                            <div key={idx} className="pointer-slot">
+                              {pt && (
+                                <div className="pointer-arrow-wrap">
+                                  <span className="pointer-arrow">↑</span>
+                                  <span className="pointer-label">{pt.name} = {pt.index}</span>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              )}
+              ))}
+
+              {/* 2. Collections (HashMap, Stack, Queue, HashSet, StringBuilder, ArrayList) */}
+              {collections.map((col) => {
+                if (col.type === "HashMap" || col.type === "TreeMap" || col.type === "LinkedHashMap") {
+                  return (
+                    <div key={col.name} className="ds-block" style={{ marginBottom: 20 }}>
+                      <div className="ds-title">HashMap: {col.name}</div>
+                      <div className="hashmap-table-wrap">
+                        <div className="hashmap-hd-row">
+                          <div className="hashmap-th">Key</div>
+                          <div className="hashmap-th">Value</div>
+                        </div>
+                        {col.entries && col.entries.length > 0 ? (
+                          col.entries.map((ent, idx) => (
+                            <div key={idx} className="hashmap-row">
+                              <div className="hashmap-td key-td">{ent.key}</div>
+                              <div className="hashmap-td val-td">
+                                {typeof ent.value === "object" ? JSON.stringify(ent.value) : String(ent.value)}
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="hashmap-row empty-map-row">
+                            <div className="hashmap-td key-td" style={{ opacity: 0.5 }}>—</div>
+                            <div className="hashmap-td val-td" style={{ opacity: 0.5 }}>—</div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                }
+
+                if (col.type === "Stack") {
+                  return (
+                    <div key={col.name} className="ds-block" style={{ marginBottom: 20 }}>
+                      <div className="ds-title">Stack: {col.name}</div>
+                      <div className="stack-wrap" style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                        {col.items && col.items.length > 0 ? (
+                          [...col.items].reverse().map((v, idx) => (
+                            <div
+                              key={idx}
+                              className="stack-cell"
+                              style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 8px", background: "var(--bg2)", borderRadius: 4 }}
+                            >
+                              <span>{String(v)}</span>
+                              {idx === 0 && <span className="top-badge" style={{ fontSize: 10, color: "var(--accent)" }}>← top</span>}
+                            </div>
+                          ))
+                        ) : (
+                          <div style={{ fontSize: 11, color: "var(--txt3)" }}>empty stack</div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                }
+
+                if (col.type === "Queue" || col.type === "ArrayDeque" || col.type === "PriorityQueue") {
+                  return (
+                    <div key={col.name} className="ds-block" style={{ marginBottom: 20 }}>
+                      <div className="ds-title">Queue: {col.name}</div>
+                      <div className="queue-wrap" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <span style={{ fontSize: 11, color: "var(--txt3)" }}>front →</span>
+                        {col.items && col.items.length > 0 ? (
+                          col.items.map((v, idx) => (
+                            <div key={idx} className="queue-cell" style={{ padding: "4px 8px", background: "var(--bg2)", borderRadius: 4 }}>
+                              {String(v)}
+                            </div>
+                          ))
+                        ) : (
+                          <span style={{ fontSize: 11, color: "var(--txt3)" }}>empty queue</span>
+                        )}
+                        <span style={{ fontSize: 11, color: "var(--txt3)" }}>← rear</span>
+                      </div>
+                    </div>
+                  );
+                }
+
+                if (col.type === "HashSet" || col.type === "TreeSet" || col.type === "LinkedHashSet") {
+                  return (
+                    <div key={col.name} className="ds-block" style={{ marginBottom: 20 }}>
+                      <div className="ds-title">HashSet: {col.name}</div>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                        {col.items && col.items.length > 0 ? (
+                          col.items.map((v, idx) => (
+                            <span key={idx} style={{ padding: "2px 8px", background: "var(--bg2)", borderRadius: 12, fontSize: 12 }}>
+                              {String(v)}
+                            </span>
+                          ))
+                        ) : (
+                          <span style={{ fontSize: 11, color: "var(--txt3)" }}>empty set</span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                }
+
+                if (col.type === "StringBuilder" || col.type === "StringBuffer") {
+                  return (
+                    <div key={col.name} className="ds-block" style={{ marginBottom: 20 }}>
+                      <div className="ds-title">StringBuilder: {col.name}</div>
+                      <div style={{ padding: "6px 10px", background: "var(--bg2)", borderRadius: 4, fontFamily: "monospace" }}>
+                        "{col.value}"
+                      </div>
+                    </div>
+                  );
+                }
+
+                return null;
+              })}
+
+              {/* 3. Objects (ListNode, TreeNode, Node, custom Java classes) */}
+              {objects.map((obj) => (
+                <div key={obj.name} className="ds-block" style={{ marginBottom: 20 }}>
+                  <div className="ds-title">
+                    Object: {obj.name} <span style={{ fontSize: 11, opacity: 0.6 }}>({obj.type})</span>
+                  </div>
+                  <div
+                    className="object-tree-box"
+                    style={{ padding: "8px 12px", background: "var(--bg2)", borderRadius: 6, fontFamily: "monospace", fontSize: 12, lineHeight: 1.6 }}
+                  >
+                    {formatObjectTree(obj.value, obj.name).map((node, nIdx) => (
+                      <div key={nIdx} style={{ paddingLeft: node.depth * 18, display: "flex", alignItems: "center", gap: 6 }}>
+                        <span style={{ color: "var(--txt3)", userSelect: "none" }}>
+                          {node.depth === 0 ? "●" : "├──"}
+                        </span>
+                        <span style={{ color: "var(--accent)", fontWeight: 500 }}>{node.key}: </span>
+                        <span style={{ color: node.value === "null" ? "var(--txt3)" : "var(--txt1)" }}>
+                          {node.value}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </>
+          ) : (
+            <div className="ds-empty-state" style={{ padding: "32px 16px", textAlign: "center", color: "var(--txt3)" }}>
+              <div style={{ fontSize: 28, marginBottom: 8 }}>📊</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "var(--txt2)", marginBottom: 4 }}>
+                {totalSteps === 0 ? "Ready to Visualize" : "No Visualizable Data Structures"}
+              </div>
+              <div style={{ fontSize: 12, maxWidth: 320, margin: "0 auto", lineHeight: 1.5 }}>
+                {totalSteps === 0
+                  ? "Click Run to execute your algorithm and inspect memory."
+                  : "This execution step operates on scalar variables. Track variable state in the panel below."}
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Right Canvas: Current Step Explanation Card */}

@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { callGeminiApi, SYSTEM_TUTOR_PROMPT } from '../services/aiService.js';
 import { useTraceStore } from '../store/traceStore.js';
+import { renderSafeMarkdown } from '../utils/sanitize.js';
 
 const SUGGESTED_PROMPTS = [
   "Explain the sliding window pattern",
@@ -342,29 +343,7 @@ export default function DSABrain() {
   );
 }
 
-// Simple Markdown renderer (no external deps)
+// Secured Markdown renderer (Hardening #2: XSS protected)
 function RenderMarkdown({ text }) {
-  const html = text
-    .replace(/```(\w*)\n?([\s\S]*?)```/g, (_, lang, code) =>
-      `<pre style="background:rgba(0,0,0,0.35);border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:10px 12px;overflow-x:auto;margin:8px 0;font-size:11.5px;"><code>${escapeHtml(code.trim())}</code></pre>`
-    )
-    .replace(/`([^`]+)`/g, '<code style="background:rgba(0,0,0,0.3);padding:1px 5px;border-radius:3px;font-size:11.5px;color:#79a8ff;">$1</code>')
-    .replace(/\*\*([^*]+)\*\*/g, '<strong style="color:#fff;">$1</strong>')
-    .replace(/\*([^*]+)\*/g, '<em>$1</em>')
-    .replace(/^### (.+)$/gm, '<h3 style="color:#79a8ff;font-size:13px;margin:10px 0 4px;">$1</h3>')
-    .replace(/^## (.+)$/gm,  '<h2 style="color:#79a8ff;font-size:13.5px;margin:10px 0 4px;">$1</h2>')
-    .replace(/^# (.+)$/gm,   '<h1 style="color:#79a8ff;font-size:14px;margin:10px 0 4px;">$1</h1>')
-    .replace(/^- (.+)$/gm, '<li style="margin-bottom:3px;">$1</li>')
-    .replace(/^\* (.+)$/gm, '<li style="margin-bottom:3px;">$1</li>')
-    .replace(/^\d+\. (.+)$/gm, '<li style="margin-bottom:3px;">$1</li>')
-    .replace(/(<li[^>]*>[\s\S]*?<\/li>)/g, '<ul style="padding-left:18px;margin:4px 0;">$1</ul>')
-    .replace(/^---$/gm, '<hr style="border:none;border-top:1px solid rgba(255,255,255,0.1);margin:10px 0;">')
-    .replace(/\n\n/g, '<br/><br/>')
-    .replace(/\n/g, '<br/>');
-
-  return <div dangerouslySetInnerHTML={{ __html: html }} />;
-}
-
-function escapeHtml(str) {
-  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return <div dangerouslySetInnerHTML={{ __html: renderSafeMarkdown(text) }} />;
 }

@@ -31,6 +31,7 @@ export default function InterviewExecutionPanel({
   testCases = [],
   evidence = null
 }) {
+  const theme = useTraceStore((s) => s.theme);
   const handleCodeChange = onCodeChange || onChangeCode;
   const handleLanguageChange = onLanguageChange || onChangeLanguage;
   const readOnlyMode = Boolean(isReadOnly || readOnly);
@@ -75,7 +76,7 @@ export default function InterviewExecutionPanel({
           </span>
           <select
             value={language}
-            onChange={(e) => onLanguageChange && handleLanguageChange && handleLanguageChange(e.target.value)}
+            onChange={(e) => handleLanguageChange && handleLanguageChange(e.target.value)}
             disabled={readOnlyMode}
             style={{
               background: "#141e33",
@@ -154,7 +155,7 @@ export default function InterviewExecutionPanel({
           language={selectedLangObj.monaco}
           theme={theme === "light" ? "vs" : "vs-dark"}
           value={code || ""}
-          onChange={(val) => onCodeChange && handleCodeChange && handleCodeChange(val || "")}
+          onChange={(val) => handleCodeChange && handleCodeChange(val || "")}
           options={{
             readOnly: readOnlyMode,
             minimap: { enabled: false },

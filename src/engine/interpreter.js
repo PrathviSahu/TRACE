@@ -57,6 +57,8 @@ class Interpreter {
     this.depth    = 0;
     this.outputs  = [];
     this.methods  = new Map();
+    this.classes  = new Map();
+    this.globalEnv = null;
     this.srcLines = [];
     this.prevVars = {};
   }
@@ -67,35 +69,66 @@ class Interpreter {
     this.depth    = 0;
     this.outputs  = [];
     this.methods  = new Map();
+    this.classes  = new Map();
     this.srcLines = src.split('\n');
 
     const ast  = parse(src);
     const genv = new Env();
+    this.globalEnv = genv;
 
-    // Collect method declarations
+    // Collect method and class declarations
     for (const node of ast.body) {
-      if (node.kind === 'MethodDecl') this.methods.set(node.name, node);
+      if (node.kind === 'MethodDecl') {
+        this.methods.set(node.name, node);
+      } else if (node.kind === 'ClassDecl') {
+        this.classes.set(node.name, node);
+        if (node.methods) {
+          for (const m of node.methods) this.methods.set(m.name, m);
+        }
+      }
     }
 
-    // Find and call main method (first public method)
+    const topLevelStmts = ast.body.filter(n => n.kind !== 'MethodDecl' && n.kind !== 'ClassDecl');
     const mainM = this.findMainMethod(ast);
-    if (!mainM) throw new Error('No method found. Paste a complete Java class or method.');
-
-    // Build argument list from inputs
-    const args = this.buildArgs(mainM, inputs);
-    this.callStack = [mainM.name + '(' + mainM.params.map(p=>p.name).join(', ') + ')'];
 
     let retVal;
-    try {
-      const env = new Env(genv);
-      for (let i=0; i<mainM.params.length; i++) {
-        const p = mainM.params[i];
-        env.define(p.name, args[i], p.ptype?.base ?? 'any', p.ptype?.isArray ?? false);
+
+    if (topLevelStmts.length > 0) {
+      this.callStack = ['<main>'];
+      try {
+        for (const stmt of topLevelStmts) {
+          this.execStmt(stmt, genv);
+        }
+        if (mainM && mainM.name === 'main') {
+          const args = this.buildArgs(mainM, inputs);
+          const env = new Env(genv);
+          for (let i = 0; i < mainM.params.length; i++) {
+            const p = mainM.params[i];
+            env.define(p.name, args[i], p.ptype?.base ?? 'any', p.ptype?.isArray ?? false);
+          }
+          this.callStack.push(mainM.name + '(' + mainM.params.map(p=>p.name).join(', ') + ')');
+          retVal = this.execBlock(mainM.body, env);
+        }
+      } catch(e) {
+        if (e instanceof ReturnSignal) retVal = e.value;
+        else throw e;
       }
-      retVal = this.execBlock(mainM.body, env);
-    } catch(e) {
-      if (e instanceof ReturnSignal) retVal = e.value;
-      else throw e;
+    } else if (mainM) {
+      const args = this.buildArgs(mainM, inputs);
+      this.callStack = [mainM.name + '(' + mainM.params.map(p=>p.name).join(', ') + ')'];
+      try {
+        const env = new Env(genv);
+        for (let i=0; i<mainM.params.length; i++) {
+          const p = mainM.params[i];
+          env.define(p.name, args[i], p.ptype?.base ?? 'any', p.ptype?.isArray ?? false);
+        }
+        retVal = this.execBlock(mainM.body, env);
+      } catch(e) {
+        if (e instanceof ReturnSignal) retVal = e.value;
+        else throw e;
+      }
+    } else {
+      throw new Error('No method found. Paste a complete Java class or method.');
     }
 
     // Final step
@@ -108,8 +141,13 @@ class Interpreter {
   }
 
   findMainMethod(ast) {
-    // prefer the first non-void public method
-    for (const n of ast.body) if (n.kind==='MethodDecl') return n;
+    for (const n of ast.body) {
+      if (n.kind === 'MethodDecl') return n;
+      if (n.kind === 'ClassDecl' && n.methods && n.methods.length > 0) {
+        const main = n.methods.find(m => m.name === 'main') || n.methods[0];
+        if (main) return main;
+      }
+    }
     return null;
   }
 
@@ -142,18 +180,41 @@ class Interpreter {
   }
 
   // ── Snapshot helpers ─────────────────────────────────────────
+  safeSnapshotValue(val, depth=0, seen=new WeakSet()) {
+    if (val === null || val === undefined) return val;
+    if (typeof val !== 'object') return val;
+    if (seen.has(val) || depth > 3) return `<${val.__type || 'Object'}>`;
+    seen.add(val);
+
+    if (Array.isArray(val)) {
+      return val.slice(0, 50).map(item => this.safeSnapshotValue(item, depth + 1, seen));
+    }
+
+    if (val.fields) {
+      const snapFields = {};
+      for (const [fName, fVal] of Object.entries(val.fields)) {
+        snapFields[fName] = this.safeSnapshotValue(fVal, depth + 1, seen);
+      }
+      return { __type: val.__type, ...snapFields };
+    }
+    return val;
+  }
+
   snapshotVars(env) {
     const snap = env.snapshot();
     const vars = {};
     const arrays = {};
     const collections = {};
+    const builtInCollections = new Set(['ArrayList','Stack','Queue','HashMap','HashSet','StringBuilder','ArrayDeque','PriorityQueue','Vector','TreeMap','TreeSet','LinkedHashMap','LinkedHashSet']);
+
     for (const [k,v] of Object.entries(snap)) {
+      if (k === 'this') continue;
       if (v.isArray && Array.isArray(v.value)) {
         arrays[k] = { values: [...v.value], type: v.type };
-      } else if (v.value && typeof v.value === 'object' && v.value.__type) {
+      } else if (v.value && typeof v.value === 'object' && builtInCollections.has(v.value.__type)) {
         collections[k] = { ...v.value };
       } else {
-        vars[k] = { value: v.value, type: v.type };
+        vars[k] = { value: this.safeSnapshotValue(v.value), type: v.type };
       }
     }
     // detect pointer variables for each array
@@ -227,9 +288,19 @@ class Interpreter {
 
   execVarDecl(node, env) {
     for (const decl of node.decls) {
-      let val = decl.init ? this.evalExpr(decl.init, env) : (decl.isArray ? [] : 0);
+      let val;
+      if (decl.init) {
+        val = this.evalExpr(decl.init, env);
+      } else if (decl.isArray) {
+        val = [];
+      } else {
+        const baseType = node.typeExpr?.base;
+        if (['int','long','double','float','char','byte','short'].includes(baseType)) val = 0;
+        else if (baseType === 'boolean') val = false;
+        else val = null;
+      }
       const isArr = decl.isArray || Array.isArray(val);
-      const isCol = val && typeof val === 'object' && val.__type;
+      const isCol = val && typeof val === 'object' && ['ArrayList','Stack','Queue','HashMap','HashSet','StringBuilder','ArrayDeque','PriorityQueue','Vector'].includes(val.__type);
       env.define(decl.name, val, node.typeExpr?.base ?? 'any', isArr || isCol);
       const expl = this.makeExplanation('decl', { name:decl.name, value:val, type:node.typeExpr?.base });
       this.emit(node.line, 'declaration', { explanation: expl }, env);
@@ -344,7 +415,20 @@ class Interpreter {
 
   evalId(node, env) {
     try { return env.get(node.name).value; }
-    catch(_) { return undefined; }
+    catch(_) {
+      if (env.has('this')) {
+        const thisObj = env.get('this').value;
+        if (thisObj && typeof thisObj === 'object') {
+          if (thisObj.fields && Object.prototype.hasOwnProperty.call(thisObj.fields, node.name)) {
+            return thisObj.fields[node.name];
+          }
+          if (Object.prototype.hasOwnProperty.call(thisObj, node.name)) {
+            return thisObj[node.name];
+          }
+        }
+      }
+      return undefined;
+    }
   }
 
   evalBinOp(node, env) {
@@ -406,14 +490,32 @@ class Interpreter {
 
   assignTo(target, value, env) {
     if (target.kind === 'Identifier') {
-      if (env.has(target.name)) env.set(target.name, value);
-      else env.define(target.name, value);
+      if (env.has(target.name)) {
+        env.set(target.name, value);
+      } else if (env.has('this')) {
+        const thisObj = env.get('this').value;
+        if (thisObj && typeof thisObj === 'object') {
+          if (!thisObj.fields) thisObj.fields = {};
+          thisObj.fields[target.name] = value;
+          thisObj[target.name] = value;
+          return;
+        }
+        env.define(target.name, value);
+      } else {
+        env.define(target.name, value);
+      }
     } else if (target.kind === 'ArrayAccess') {
       const arr = this.evalExpr(target.object, env);
       const idx = this.evalExpr(target.index, env);
       if (Array.isArray(arr)) arr[idx] = value;
     } else if (target.kind === 'MemberAccess') {
-      // collection set operations handled in method calls
+      const obj = this.evalExpr(target.object, env);
+      if (obj === null || obj === undefined || typeof obj !== 'object') {
+        throw new Error(`NullPointerException: Cannot set field "${target.member}" on null object`);
+      }
+      if (!obj.fields) obj.fields = {};
+      obj.fields[target.member] = value;
+      obj[target.member] = value;
     }
   }
 
@@ -426,33 +528,48 @@ class Interpreter {
   }
 
   evalMemberAccess(node, env) {
-    // Integer.MAX_VALUE / MIN_VALUE
-    if (node.object.kind==='Identifier') {
+    // Integer / Long / Math constants
+    if (node.object.kind === 'Identifier') {
       const objName = node.object.name;
-      if (objName==='Integer') {
-        if (node.member==='MAX_VALUE') return 2147483647;
-        if (node.member==='MIN_VALUE') return -2147483648;
+      if (objName === 'Integer') {
+        if (node.member === 'MAX_VALUE') return 2147483647;
+        if (node.member === 'MIN_VALUE') return -2147483648;
       }
-      if (objName==='Long') {
-        if (node.member==='MAX_VALUE') return 9007199254740991;
-        if (node.member==='MIN_VALUE') return -9007199254740991;
+      if (objName === 'Long') {
+        if (node.member === 'MAX_VALUE') return 9007199254740991;
+        if (node.member === 'MIN_VALUE') return -9007199254740991;
       }
-      // array.length
-      try {
-        const obj = env.get(objName).value;
-        if (node.member==='length') {
-          if (Array.isArray(obj)) return obj.length;
-          if (typeof obj==='string') return obj.length;
-          if (obj && typeof obj==='object' && obj.__type) return obj.size ?? 0;
-        }
-        if (obj && typeof obj==='object' && obj.__type) return this.collectionGet(obj, node.member);
-      } catch(_){}
+      if (objName === 'Math') {
+        if (node.member === 'PI') return Math.PI;
+        if (node.member === 'E') return Math.E;
+      }
     }
+
     const obj = this.evalExpr(node.object, env);
-    if (node.member==='length') {
-      if (Array.isArray(obj)) return obj.length;
-      if (typeof obj==='string') return obj.length;
+    if (obj === null || obj === undefined) {
+      throw new Error(`NullPointerException: Cannot read field "${node.member}" because object is null`);
     }
+
+    if (node.member === 'length') {
+      if (Array.isArray(obj)) return obj.length;
+      if (typeof obj === 'string') return obj.length;
+      if (obj && typeof obj === 'object' && obj.__type) return obj.size ?? obj.items?.length ?? 0;
+    }
+
+    if (typeof obj === 'object') {
+      if (obj.fields && Object.prototype.hasOwnProperty.call(obj.fields, node.member)) {
+        return obj.fields[node.member];
+      }
+      if (Object.prototype.hasOwnProperty.call(obj, node.member)) {
+        return obj[node.member];
+      }
+      if (obj.__type && typeof this.collectionGet === 'function') {
+        const cVal = this.collectionGet(obj, node.member);
+        if (cVal !== undefined && cVal !== null) return cVal;
+      }
+      return null;
+    }
+
     return null;
   }
 
@@ -462,8 +579,8 @@ class Interpreter {
       const cls = node.object.object.name;
       const mid = node.object.member;
       if (cls==='System' && (mid==='out') && (node.method==='println'||node.method==='print')) {
-        const arg = node.args[0] ? this.evalExpr(node.args[0], env) : '';
-        const line = String(arg);
+        const arg = node.args[0] !== undefined ? this.evalExpr(node.args[0], env) : '';
+        const line = arg === null ? 'null' : (typeof arg === 'object' && arg.__type ? (arg.name || arg.__type) : String(arg));
         this.outputs.push(line);
         this.emit(node.line, 'output', { explanation: { type:'output', value:line } }, env);
         return null;
@@ -565,6 +682,13 @@ class Interpreter {
   }
 
   evalFuncCall(node, env) {
+    if (node.name === 'println' || node.name === 'print') {
+      const arg = node.args[0] !== undefined ? this.evalExpr(node.args[0], env) : '';
+      const line = arg === null ? 'null' : (typeof arg === 'object' && arg.__type ? (arg.name || arg.__type) : String(arg));
+      this.outputs.push(line);
+      this.emit(node.line, 'output', { explanation: { type:'output', value:line } }, env);
+      return null;
+    }
     if (this.methods.has(node.name))
       return this.callUserMethod(node.name, node.args.map(a=>this.evalExpr(a,env)), env, node.line);
     return null;
@@ -600,14 +724,14 @@ class Interpreter {
   }
 
   evalObjectCreate(node, env) {
-    const args = node.args.map(a=>this.evalExpr(a,env));
+    const args = node.args.map(a => this.evalExpr(a, env));
     const cls = node.className;
     // Collections
     if (cls==='ArrayList' || cls==='LinkedList' || cls==='Vector')
       return { __type:'ArrayList', items:[], name:cls };
     if (cls==='Stack')
       return { __type:'Stack', items:[] };
-    if (cls==='Queue' || cls==='ArrayDeque' || cls==='PriorityQueue' || cls==='LinkedList')
+    if (cls==='Queue' || cls==='ArrayDeque' || cls==='PriorityQueue')
       return { __type:'Queue', items:[], name:cls };
     if (cls==='HashMap' || cls==='TreeMap' || cls==='LinkedHashMap')
       return { __type:'HashMap', entries:new Map(), name:cls };
@@ -615,8 +739,110 @@ class Interpreter {
       return { __type:'HashSet', items:new Set(), name:cls };
     if (cls==='StringBuilder' || cls==='StringBuffer')
       return { __type:'StringBuilder', value:'' };
-    // Default: plain object
-    return { __type:cls, args };
+
+    // General Java object instance
+    const instance = {
+      __type: cls,
+      fields: {},
+      args,
+    };
+
+    // If explicit class declaration exists
+    const classDecl = this.classes?.get(cls);
+    if (classDecl) {
+      if (classDecl.fields) {
+        for (const fieldStmt of classDecl.fields) {
+          for (const decl of fieldStmt.decls) {
+            let defVal = null;
+            if (decl.init) {
+              defVal = this.evalExpr(decl.init, env);
+            } else if (decl.isArray) {
+              defVal = [];
+            } else {
+              const baseType = fieldStmt.typeExpr?.base;
+              if (['int','long','double','float','char','byte','short'].includes(baseType)) defVal = 0;
+              else if (baseType === 'boolean') defVal = false;
+              else defVal = null;
+            }
+            instance.fields[decl.name] = defVal;
+            instance[decl.name] = defVal;
+          }
+        }
+      }
+
+      let matchingCtor = null;
+      if (classDecl.constructors && classDecl.constructors.length > 0) {
+        matchingCtor = classDecl.constructors.find(c => c.params.length === args.length)
+          || classDecl.constructors[0];
+      }
+
+      if (matchingCtor) {
+        const ctorEnv = new Env(this.globalEnv || env);
+        ctorEnv.define('this', instance, cls);
+        for (let i = 0; i < matchingCtor.params.length; i++) {
+          const p = matchingCtor.params[i];
+          ctorEnv.define(p.name, args[i] ?? null, p.ptype?.base ?? 'any', p.ptype?.isArray ?? false);
+        }
+        this.callStack.push(`${cls}(${args.map(a => String(a)).join(', ')})`);
+        this.depth++;
+        try {
+          this.execBlock(matchingCtor.body, ctorEnv);
+        } catch(e) {
+          if (!(e instanceof ReturnSignal)) throw e;
+        }
+        this.callStack.pop();
+        this.depth--;
+        return instance;
+      }
+    }
+
+    // Standard DSA defaults for implicit or undeclared classes
+    if (cls === 'ListNode') {
+      const val = args[0] !== undefined ? args[0] : 0;
+      const next = args[1] !== undefined ? args[1] : null;
+      instance.fields.val = val;
+      instance.fields.next = next;
+      instance.val = val;
+      instance.next = next;
+      return instance;
+    }
+
+    if (cls === 'TreeNode') {
+      const val = args[0] !== undefined ? args[0] : 0;
+      const left = args[1] !== undefined ? args[1] : null;
+      const right = args[2] !== undefined ? args[2] : null;
+      instance.fields.val = val;
+      instance.fields.left = left;
+      instance.fields.right = right;
+      instance.val = val;
+      instance.left = left;
+      instance.right = right;
+      return instance;
+    }
+
+    if (cls === 'Node') {
+      const val = args[0] !== undefined ? args[0] : 0;
+      const next = args[1] !== undefined ? args[1] : null;
+      instance.fields.val = val;
+      instance.fields.next = next;
+      instance.val = val;
+      instance.next = next;
+      return instance;
+    }
+
+    // Fallback: positional assignment if fields exist on class
+    if (classDecl && classDecl.fields) {
+      const fieldNames = [];
+      for (const fieldStmt of classDecl.fields) {
+        for (const decl of fieldStmt.decls) fieldNames.push(decl.name);
+      }
+      for (let i = 0; i < args.length && i < fieldNames.length; i++) {
+        instance.fields[fieldNames[i]] = args[i];
+        instance[fieldNames[i]] = args[i];
+      }
+    }
+
+    return instance;
   }
 
   callCollectionMethod(obj, method, args, line, env) {
@@ -739,9 +965,17 @@ class Interpreter {
     const snap = env.snapshot();
     const state = {};
     for (const [k,v] of Object.entries(snap)) {
-      if (Array.isArray(v.value)) state[k] = [...v.value];
-      else if (v.value && typeof v.value==='object' && v.value.__type) state[k] = JSON.stringify(v.value);
-      else state[k] = v.value;
+      if (Array.isArray(v.value)) {
+        state[k] = [...v.value];
+      } else if (v.value && typeof v.value === 'object') {
+        try {
+          state[k] = JSON.stringify(this.safeSnapshotValue(v.value));
+        } catch(_) {
+          state[k] = String(v.value);
+        }
+      } else {
+        state[k] = v.value;
+      }
     }
     return state;
   }
@@ -750,7 +984,7 @@ class Interpreter {
     const changed = [];
     for (const [k,v] of Object.entries(after)) {
       const bv = before[k];
-      if (JSON.stringify(bv) !== JSON.stringify(v)) changed.push({ name:k, from:bv, to:v });
+      if (bv !== v) changed.push({ name:k, from:bv, to:v });
     }
     return changed;
   }

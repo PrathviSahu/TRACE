@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { PROBLEM_DESCRIPTIONS } from "../../data/problemDescriptions.js";
 import { PRESET_SOLUTIONS } from "../../data/problemTemplates.js";
+import { sanitizeHtml } from "../../utils/sanitize.js";
 
 export default function InterviewProblemPanel({
   problem,
@@ -124,7 +125,7 @@ export default function InterviewProblemPanel({
         border: "1px solid #1c2842",
       }}>
         {descObj?.description ? (
-          <div dangerouslySetInnerHTML={{ __html: descObj.description }} />
+          <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(descObj.description) }} />
         ) : (
           <p style={{ margin: 0 }}>
             Implement the optimal algorithm for <strong>{problem?.title}</strong> in your target language.
