@@ -3,7 +3,44 @@ import { runJava } from '../engine/interpreter.js';
 import { runPython } from '../engine/pythonRunner.js';
 import { MULTI_LANG_EXAMPLES } from '../engine/multiLangExamples.js';
 
+const getInitialTheme = () => {
+  if (typeof window !== "undefined" && window.localStorage) {
+    const saved = localStorage.getItem("trace_theme");
+    if (saved === "light" || saved === "dark") return saved;
+  }
+  return "dark";
+};
+
+const initialTheme = getInitialTheme();
+if (typeof document !== "undefined") {
+  document.documentElement.setAttribute("data-theme", initialTheme);
+  if (initialTheme === "light") {
+    document.documentElement.classList.add("light-theme");
+  } else {
+    document.documentElement.classList.remove("light-theme");
+  }
+}
+
 export const useTraceStore = create((set, get) => ({
+  // ── Theme State
+  theme: initialTheme,
+  setTheme: (newTheme) => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("trace_theme", newTheme);
+      document.documentElement.setAttribute("data-theme", newTheme);
+      if (newTheme === "light") {
+        document.documentElement.classList.add("light-theme");
+      } else {
+        document.documentElement.classList.remove("light-theme");
+      }
+    }
+    set({ theme: newTheme });
+  },
+  toggleTheme: () => {
+    const next = get().theme === "dark" ? "light" : "dark";
+    get().setTheme(next);
+  },
+
   // ── Language & Active Selection
   language: 'python', // 'python' | 'java' | 'cpp'
   activeExampleId: 'two-sum',

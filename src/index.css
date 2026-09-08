@@ -37,6 +37,63 @@
   --radius-xl: 16px;
 }
 
+/* ── Clean Slate Light Theme Tokens ─────────────────────────── */
+:root[data-theme="light"],
+html[data-theme="light"],
+body.light-theme,
+[data-theme="light"] {
+  --bg-darkest: #f1f5f9;
+  --bg-main:    #ffffff;
+  --bg-surface: #ffffff;
+  --bg-card:    #ffffff;
+  --bg-raised:  #e2e8f0;
+  --bg-hover:   #f1f5f9;
+
+  --border-subtle: #e2e8f0;
+  --border-card:   #cbd5e1;
+  --border-glow:   rgba(99, 102, 241, 0.3);
+
+  --accent-purple: #7c3aed;
+  --accent-indigo: #4f46e5;
+  --accent-glow:   #6366f1;
+  --accent-cyan:   #0284c7;
+  --accent-teal:   #0d9488;
+  --accent-green:  #059669;
+  --accent-amber:  #d97706;
+  --accent-rose:   #e11d48;
+
+  --txt-bright: #0f172a;
+  --txt-main:   #1e293b;
+  --txt-muted:  #475569;
+  --txt-dim:    #64748b;
+  color-scheme: light;
+}
+
+[data-theme="light"] .theme-icon-btn.active {
+  color: #f59e0b;
+  background: var(--bg-raised);
+}
+
+[data-theme="light"] .nav-item.active-pill {
+  background: rgba(99, 102, 241, 0.12);
+  color: var(--accent-indigo);
+}
+
+[data-theme="light"] .fbtn.on {
+  background: rgba(99, 102, 241, 0.12);
+  border-color: var(--accent-indigo);
+  color: var(--accent-indigo);
+}
+
+[data-theme="light"] tr:hover {
+  background: rgba(0, 0, 0, 0.02) !important;
+}
+
+[data-theme="light"] .app-container {
+  background: var(--bg-darkest);
+  color: var(--txt-main);
+}
+
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;

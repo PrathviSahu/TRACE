@@ -4,6 +4,7 @@
 // ─────────────────────────────────────────────────────────────
 import { useState } from "react";
 import Editor from "@monaco-editor/react";
+import { useTraceStore } from "../../store/traceStore.js";
 
 const SUPPORTED_LANGS = [
   { id: "java", label: "Java 17 (Executable)", monaco: "java", isExecutable: true },
@@ -151,7 +152,7 @@ export default function InterviewExecutionPanel({
         <Editor
           height="100%"
           language={selectedLangObj.monaco}
-          theme="vs-dark"
+          theme={theme === "light" ? "vs" : "vs-dark"}
           value={code || ""}
           onChange={(val) => onCodeChange && handleCodeChange && handleCodeChange(val || "")}
           options={{

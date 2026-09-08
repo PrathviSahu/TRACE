@@ -8,6 +8,7 @@ export default function CodeEditor() {
   const trace       = useTraceStore(s => s.trace);
   const currentStep = useTraceStore(s => s.currentStep);
   const language    = useTraceStore(s => s.language);
+  const theme       = useTraceStore(s => s.theme);
   const editorRef   = useRef(null);
   const monacoRef   = useRef(null);
   const decoRef     = useRef([]);
@@ -36,8 +37,15 @@ export default function CodeEditor() {
         'editorGutter.background': '#0b0f19',
       }
     });
-    monaco.editor.setTheme('trace-dark');
+    monaco.editor.setTheme(theme === 'light' ? 'vs' : 'trace-dark');
   }
+
+  // Switch Monaco theme on global theme toggle
+  useEffect(() => {
+    if (monacoRef.current) {
+      monacoRef.current.editor.setTheme(theme === "light" ? "vs" : "trace-dark");
+    }
+  }, [theme]);
 
   // highlight the current executing line
   useEffect(() => {
@@ -70,7 +78,7 @@ export default function CodeEditor() {
         value={code}
         onChange={v => setCode(v ?? '')}
         onMount={handleMount}
-        theme="vs-dark"
+        theme={theme === 'light' ? 'vs' : 'trace-dark'}
         options={{
           fontSize: 13,
           fontFamily: "'JetBrains Mono', 'Fira Code', monospace",

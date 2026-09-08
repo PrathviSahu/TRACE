@@ -4,6 +4,7 @@ import { getSession } from "../services/interviewSimulationStore.js";
 import InterviewRubricPanel from "../components/interview/InterviewRubricPanel.jsx";
 import InterviewHistoryModal from "../components/interview/InterviewHistoryModal.jsx";
 import Editor from "@monaco-editor/react";
+import { useTraceStore } from "../store/traceStore.js";
 
 export default function InterviewResultPage() {
   const { sessionId } = useParams();
@@ -11,6 +12,7 @@ export default function InterviewResultPage() {
 
   const [activeReviewTab, setActiveReviewTab] = useState("rubric"); // "rubric" | "code" | "approach"
   const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const theme = useTraceStore(s => s.theme);
 
   const session = useMemo(() => getSession(sessionId), [sessionId]);
 
@@ -253,7 +255,7 @@ export default function InterviewResultPage() {
                 height="100%"
                 language={session.language || "java"}
                 value={session.code || "// No code submitted"}
-                theme="vs-dark"
+                theme={theme === "light" ? "vs" : "vs-dark"}
                 options={{
                   readOnly: true,
                   fontSize: 13,

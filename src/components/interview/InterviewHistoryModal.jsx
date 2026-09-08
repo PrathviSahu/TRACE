@@ -24,8 +24,8 @@ export default function InterviewHistoryModal({ isOpen = true, onClose }) {
       padding: "1rem",
     }}>
       <div style={{
-        background: "#0d1322",
-        border: "1px solid #1c2842",
+        background: "var(--bg-surface, #0d1322)",
+        border: "1px solid var(--border-card, #1c2842)",
         borderRadius: "12px",
         width: "100%",
         maxWidth: "680px",
@@ -41,11 +41,11 @@ export default function InterviewHistoryModal({ isOpen = true, onClose }) {
           justifyContent: "space-between",
           alignItems: "center",
           padding: "1rem 1.25rem",
-          borderBottom: "1px solid #1c2842",
+          borderBottom: "1px solid var(--border-card, #1c2842)",
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
             <span style={{ fontSize: "1.1rem" }}>📜</span>
-            <h3 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 700, color: "#f8fafc" }}>
+            <h3 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 700, color: "var(--txt-bright, #f8fafc)" }}>
               Interview Simulation History
             </h3>
           </div>
@@ -83,7 +83,7 @@ export default function InterviewHistoryModal({ isOpen = true, onClose }) {
                       navigate(`/interview/result/${item.id}`);
                     }}
                     style={{
-                      background: "#080c16",
+                      background: "var(--bg-darkest, #080c16)",
                       border: "1px solid #1c2842",
                       borderRadius: "8px",
                       padding: "0.75rem 1rem",
