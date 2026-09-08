@@ -4,7 +4,7 @@ TRACE tagline:
 > **See your algorithm think.**
 
 ## 1. Overview & Architecture
-Phase 3.4 introduces a full-fledged technical interview simulation environment designed to emulate realistic coding rounds while preserving strict deterministic evaluation standards.
+Phase 3.4 introduces a realistic technical interview simulation environment designed to emulate real FAANG/tier-1 coding rounds while preserving strict deterministic evaluation standards and preventing client-side score tampering.
 
 ```text
 Interview Setup
@@ -30,68 +30,83 @@ Detailed Performance Report & Phase 3.3 Progress Dual-Write
 
 ---
 
-## 2. Phase 3.4.1 Surgical Audit Corrections
+## 2. Phase 3.4.1 Surgical Audit Corrections & Invariants
 
 ### 1. Language Execution Honesty
-- **Problem**: UI previously advertised 5 executable languages, but C++, JS, and C lacked in-browser compilation/execution and were silently piped into Java execution.
-- **Correction**: `src/services/interviewExecutionAdapter.js` explicitly defines `EXECUTABLE_LANGUAGES = ["java", "python"]`. The UI visually marks C++, JS, and C as `Editor only (Evaluated in Rubric)` with an explicit notice badge and disables "Run & Test" for non-executable languages. Code written in these languages is preserved and evaluated thoroughly by the Rubric evaluator.
+- **Invariant**: `EXECUTABLE_LANGUAGES = ["java", "python"]` strictly enforced in `src/services/interviewExecutionAdapter.js`.
+- C++, JS, and C are honestly labeled `Editor only (Evaluated in Rubric)` with a warning badge; the "Run & Test" button is disabled while preserving code for comprehensive rubric evaluation.
 
 ### 2. Multi-Test Java Verification
-- **Problem**: Java previously executed once with default inputs and compared that single output against all verification examples.
-- **Correction**: Implemented `parseInputStringToMap` to extract and map arguments per test case, executing Java independently for every test case.
+- **Invariant**: Implemented `parseInputStringToMap` to extract argument mappings per test case. Java compiles and executes independently for each test case, reporting individual pass/fail status.
 
 ### 3. Strict Normalized Output Comparison
-- **Problem**: Test matching used substring containment (`actual.includes(expected)`), producing false positive passes on partial matches.
-- **Correction**: Implemented `normalizeAndCompareOutputs(actual, expected)` which normalizes JSON arrays, booleans, and whitespace, enforcing strict equality.
+- **Invariant**: `normalizeAndCompareOutputs(actual, expected)` normalizes JSON structures, booleans, and whitespace, enforcing strict equality and preventing partial substring false positives.
 
 ### 4. Monotonic Timer State Unification
-- **Problem**: Timer maintained dual-accounting fields (`totalPausedSeconds` and `pausedDurationMs`), leading to potential desynchronization.
-- **Correction**: Unified into a single monotonic `totalPausedMs` offset applied to `Date.now() - session.startedAt`.
+- **Invariant**: Timer accounting is unified into a single monotonic `totalPausedMs` offset applied directly to `Date.now() - session.startedAt`.
 
 ### 5. Clamped Expiration Semantics
-- **Problem**: Expired sessions allowed elapsed time to drift past duration.
-- **Correction**: Clamped elapsed time on expiry (`elapsedSeconds = durationSeconds`, `remainingSeconds = 0`, `isExpired = true`).
+- **Invariant**: Expired sessions clamp elapsed time to duration (`elapsedSeconds = durationSeconds`, `remainingSeconds = 0`, `isExpired = true`).
 
-### 6. Submission Authority Hardening
-- **Problem**: Client could potentially forge execution evidence or override rubric scores via `submitInterviewSession(sessionId, payload)`.
-- **Correction**: `submitInterviewSession` recalculates objective correctness and rubric scores server-authoritatively using recorded evidence, approach notes, and code. Client overrides are strictly discarded.
+### 6. Submission Authority & Security Hardening
+- **Invariant**:
+  ```text
+  session
+    ↓
+  recorded execution evidence ONLY (session.executionEvidence)
+    ↓
+  deterministic objective scoring (computeCorrectnessScore, computeTimeManagementScore)
+    ↓
+  validated qualitative evaluation (validateEvaluationSchema or computeDeterministicRubricFallback)
+    ↓
+  authoritative rubric (category weights strictly from RUBRIC_WEIGHTS, overallScore strictly recomputed)
+    ↓
+  immutable snapshot (all post-submit mutations blocked)
+  ```
+  - **Caller execution evidence discarded**: `finalPayload.executionEvidence` and `finalPayload.executionResult` are NEVER accepted. If no code was executed during the session, objective correctness is strictly 0.
+  - **Caller rubric discarded as authoritative**: Caller-supplied `rubricResult` is never taken at face value. Only qualitative categories are checked via `validateEvaluationSchema`; if invalid, deterministic fallback is computed. Correctness and time management are ALWAYS overwritten with deterministic objective calculations. `overallScore` is ALWAYS mathematically recomputed.
+  - **Elapsed time derived from clock**: Caller-supplied `elapsedSeconds` is ignored; elapsed time is computed from `calculateSessionTime(session, nowMs)`.
+  - **Post-submit immutability**: Both `saveInterviewSession` and `submitInterviewSession` reject any modification to an already-submitted session.
 
 ### 7. Phase 3.3 Integration Dual-Write
-- **Problem**: Need to inform Phase 3.3 adaptive engine of interview results without mutating its existing adaptive logic.
-- **Correction**: On submission, rich interview metadata is recorded in `progressStore` under `interviewHistory` and `lastInterviewPerformance`, preserving Phase 3.3 compatibility.
+- **Invariant**: Submitted sessions dual-write `interviewHistory` and `lastInterviewPerformance` into `progressStore` without mutating Phase 3.3 adaptive logic.
 
 ### 8. Follow-up Question Lifecycle
-- **Correction**: Follow-up questions are dynamically presented based on problem pattern, candidate answers are saved incrementally in session storage, and frozen upon submission.
+- **Invariant**: Follow-ups are seeded per pattern family, saved incrementally to session state, and frozen on submission.
 
-### 9. Seeded Deterministic Problem Selection
-- **Correction**: Weakness, Company, Pattern, and Random modes use deterministic pseudo-random seeds (`seededRandom`) ensuring reproducible problem selection.
+### 9. Deterministic Problem Selection Across All 4 Modes
+- **Company Mode**: Strictly selects from the verified company's enriched problem pool.
+- **Pattern Mode**: Strictly selects problems matching the requested pattern or canonical pattern family.
+- **Weakness Mode**: Focuses on candidate's weak patterns from Phase 3.3 adaptive state, prioritizing problems with higher consecutive failures.
+- **Random Mode**: Uses deterministic LCG PRNG (`seededRandom`) ensuring identical seeds produce identical problem selections, while differing seeds produce differing selections.
 
 ### 10. Real Headless Chrome E2E Verification
-- **Correction**: Built an automated 12-stage Chrome CDP test (`scripts/e2e_interview_simulation.js`) capturing visual proof artifacts at each milestone.
+- 12-stage end-to-end browser automation script (`scripts/e2e_interview_simulation.js`) exercising all 4 mode buttons, launcher, timer, pause/resume, approach notes, multi-test execution, reload persistence, submission, rubric results, and history drawer with visual screenshots.
 
 ---
 
-## 3. Rubric Evaluator Specification (100% Total)
+## 3. Rubric Evaluator Specification (Strict 8 Categories = 100%)
 
 | Category | Weight | Description |
-| :--- | :--- | :--- |
-| **Problem Understanding** | 15% | Identifying constraints, edge cases, input/output contracts |
-| **Correctness** | 20% | Objective multi-test execution, compile status, runtime failures |
-| **Efficiency** | 10% | Optimal Time and Space complexity analysis |
-| **Code Quality & Fluency** | 20% | Idiomatic style, variable naming, modular structure |
-| **Edge Case Handling** | 10% | Null checks, single elements, duplicates, extremes |
-| **Communication & Reasoning**| 10% | Approach explanation, clarity of thought before coding |
-| **Time Management** | 10% | Pacing, timely submission, avoidance of expiration |
-| **Follow-up Adaptability** | 5% | Responses to algorithmic and scaling follow-ups |
+| :--- | :---: | :--- |
+| **Problem Understanding** | **15%** | Identifying constraints, edge cases, and input/output contracts |
+| **Approach / Reasoning** | **20%** | Soundness, optimality, and justification of chosen algorithmic approach |
+| **Pattern Recognition** | **10%** | Identification and application of canonical DSA pattern |
+| **Correctness** | **20%** | Authoritative multi-test execution, compilation, runtime errors (strictly deterministic) |
+| **Code Quality** | **10%** | Idiomatic style, variable naming, readability, and modularity |
+| **Complexity Analysis** | **10%** | Accuracy of Big-O time and space complexity explanations |
+| **Communication** | **10%** | Structured reasoning, clarity of explanation, proactive edge-case documentation |
+| **Time Management** | **5%** | Pacing, timely completion within time budget (strictly deterministic) |
+| **Total** | **100%** | Exact weighted sum: $15 + 20 + 10 + 20 + 10 + 10 + 10 + 5 = 100\%$ |
 
 ---
 
 ## 4. Verification & Test Metrics
 
-- **Phase 3.1 Suite**: 14/14 PASSED
-- **Phase 3.2 Suite**: 10/10 PASSED
-- **Phase 3.3 Suite**: 26/26 PASSED
-- **Phase 3.4.1 Suite**: 25/25 PASSED
-- **Total Unit/Integration Tests**: **75/75 PASSED (100%)**
-- **Production Build**: Built in 199ms with 0 errors
-- **Browser E2E Verification**: 12/12 stages PASSED (100%)
+- **Phase 3.1 Suite**: 14 / 14 PASSED
+- **Phase 3.2 Suite**: 10 / 10 PASSED
+- **Phase 3.3 Suite**: 26 / 26 PASSED
+- **Phase 3.4.1 Suite**: 28 / 28 PASSED (including 5 security attack-vector tests & 4 mode tests)
+- **Total Unit/Integration Regression Tests**: **78 / 78 PASSED (100% GREEN)**
+- **Production Build (`vite build`)**: Built in 232ms with 0 errors
+- **Real Chrome E2E Verification**: 12 / 12 stages PASSED (100% SUCCESS)

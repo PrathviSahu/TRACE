@@ -13,7 +13,7 @@ import {
   computeOverallRubricScore,
   RUBRIC_WEIGHTS,
 } from "./interviewSimulationEngine.js";
-import { computeDeterministicRubricFallback } from "./interviewEvaluator.js";
+import { computeDeterministicRubricFallback, validateEvaluationSchema } from "./interviewEvaluator.js";
 
 export const STORAGE_KEYS = {
   SESSIONS: "trace_interview_sessions",
@@ -149,9 +149,9 @@ export function saveInterviewSession(session) {
   const nowIso = new Date().toISOString();
   const sessions = getAllSessions();
 
-  // If already submitted, preserve frozen data
+  // If already submitted, preserve frozen data — strictly block any modification
   const existing = sessions[session.id];
-  if (existing && existing.status === "submitted" && session.status !== "submitted") {
+  if (existing && existing.status === "submitted") {
     console.warn(`Attempted to modify submitted session ${session.id} — modification blocked.`);
     return existing;
   }
@@ -277,19 +277,32 @@ export function submitInterviewSession(sessionId, finalPayload = {}) {
   const nowMs = Date.now();
   const nowIso = new Date(nowMs).toISOString();
 
-  // 1. Calculate authoritative final elapsed time
+  // 1. Calculate authoritative final elapsed time (clamped to duration if expired)
+  // Elapsed time is DERIVED from session.startedAt, session.durationSeconds, and session.totalPausedMs.
+  // NEVER accept caller-supplied elapsedSeconds or timing fields!
   const timeState = calculateSessionTime(session, nowMs);
   const finalElapsedSeconds = timeState.elapsedSeconds;
 
-  // 2. Authoritative code: take from current session, allow finalCode from payload ONLY if matching or if session.code is empty
-  const finalCode = session.code || finalPayload.code || finalPayload.finalCode || "";
-  const finalExplanation = session.explanation || finalPayload.explanation || finalPayload.finalExplanation || "";
+  // 2. Authoritative candidate inputs: ONLY adopt legitimate candidate fields
+  const finalCode = (finalPayload.code !== undefined && finalPayload.code !== null)
+    ? String(finalPayload.code)
+    : (session.code || "");
+  const finalExplanation = (finalPayload.explanation !== undefined && finalPayload.explanation !== null)
+    ? String(finalPayload.explanation)
+    : (session.explanation || "");
+  const finalApproach = (finalPayload.approach && typeof finalPayload.approach === "object")
+    ? { ...session.approach, ...finalPayload.approach }
+    : (session.approach || {});
+  const finalFollowUps = Array.isArray(finalPayload.followUps)
+    ? finalPayload.followUps
+    : (session.followUps || []);
 
-  // 3. Authoritative execution evidence: ONLY from session's actual execution runs (Issue 6)
-  // If the session has executed, take its evidence; if payload provided an unexecuted test fixture, adopt it strictly
-  const authoritativeEvidence = (session.executionEvidence && (session.executionEvidence.executed || session.executionEvidence.testsTotal > 0))
-    ? session.executionEvidence
-    : (finalPayload.executionEvidence || finalPayload.executionResult || session.executionEvidence || {
+  // 3. Authoritative execution evidence: ONLY from session's actual recorded execution runs!
+  // NEVER accept executionEvidence or executionResult from finalPayload under ANY circumstance.
+  // If no execution was run, evidence is strictly marked unexecuted / 0 tests passed.
+  const authoritativeEvidence = (session.executionEvidence && typeof session.executionEvidence === "object" && (session.executionEvidence.executed || session.executionEvidence.testsTotal > 0 || session.executionEvidence.compileError || session.executionEvidence.runtimeError))
+    ? { ...session.executionEvidence }
+    : {
         compiled: false,
         executed: false,
         passed: false,
@@ -297,12 +310,12 @@ export function submitInterviewSession(sessionId, finalPayload = {}) {
         testsTotal: 0,
         runtimeError: null,
         compileError: "No execution attempted before submission."
-      });
+      };
 
   // 4. Compute authoritative objective correctness strictly from authoritative evidence
   const objCorrectness = computeCorrectnessScore(authoritativeEvidence);
 
-  // 5. Compute authoritative time management score
+  // 5. Compute authoritative time management score strictly from authoritative elapsed seconds
   const objTimeManagement = computeTimeManagementScore(
     finalElapsedSeconds,
     session.durationSeconds,
@@ -310,32 +323,90 @@ export function submitInterviewSession(sessionId, finalPayload = {}) {
     "submitted"
   );
 
-  // 6. Rubric: If payload or session supplied rubric, overwrite objective categories with authoritative deterministic scores
-  let authoritativeRubric = finalPayload.rubricResult || session.rubricResult;
-  if (!authoritativeRubric) {
-    authoritativeRubric = computeDeterministicRubricFallback(
-      { ...session, code: finalCode, explanation: finalExplanation, elapsedSeconds: finalElapsedSeconds },
-      authoritativeEvidence
-    );
+  // 6. Qualitative Rubric: NEVER trust client rubricResult as authoritative!
+  // Qualitative categories may come from a schema-validated AI evaluation (e.g. Gemini),
+  // but NEVER accept objective categories (correctness, timeManagement) or overallScore from client.
+  const rawQualitative = finalPayload.rubricResult || session.rubricResult;
+  let validatedCategories = null;
+  if (rawQualitative && typeof rawQualitative === "object") {
+    validatedCategories = validateEvaluationSchema(rawQualitative);
   }
 
-  // Force authoritative correctness & time management scores into rubric categories
-  if (authoritativeRubric && authoritativeRubric.categories) {
-    authoritativeRubric.categories.correctness = {
+  let authoritativeRubric;
+  const sessionForFallback = {
+    ...session,
+    code: finalCode,
+    explanation: finalExplanation,
+    approach: finalApproach,
+    elapsedSeconds: finalElapsedSeconds,
+    status: "submitted",
+  };
+
+  if (!validatedCategories) {
+    // If no valid AI qualitative evaluation exists, use deterministic offline fallback
+    authoritativeRubric = computeDeterministicRubricFallback(
+      sessionForFallback,
+      authoritativeEvidence
+    );
+  } else {
+    // Construct categories using validated qualitative scores for the 6 qualitative areas,
+    // and strictly authoritative calculations for correctness and time management.
+    const qualitativeKeys = [
+      "problemUnderstanding",
+      "approachReasoning",
+      "patternRecognition",
+      "codeQuality",
+      "complexityAnalysis",
+      "communication",
+    ];
+
+    const finalCategories = {};
+    for (const key of qualitativeKeys) {
+      const cat = validatedCategories[key];
+      const rawScore = Number(cat?.score ?? 0);
+      const clampedScore = Math.max(0, Math.min(5, isNaN(rawScore) ? 0 : rawScore));
+      finalCategories[key] = {
+        score: clampedScore,
+        weight: RUBRIC_WEIGHTS[key],
+        weightedScore: Math.round((clampedScore / 5) * 100 * RUBRIC_WEIGHTS[key]),
+        source: cat?.source || "gemini",
+        reasoning: typeof cat?.reasoning === "string" ? cat.reasoning : "Qualitative evaluation recorded.",
+      };
+    }
+
+    // STRICT INVARIANT: Correctness is ALWAYS derived from authoritative session execution evidence
+    finalCategories.correctness = {
       score: objCorrectness,
       weight: RUBRIC_WEIGHTS.correctness,
       weightedScore: Math.round((objCorrectness / 5) * 100 * RUBRIC_WEIGHTS.correctness),
       source: "deterministic",
-      reasoning: `Objective verification: ${authoritativeEvidence.testsPassed || 0}/${authoritativeEvidence.testsTotal || 0} tests passed.`
+      reasoning: authoritativeEvidence.testsTotal > 0
+        ? `Objective verification: ${authoritativeEvidence.testsPassed || 0}/${authoritativeEvidence.testsTotal || 0} tests passed.`
+        : (authoritativeEvidence.passed ? "Code executed cleanly and produced expected output." : "Execution did not pass all requirements."),
     };
-    authoritativeRubric.categories.timeManagement = {
+
+    // STRICT INVARIANT: Time management is ALWAYS derived from authoritative elapsed time
+    finalCategories.timeManagement = {
       score: objTimeManagement,
       weight: RUBRIC_WEIGHTS.timeManagement,
       weightedScore: Math.round((objTimeManagement / 5) * 100 * RUBRIC_WEIGHTS.timeManagement),
       source: "deterministic",
-      reasoning: `Elapsed ${finalElapsedSeconds}s of ${session.durationSeconds}s duration.`
+      reasoning: `Elapsed ${finalElapsedSeconds}s of ${session.durationSeconds}s duration.`,
     };
-    authoritativeRubric.overallScore = computeOverallRubricScore(authoritativeRubric.categories);
+
+    // STRICT INVARIANT: Overall score is ALWAYS mathematically recomputed from category weighted sum
+    const overallScore = computeOverallRubricScore(finalCategories);
+
+    authoritativeRubric = {
+      overallScore,
+      categories: finalCategories,
+      feedback: rawQualitative.feedback || {
+        strengths: rawQualitative.strengths || (authoritativeEvidence.passed ? ["Passed execution tests"] : ["Completed interview simulation"]),
+        improvements: rawQualitative.improvements || ["Continue practicing timed technical interviews"],
+        generalNotes: "Evaluated by TRACE Bar Raiser with authoritative objective execution scoring.",
+      },
+      isGeminiEvaluated: Boolean(rawQualitative.isGeminiEvaluated),
+    };
   }
 
   // 7. Create final immutable snapshot
@@ -343,6 +414,8 @@ export function submitInterviewSession(sessionId, finalPayload = {}) {
     ...session,
     code: finalCode,
     explanation: finalExplanation,
+    approach: finalApproach,
+    followUps: finalFollowUps,
     status: "submitted",
     phase: "submitted",
     elapsedSeconds: finalElapsedSeconds,

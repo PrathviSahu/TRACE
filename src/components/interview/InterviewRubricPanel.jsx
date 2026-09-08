@@ -3,13 +3,13 @@ import { RUBRIC_WEIGHTS } from "../../services/interviewSimulationEngine.js";
 
 const CATEGORY_META = {
   problemUnderstanding: { label: "Problem Understanding", weight: "15%", icon: "📖" },
-  approachReasoning:    { label: "Approach & Reasoning", weight: "20%", icon: "🧠" },
+  approachReasoning:    { label: "Approach / Reasoning", weight: "20%", icon: "🧠" },
   patternRecognition:   { label: "Pattern Recognition", weight: "10%", icon: "🧩" },
-  correctness:          { label: "Correctness (Deterministic)", weight: "20%", icon: "✅" },
+  correctness:          { label: "Correctness", weight: "20%", icon: "✅" },
   codeQuality:          { label: "Code Quality", weight: "10%", icon: "💻" },
   complexityAnalysis:   { label: "Complexity Analysis", weight: "10%", icon: "⚡" },
   communication:        { label: "Communication", weight: "10%", icon: "💬" },
-  timeManagement:       { label: "Time Management (Deterministic)", weight: "5%", icon: "⏱️" },
+  timeManagement:       { label: "Time Management", weight: "5%", icon: "⏱️" },
 };
 
 export default function InterviewRubricPanel({ rubricResult, evidence, session }) {

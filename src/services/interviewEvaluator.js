@@ -50,6 +50,8 @@ CRITICAL: Return ONLY a valid JSON object with this exact structure (NO markdown
 export function validateEvaluationSchema(data) {
   if (!data || typeof data !== "object") return null;
 
+  const target = (data.categories && typeof data.categories === "object") ? data.categories : data;
+
   const categories = [
     "problemUnderstanding",
     "approachReasoning",
@@ -60,17 +62,13 @@ export function validateEvaluationSchema(data) {
   ];
 
   for (const cat of categories) {
-    if (!data[cat] || typeof data[cat] !== "object") return null;
-    const score = Number(data[cat].score);
+    if (!target[cat] || typeof target[cat] !== "object") return null;
+    const score = Number(target[cat].score);
     if (isNaN(score) || score < 0 || score > 5) return null;
-    if (typeof data[cat].reasoning !== "string") return null;
+    if (typeof target[cat].reasoning !== "string") return null;
   }
 
-  if (!Array.isArray(data.strengths) || !Array.isArray(data.improvements)) {
-    return null;
-  }
-
-  return data;
+  return target;
 }
 
 /**

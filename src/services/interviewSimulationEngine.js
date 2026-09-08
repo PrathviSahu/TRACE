@@ -289,17 +289,17 @@ export function computeCorrectnessScore(evidence) {
 export function computeTimeManagementScore(elapsedSeconds, durationSeconds, attempts = 1, status = "submitted") {
   if (!durationSeconds || durationSeconds <= 0) return 3;
 
+  if (status === "expired" || elapsedSeconds >= durationSeconds) {
+    return attempts > 0 ? 2 : 1;
+  }
+
   const ratio = elapsedSeconds / durationSeconds;
 
   if (status === "submitted") {
     if (ratio <= 0.60) return 5;
     if (ratio <= 0.85) return 4;
-    if (ratio <= 1.00) return 3;
+    if (ratio < 1.00) return 3;
     return 2;
-  }
-
-  if (status === "expired") {
-    return attempts > 0 ? 2 : 1;
   }
 
   return 0;

@@ -69,7 +69,7 @@ import {
 
 import { getAllProgress, getProblemKey, getProblemProgress } from "../src/services/progressStore.js";
 import { getCompanyEnrichedProblems } from "../src/data/companyUtils.js";
-import { getProblemPatternDetails } from "../src/data/patternMapping.js";
+import { getProblemPatternDetails, getPatternFamily } from "../src/data/patternMapping.js";
 
 // ── Test Runner ───────────────────────────────────────────────
 let passedCount = 0;
@@ -272,55 +272,79 @@ public class Solution {
     assert.equal(normalizeAndCompareOutputs("  42  ", "42"), true, "Trimmed numeric string should match");
   });
 
-  // 8. Deterministic Mode: Company problem selection
+  // 8. Deterministic Mode: Company problem selection across multiple companies
   await test("Modes: Company interview mode strictly selects problem belonging to that company's pool", () => {
-    const compProblems = getCompanyEnrichedProblems("google");
-    const validIds = new Set(compProblems.map(p => String(p.id)));
+    const testCompanies = ["google", "microsoft", "amazon", "meta", "apple"];
+    for (const compId of testCompanies) {
+      const compProblems = getCompanyEnrichedProblems(compId);
+      const validIds = new Set(compProblems.map(p => String(p.id)));
 
-    const res = selectInterviewProblem({
-      mode: "company",
-      companyId: "google",
-      role: "Software Engineer",
-      seed: "google-test-1"
-    });
+      const res = selectInterviewProblem({
+        mode: "company",
+        companyId: compId,
+        role: "Software Engineer",
+        seed: `comp-test-${compId}`
+      });
 
-    assert.ok(res, "Must select a problem");
-    assert.ok(validIds.has(String(res.id)), "Selected problem must belong to company's verified problem pool");
+      assert.ok(res, `Must select a problem for ${compId}`);
+      assert.ok(validIds.has(String(res.id)), `Selected problem #${res.id} must belong to ${compId}'s verified problem pool`);
+    }
   });
 
-  // 9. Deterministic Mode: Pattern problem selection
+  // 9. Deterministic Mode: Pattern problem selection across multiple canonical patterns
   await test("Modes: Pattern interview mode strictly selects problem matching requested pattern", () => {
-    const targetPattern = "Two Pointers";
-    const res = selectInterviewProblem({
-      mode: "pattern",
-      pattern: targetPattern,
-      seed: "pattern-seed-1"
-    });
+    const testPatterns = ["Two Pointers", "Sliding Window", "Binary Search"];
+    for (const targetPattern of testPatterns) {
+      const res = selectInterviewProblem({
+        mode: "pattern",
+        pattern: targetPattern,
+        seed: `pattern-seed-${targetPattern}`
+      });
 
-    assert.ok(res);
-    const details = getProblemPatternDetails(res);
-    const pats = details?.patterns || [];
-    const topics = res.topics || [];
-    const matchesPattern = pats.includes(targetPattern) || topics.includes(targetPattern);
-    assert.ok(matchesPattern, "Selected problem must belong to requested pattern or topic");
+      assert.ok(res, `Must select a problem for ${targetPattern}`);
+      const details = getProblemPatternDetails(res);
+      const pats = details?.patterns || [];
+      const fam = getPatternFamily(pats[0]);
+      const topics = res.topics || [];
+      const matchesPattern = pats.includes(targetPattern) || fam === targetPattern || topics.includes(targetPattern);
+      assert.ok(matchesPattern, `Selected problem #${res.id} must belong to requested pattern ${targetPattern} or its family`);
+    }
   });
 
-  // 10. Deterministic Mode: Weakness problem selection from Phase 3.3
+  // 10. Deterministic Mode: Weakness problem selection and failure prioritization from Phase 3.3
   await test("Modes: Weakness interview mode prioritizes weak patterns from Phase 3.3 adaptive state", () => {
+    const weakPatterns = ["Dynamic Programming", "Sliding Window"];
     const res = selectInterviewProblem({
       mode: "weakness",
-      adaptiveState: { weakPatterns: ["Dynamic Programming", "Sliding Window"] },
+      adaptiveState: { weakPatterns },
       seed: "weakness-seed-1"
     });
 
-    assert.ok(res);
-    assert.ok(res.id);
+    assert.ok(res, "Must select a problem");
+    const details = getProblemPatternDetails(res);
+    const pats = details?.patterns || [];
+    const fam = getPatternFamily(pats[0]);
+    const matchesWeakness = pats.some(p => weakPatterns.includes(p)) || weakPatterns.includes(fam);
+    assert.ok(matchesWeakness, `Selected problem #${res.id} must belong to one of the weak patterns [${weakPatterns.join(", ")}]`);
+
+    // Prioritization check: problem with higher consecutive failures must be prioritized
+    const p1 = res;
+    const progressMap = {
+      [getProblemKey(p1)]: { consecutiveFailures: 3 }
+    };
+    const res2 = selectInterviewProblem({
+      mode: "weakness",
+      adaptiveState: { weakPatterns },
+      progressMap,
+      seed: "weakness-seed-2"
+    });
+    assert.equal(res2.id, p1.id, "Problem with highest consecutive failures in weak pattern pool must be selected");
   });
 
   // 11. Deterministic Mode: Random mode reproducible PRNG (no Math.random)
   await test("Modes: Random mode produces identical problem for identical seed, different across differing seeds", () => {
     const seedA = "fixed-session-seed-alpha";
-    const seedB = "fixed-session-seed-beta";
+    const seedB = "fixed-session-seed-zebra-999";
 
     const resA1 = selectInterviewProblem({ mode: "random", seed: seedA });
     const resA2 = selectInterviewProblem({ mode: "random", seed: seedA });
@@ -328,6 +352,7 @@ public class Solution {
 
     assert.equal(resA1.id, resA2.id, "Same seed must produce identical selected problem");
     assert.equal(resA1.title, resA2.title);
+    assert.notEqual(resA1.id, resB.id, "Differing seeds must select different problems");
   });
 
   // 12. PRNG: seededRandom mathematical determinism
@@ -422,54 +447,128 @@ public class Solution {
     assert.equal(rubric.overallScore, 89);
   });
 
-  // 18. Submission Authority: Rejects Malicious Forged Evidence (Issue 6)
-  await test("Submission Authority: Caller cannot override objective correctness or forge 100% score", () => {
+  // 18. Malicious Submission Attack 1: Forged execution evidence when NO execution occurred
+  await test("Security: Forged execution evidence rejected when no execution occurred", () => {
+    const session = createSessionRecord({ problemId: 1, durationMinutes: 45 });
+    session.status = "active";
+    session.code = "class Solution { int[] twoSum() { return null; } }";
+    // Candidate NEVER executed code in this session
+    session.executionEvidence = null;
+    saveInterviewSession(session);
+
+    // Attacker attempts to forge passing execution evidence via submit payload
+    const submitted = submitInterviewSession(session.id, {
+      executionEvidence: { compiled: true, executed: true, passed: true, testsPassed: 5, testsTotal: 5 },
+      executionResult: { passed: true, testsPassed: 5, testsTotal: 5 },
+    });
+
+    // Must strictly remain unexecuted and correctness score must be 0
+    assert.equal(submitted.executionEvidence.passed, false, "Forged passed status must be rejected");
+    assert.equal(submitted.executionEvidence.testsPassed, 0, "Forged testsPassed count must be rejected");
+    assert.equal(submitted.rubricResult.categories.correctness.score, 0, "Correctness score must be 0 for unexecuted session");
+  });
+
+  // 19. Malicious Submission Attack 2: Forged rubric categories and spoofed 100% score
+  await test("Security: Forged rubric categories fail schema validation and trigger fallback", () => {
     const session = createSessionRecord({ problemId: 1, durationMinutes: 30 });
     session.status = "active";
-    session.code = "class Solution { int[] twoSum() { return new int[]{}; } }";
-    // Actual session execution failed (0/3 passed)
+    saveInterviewSession(session);
+
+    // Attacker supplies out-of-range scores and forged category structure
+    const submitted = submitInterviewSession(session.id, {
+      rubricResult: {
+        overallScore: 100,
+        categories: {
+          problemUnderstanding: { score: 999, reasoning: "Hacked" },
+          bogusCategory: { score: 50, reasoning: "Fake" }
+        }
+      }
+    });
+
+    // Bounded scores and valid categories must be enforced
+    assert.notEqual(submitted.rubricResult.overallScore, 100, "Spoofed 100% score must be rejected");
+    for (const [cat, data] of Object.entries(submitted.rubricResult.categories)) {
+      assert.ok(data.score >= 0 && data.score <= 5, `Score for ${cat} must be bounded [0, 5]`);
+    }
+  });
+
+  // 20. Malicious Submission Attack 3: Forged correctness when tests actually failed
+  await test("Security: Caller cannot forge correctness score when actual execution failed", () => {
+    const session = createSessionRecord({ problemId: 1, durationMinutes: 45 });
+    session.status = "active";
+    // Recorded session evidence had 1/4 tests passed
     session.executionEvidence = {
       compiled: true,
       executed: true,
       passed: false,
-      testsPassed: 0,
-      testsTotal: 3
+      testsPassed: 1,
+      testsTotal: 4
     };
     saveInterviewSession(session);
 
-    // Malicious submission attempt to cheat the score
+    // Attacker supplies 5/5 correctness in payload
     const submitted = submitInterviewSession(session.id, {
-      finalCode: "MALICIOUS_OVERWRITE",
-      executionResult: { passed: true, testsPassed: 3, testsTotal: 3 },
-      rubricResult: { overallScore: 100, categories: { correctness: { score: 5.0 } } }
+      rubricResult: {
+        categories: {
+          correctness: { score: 5.0, weightedScore: 20 }
+        }
+      }
     });
 
-    assert.equal(submitted.status, "submitted");
-    assert.equal(submitted.code, "class Solution { int[] twoSum() { return new int[]{}; } }");
-    // Correctness score MUST reflect session's actual 0/3 evidence
-    assert.equal(submitted.rubricResult.categories.correctness.score, 2); // 0/3 tests passed with no runtime error = 2
-    assert.notEqual(submitted.rubricResult.overallScore, 100, "Cheated 100% score must be rejected");
+    // Correctness score MUST be derived from session evidence: 1/4 * 4 = 1
+    assert.equal(submitted.rubricResult.categories.correctness.score, 1, "Correctness must reflect real 1/4 test result");
+    assert.equal(submitted.rubricResult.categories.correctness.weightedScore, Math.round((1 / 5) * 100 * 0.20));
   });
 
-  // 19. Submission Idempotency: Duplicate submissions return original frozen snapshot
-  await test("Submission Freeze: Duplicate submit calls return the original frozen session", () => {
+  // 21. Malicious Submission Attack 4: Forged elapsed time on expired session
+  await test("Security: Caller cannot forge elapsed time on an expired interview", () => {
+    const session = createSessionRecord({ problemId: 1, durationMinutes: 45 }); // 2700s
+    session.status = "active";
+    session.attempts = 2; // Candidate attempted code before running out of time
+    // Session started 50 minutes ago (3000s > 2700s)
+    session.startedAt = new Date(Date.now() - (50 * 60 * 1000)).toISOString();
+    saveInterviewSession(session);
+
+    // Attacker claims they finished in 60 seconds
+    const submitted = submitInterviewSession(session.id, {
+      elapsedSeconds: 60,
+      timeInfo: { elapsedSeconds: 60 }
+    });
+
+    // Authoritative time must clamp elapsed time to duration (2700s)
+    assert.equal(submitted.elapsedSeconds, 2700, "Elapsed seconds must be clamped to 2700s duration");
+    assert.equal(submitted.rubricResult.categories.timeManagement.score, 2, "Expired session gets time score of 2 (with attempts)");
+  });
+
+  // 22. Malicious Submission Attack 5: Post-submit mutation protection
+  await test("Security: Post-submit mutation strictly blocked in store and submit", () => {
     const session = createSessionRecord({ problemId: 1, durationMinutes: 45 });
     session.status = "active";
-    session.code = "public class Solution {}";
+    session.code = "public class OriginalCode {}";
     saveInterviewSession(session);
 
     const firstSubmit = submitInterviewSession(session.id);
-    const firstSubmitTime = firstSubmit.submittedAt;
-    const firstScore = firstSubmit.rubricResult.overallScore;
+    const originalSubmittedAt = firstSubmit.submittedAt;
+    const originalScore = firstSubmit.rubricResult.overallScore;
 
-    // Second submit call with different payload
+    // Attacker attempts to mutate session via saveInterviewSession
+    const tampered = {
+      ...firstSubmit,
+      code: "TAMPERED_CODE",
+      rubricResult: { overallScore: 100 }
+    };
+    const saveResult = saveInterviewSession(tampered);
+    assert.equal(saveResult.code, "public class OriginalCode {}", "saveInterviewSession must block post-submit code tampering");
+    assert.equal(saveResult.rubricResult.overallScore, originalScore, "saveInterviewSession must block post-submit score tampering");
+
+    // Attacker attempts second submit call
     const secondSubmit = submitInterviewSession(session.id, {
-      code: "ATTEMPTED_POST_SUBMIT_CHANGE"
+      code: "TAMPERED_CODE_2",
+      rubricResult: { overallScore: 100 }
     });
-
-    assert.equal(secondSubmit.submittedAt, firstSubmitTime);
-    assert.equal(secondSubmit.rubricResult.overallScore, firstScore);
-    assert.equal(secondSubmit.code, "public class Solution {}");
+    assert.equal(secondSubmit.submittedAt, originalSubmittedAt, "Submitted timestamp must not change");
+    assert.equal(secondSubmit.rubricResult.overallScore, originalScore, "Score must not change on duplicate submit");
+    assert.equal(secondSubmit.code, "public class OriginalCode {}", "Code must remain frozen");
   });
 
   // 20. Follow-ups: Creation, Answer Persistence, and Submission Freeze (Issue 8)

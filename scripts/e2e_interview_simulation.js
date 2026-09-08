@@ -130,8 +130,22 @@ async function runBrowserE2E() {
 
     await client.captureScreenshot("phase3_4_setup_launchpad.png");
 
-    // 4. Select Mode & Duration, then Launch Simulation
-    console.log("4. Selecting 45-min duration and launching simulation...");
+    // 4. Test All 4 Mode Buttons (Company, Pattern, Weakness, Random) & Launch Simulation
+    console.log("4. Testing all 4 Interview Modes (Company, Pattern, Weakness, Random)...");
+    await client.eval("document.getElementById('mode-btn-company')?.click()");
+    await sleep(200);
+    await client.eval("document.getElementById('mode-btn-pattern')?.click()");
+    await sleep(200);
+    const hasPatternSelect = await client.eval("!!document.getElementById('sim-pattern-select')");
+    assert.ok(hasPatternSelect, "Pattern dropdown must appear when Pattern mode is active");
+    await client.eval("document.getElementById('mode-btn-weakness')?.click()");
+    await sleep(200);
+    await client.eval("document.getElementById('mode-btn-random')?.click()");
+    await sleep(200);
+    await client.eval("document.getElementById('mode-btn-company')?.click()");
+    await sleep(200);
+    console.log("  ✓ All 4 interview mode selectors verified interactive in browser.");
+
     await client.eval("document.getElementById('duration-btn-45')?.click()");
     await sleep(300);
 
