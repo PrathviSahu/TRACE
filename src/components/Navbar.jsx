@@ -35,7 +35,7 @@ export default function Navbar() {
         <Link to="/data-structures" className={`nav-item ${loc.pathname === '/data-structures' ? 'active-pill' : ''}`}>
           Data Structures
         </Link>
-        <Link to="/companies" className={`nav-item ${loc.pathname === '/companies' ? 'active-pill' : ''}`}>
+        <Link to="/companies" className={`nav-item ${loc.pathname.startsWith('/companies') ? 'active-pill' : ''}`}>
           Companies
         </Link>
         <Link to="/learn" className={`nav-item ${loc.pathname === '/learn' ? 'active-pill' : ''}`}>

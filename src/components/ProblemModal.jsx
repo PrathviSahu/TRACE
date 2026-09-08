@@ -4,6 +4,9 @@ import { useTraceStore } from '../store/traceStore.js';
 import { getProblemTemplate, PRESET_SOLUTIONS } from '../data/problemTemplates.js';
 import { getProblemDescription } from '../data/problemDescriptions.js';
 import { getProblemSolutions } from '../data/problemSolutions.js';
+import { getProblemCompanyCrossref } from '../data/companyUtils.js';
+import { useProblemProgress, updateProblemProgress } from '../services/progressStore.js';
+import { useMemo } from 'react';
 import {
   generateProblemSolutions,
   generateProblemDescription,
@@ -47,6 +50,8 @@ export default function ProblemModal({ problem, onClose }) {
   const [generatingSolutions, setGeneratingSolutions] = useState(false);
   const [genSolutionError, setGenSolutionError] = useState('');
   const [generatingDesc, setGeneratingDesc] = useState(false);
+  const [prog, setProg] = useProblemProgress(problem?.id);
+  const crossref = useMemo(() => problem ? getProblemCompanyCrossref(problem.id) : null, [problem]);
   const [genDescError, setGenDescError] = useState('');
 
   // AI Tutor states inside modal
@@ -122,6 +127,12 @@ export default function ProblemModal({ problem, onClose }) {
   }
 
   function handleVisualize(customCode) {
+    if (problem?.id) {
+      updateProblemProgress(problem.id, {
+        attempts: (prog?.attempts || 0) + 1,
+        lastAttempted: new Date().toISOString()
+      });
+    }
     // Set matching language in store
     if (setStoreLanguage && selectedLanguage) {
       setStoreLanguage(selectedLanguage);
@@ -367,6 +378,68 @@ Guidelines:
                 </div>
               </div>
               <h2 style={{ margin:0, fontSize:20, fontWeight:700, color:'#e6edf3', letterSpacing:'-0.01em', lineHeight:1.3 }}>{problem.name}</h2>
+              {/* User Progress & Multi-Company Badges */}
+              <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginTop: 8 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <span style={{ fontSize: 11, color: "#8b949e", fontWeight: 600 }}>Status:</span>
+                  <select
+                    value={prog?.status || "unsolved"}
+                    onChange={e => setProg({ status: e.target.value })}
+                    style={{
+                      background: "#0d1117",
+                      color: prog?.status === "solved" ? "#00b8a3" : prog?.status === "need_revision" ? "#ffa116" : prog?.status === "forgot_approach" ? "#ef4743" : "#8b949e",
+                      border: "1px solid rgba(255,255,255,0.15)",
+                      fontSize: 11.5,
+                      fontWeight: 600,
+                      padding: "2px 8px",
+                      borderRadius: 6,
+                      cursor: "pointer",
+                    }}
+                  >
+                    <option value="unsolved">○ Unsolved</option>
+                    <option value="solved">✓ Solved</option>
+                    <option value="need_revision">⚡ Need Revision</option>
+                    <option value="forgot_approach">⚠️ Forgot Approach</option>
+                  </select>
+                </div>
+
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <span style={{ fontSize: 11, color: "#8b949e", fontWeight: 600 }}>Confidence:</span>
+                  <select
+                    value={prog?.confidence || "medium"}
+                    onChange={e => setProg({ confidence: e.target.value })}
+                    style={{
+                      background: "#0d1117",
+                      color: "#c9d1d9",
+                      border: "1px solid rgba(255,255,255,0.15)",
+                      fontSize: 11.5,
+                      padding: "2px 8px",
+                      borderRadius: 6,
+                      cursor: "pointer",
+                    }}
+                  >
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                  </select>
+                </div>
+
+                {prog?.attempts > 0 && (
+                  <span style={{ fontSize: 11, color: "#6e7681", fontFamily: "var(--mono,monospace)" }}>
+                    Attempts: {prog.attempts}
+                  </span>
+                )}
+
+                {crossref && crossref.companies && crossref.companies.length > 0 && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginLeft: "auto", flexWrap: "wrap" }}>
+                    <span style={{ fontSize: 11, color: "#8b949e", fontWeight: 600 }}>Asked by {crossref.companies.length} companies:</span>
+                    <span style={{ fontSize: 11, color: "#79a8ff", fontWeight: 600 }}>
+                      {crossref.companies.slice(0, 4).map(c => c.name).join(", ")}
+                      {crossref.companies.length > 4 ? " (+" + (crossref.companies.length - 4) + " more)" : ""}
+                    </span>
+                  </div>
+                )}
+              </div>
               {desc?.category && <div style={{ marginTop:4, fontSize:12, color:'#6e7681' }}>{desc.category}</div>}
             </div>
             <button onClick={onClose} className="pm-btn pm-btn-close" style={{ padding:'6px 12px', flexShrink:0 }}>✕</button>
