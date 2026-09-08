@@ -1,8 +1,8 @@
 # TRACE Phase 3.3 — Adaptive Feedback Loop
 
-> **Status**: Completed & Verified
+> **Status**: Completed & Audited (Phase 3.3.1 Mathematical Correction Pass Applied)
 > **Target**: Closed deterministic feedback loop: Practice → Observe → Update Model → Adapt Future Plan
-> **Preceding Commits**: `f78efe2` (Phase 3.1), `38e3d8e` (Phase 3.2)
+> **Preceding Commits**: `f78efe2` (Phase 3.1), `38e3d8e` (Phase 3.2), `af35d4c` (Phase 3.3 initial)
 
 ---
 
@@ -352,6 +352,52 @@ Existing keys untouched:
 
 ---
 
+---
+
+## 19B. Phase 3.3.1 Mathematical Correction Pass
+
+Based on rigorous audit, 6 key architectural & mathematical corrections were implemented:
+
+### 1. Hard Daily Time Budget Enforcement
+- Replaced relaxed `dailyStudyMinutes + 15` tolerance with hard limit:
+  `day.estimatedMinutes <= profile.dailyStudyMinutes` (strict cap, no tolerance).
+- When a candidate problem is considered: `budgetLeft - p.estMinutes >= 0`.
+- Pruning loop strictly drives `totalEst <= dayBudget`, pruning lowest-priority problems and/or revision problems, or swapping single oversized problems for smaller difficulty equivalents from the same pattern family.
+
+### 2. Direct Low-Confidence Revision Pressure
+- Added `LOW_CONFIDENCE_PRESSURE = 12` constant.
+- When `prog.confidence === "low"`, directly increments revision pressure by `+ 12 * w`.
+- Solves the silent edge case where a user solves a problem with 0 hints and 0 solution reveals, but explicitly flags low confidence.
+
+### 3. True Spaced Repetition Scheduling
+- Replaced monolithic threshold injection with per-problem deterministic scheduling intervals:
+  - `FAILED` (unsolved / forgot_approach): **1 day**
+  - `LOW_QUALITY` (low confidence / quality < 50 / consecutive failures): **2 days**
+  - `ASSISTED` (hints used / solution viewed / quality 50-74): **4 days**
+  - `STRONG` (independent solve, high confidence, quality >= 75): **7 days**
+  - `MASTERED` (sustained streak >= 3, clean solve, quality >= 85): **14 days**
+- Implemented `computeRevisionIntervalDays(prog, difficulty)` and `computeNextRevisionDate(prog, lastAttempted, timezone, difficulty)`.
+- Revision items are injected on a future day only when `day.date >= candidate.nextRevDate`, preserving true spaced intervals.
+
+### 4. Difficulty Trend Verification on Real Problems
+- Fixed tests to exercise actual execution branches rather than returning fallback maintain:
+  - 3 clean Easy solves in last 7 days (`#1`, `#121`, `#283`) → `increase`
+  - 2 Medium/Hard failures in last 7 days (`#560`, `#875`) → `reduce`
+- Added support for injectable `problems` parameter in `computeDifficultyTrend` for testing and custom evaluation.
+
+### 5. Pattern & Topic Success Rate Denominator
+- Removed problematic `solved + (attempts > 0 ? 1 : 0)` denominator.
+- Calculated accurately: `sig.successRate = sig.attempts > 0 ? sig.solved / sig.attempts : 0`.
+- 5 attempts with 1 solve now reports accurate `0.20` success rate (not inflated `0.50`).
+
+### 6. Calendar-Aware Temporal Day Boundary & Timezones
+- Introduced `classifyPlanDay(day, nowMs, timezone)` returning `{ status: "past" | "today" | "future", isLocked: boolean }`.
+- Boundary definitions:
+  - `day.date < todayStr`: **past** → locked from adaptation (even if user forgot to mark `completed`).
+  - `day.date === todayStr`: **today** → current study day, locked if completed.
+  - `day.date > todayStr`: **future** → eligible for adaptive mutation.
+- Fully respects `profile.timezone` established in Phase 3.1.
+
 ## 20. Phase 3.4 Integration Points
 
 Phase 3.3 reserves these hooks for Phase 3.4 (Timed Interview Simulation):
@@ -368,7 +414,7 @@ Phase 3.4 must NOT implement adaptive mutation — that belongs to Phase 3.3 onl
 
 ## 21. Test Suite
 
-`scripts/test_phase3_3.js` — **23/23 tests passed**:
+`scripts/test_phase3_3.js` — **26/26 tests passed**:
 
 1. No-performance baseline
 2. Single failure — bounded adaptation
@@ -376,23 +422,26 @@ Phase 3.4 must NOT implement adaptive mutation — that belongs to Phase 3.3 onl
 4. Strong performance — success detection
 5. Hint usage — weaker signal than independent
 6. Solution viewed — not equivalent to mastery
-7. Confidence — low confidence increases pressure
+7. Confidence — low confidence directly increases revision pressure
 8. Pattern weakness detection
 9. Topic weakness detection
-10. Difficulty adaptation increase
-11. Difficulty adaptation reduce
-12. Revision spacing
+10. Difficulty adaptation increase (verified on real LeetCode Easy problems)
+11. Difficulty adaptation reduce (verified on real LeetCode Medium/Hard failures)
+12. Revision spacing — strong performance yields lower pressure
 13. Company relevance preservation
-14. Time budget enforcement
+14. Time budget enforcement (hard constraint: estimatedMinutes <= dailyStudyMinutes)
 15. Interview boundary
-16. Past immutability
-17. Future mutation
+16. Past immutability (completed days preserved)
+17. Future mutation (unlocked future days adapted)
 18. Duplicate prevention
 19. Determinism
 20. Versioning
 21. Insufficient pool — graceful degradation
 22. No infinite adaptation — cooldown
-23. Recency weight formula (bonus)
+23. Pattern success rate denominator reflects actual attempts (not inflated)
+24. True revision spacing — deterministic per-problem schedule (1, 2, 4, 7, 14 days)
+25. Calendar boundary — classifyPlanDay assigns past, today, future and past immutability
+26. Recency weight formula (half-life at 0, 14, 28 days)
 
 ---
 

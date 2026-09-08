@@ -30,6 +30,11 @@ import {
   buildAdaptiveState,
   adaptFutureDays,
   canAdaptNow,
+  computeRevisionIntervalDays,
+  computeNextRevisionDate,
+  classifyPlanDay,
+  REVISION_INTERVALS,
+  LOW_CONFIDENCE_PRESSURE,
   RECENCY_HALF_LIFE_DAYS,
   MIN_EVIDENCE_ATTEMPTS,
   ADAPTATION_COOLDOWN_MS,
@@ -188,6 +193,13 @@ test("Confidence: low confidence increases revision pressure vs high confidence"
   const qualHigh = computeSolveQuality(highConfProgress["1"], "Medium");
   const qualLow  = computeSolveQuality(lowConfProgress["1"],  "Medium");
   assert.ok(qualHigh > qualLow, `High confidence quality (${qualHigh}) > Low confidence (${qualLow})`);
+
+  // Direct test of revision pressure: low confidence must directly drive revision pressure
+  const pressHigh = computeRevisionPressure(highConfProgress, NOW_MS);
+  const pressLow  = computeRevisionPressure(lowConfProgress,  NOW_MS);
+  assert.strictEqual(pressHigh, 0, "Clean solve with high confidence should have 0 revision pressure");
+  assert.ok(pressLow > pressHigh, `Low confidence revision pressure (${pressLow}) must exceed high confidence (${pressHigh})`);
+  assert.ok(pressLow >= 10, `Low confidence must produce meaningful revision pressure (got ${pressLow})`);
 });
 
 // ─────────────────────────────────────────────────────────────
@@ -278,38 +290,62 @@ test("Topic weakness: weak topic detected with sufficient evidence", () => {
 // 10. DIFFICULTY ADAPTATION — INCREASE
 // ─────────────────────────────────────────────────────────────
 test("Difficulty adaptation increase: 3+ clean Easy solves in 7 days → increase", () => {
-  // We simulate by calling computeDifficultyTrend with nowMs set to a specific date
-  // and progress entries dated 3-4 days ago
-  const FIVE_DAYS_AGO = new Date(NOW_MS - 5 * 24 * 60 * 60 * 1000).toISOString();
-  const THREE_DAYS_AGO_T = new Date(NOW_MS - 3 * 24 * 60 * 60 * 1000).toISOString();
+  const TWO_DAYS_AGO   = new Date(NOW_MS - 2 * 24 * 60 * 60 * 1000).toISOString();
+  const THREE_DAYS_AGO = new Date(NOW_MS - 3 * 24 * 60 * 60 * 1000).toISOString();
+  const FOUR_DAYS_AGO  = new Date(NOW_MS - 4 * 24 * 60 * 60 * 1000).toISOString();
 
-  // Three Easy problems solved cleanly in last 7 days
-  // Simulated via problems that exist in NORMALIZED_PROBLEMS — use arbitrary keys
+  // Test with real normalized problems: #1 Two Sum (Easy), #121 Stock (Easy), #283 Move Zeroes (Easy)
   const easyProgress = {
-    // These keys need to exist in NORMALIZED_PROBLEMS to be counted
-    // We test the logic by using a simple mock
-    "mock_easy_1": { status: "solved", lastAttempted: FIVE_DAYS_AGO, hintsUsed: 0, solutionViewed: false },
-    "mock_easy_2": { status: "solved", lastAttempted: THREE_DAYS_AGO_T, hintsUsed: 0, solutionViewed: false },
-    "mock_easy_3": { status: "solved", lastAttempted: THREE_DAYS_AGO_T, hintsUsed: 0, solutionViewed: false },
+    "1":   { status: "solved", lastAttempted: TWO_DAYS_AGO,   hintsUsed: 0, solutionViewed: false, confidence: "high" },
+    "121": { status: "solved", lastAttempted: THREE_DAYS_AGO, hintsUsed: 0, solutionViewed: false, confidence: "high" },
+    "283": { status: "solved", lastAttempted: FOUR_DAYS_AGO,  hintsUsed: 0, solutionViewed: false, confidence: "high" },
   };
 
-  // Since mock keys won't be in NORMALIZED_PROBLEMS, we test via direct signal computation
-  // The trend computation uses NORMALIZED_PROBLEMS internally — skip to formula validation
-  const trend = computeDifficultyTrend({}, null, NOW_MS);
-  assert.ok(["increase", "maintain", "reduce"].includes(trend), "Trend must be one of the valid values");
+  const trend = computeDifficultyTrend(easyProgress, null, NOW_MS);
+  assert.strictEqual(trend, "increase", "3 clean Easy solves in 7 days must produce 'increase' trend");
+
+  // Also test with injectable problem list
+  const customEasyList = [
+    { id: "e1", difficulty: "Easy" },
+    { id: "e2", difficulty: "Easy" },
+    { id: "e3", difficulty: "Easy" },
+  ];
+  const customEasyProg = {
+    "e1": { status: "solved", lastAttempted: TWO_DAYS_AGO,   hintsUsed: 0, solutionViewed: false },
+    "e2": { status: "solved", lastAttempted: THREE_DAYS_AGO, hintsUsed: 0, solutionViewed: false },
+    "e3": { status: "solved", lastAttempted: FOUR_DAYS_AGO,  hintsUsed: 0, solutionViewed: false },
+  };
+  const trendCustom = computeDifficultyTrend(customEasyProg, null, NOW_MS, customEasyList);
+  assert.strictEqual(trendCustom, "increase", "Injectable list with 3 clean Easy solves must return 'increase'");
 });
 
 // ─────────────────────────────────────────────────────────────
 // 11. DIFFICULTY ADAPTATION — REDUCE
 // ─────────────────────────────────────────────────────────────
 test("Difficulty adaptation: failed Medium/Hard problems produce reduce signal", () => {
-  // We test the computeDifficultyTrend formula directly
-  // It only counts NORMALIZED_PROBLEMS entries, so with empty data it returns "maintain"
-  const trend = computeDifficultyTrend({}, null, NOW_MS);
-  assert.strictEqual(trend, "maintain", "No data → maintain difficulty");
+  const TWO_DAYS_AGO   = new Date(NOW_MS - 2 * 24 * 60 * 60 * 1000).toISOString();
+  const THREE_DAYS_AGO = new Date(NOW_MS - 3 * 24 * 60 * 60 * 1000).toISOString();
 
-  // When no hard failures in window: maintain
-  assert.ok(typeof computeDifficultyTrend === "function");
+  // Test with real normalized problems: #560 Subarray Sum (Medium), #875 Koko Eating Bananas (Medium)
+  const hardFailProgress = {
+    "560": { status: "need_revision", attempts: 3, lastAttempted: TWO_DAYS_AGO,   hintsUsed: 2, solutionViewed: true },
+    "875": { status: "unsolved",      attempts: 2, lastAttempted: THREE_DAYS_AGO, hintsUsed: 2, solutionViewed: false },
+  };
+
+  const trend = computeDifficultyTrend(hardFailProgress, null, NOW_MS);
+  assert.strictEqual(trend, "reduce", "2 recent Medium/Hard failures in 7 days must produce 'reduce' trend");
+
+  // Also test with injectable problem list
+  const customHardList = [
+    { id: "h1", difficulty: "Hard" },
+    { id: "m1", difficulty: "Medium" },
+  ];
+  const customHardProg = {
+    "h1": { status: "unsolved",      attempts: 2, lastAttempted: TWO_DAYS_AGO },
+    "m1": { status: "need_revision", attempts: 2, lastAttempted: THREE_DAYS_AGO },
+  };
+  const trendCustom = computeDifficultyTrend(customHardProg, null, NOW_MS, customHardList);
+  assert.strictEqual(trendCustom, "reduce", "Injectable list with 2 Med/Hard failures must return 'reduce'");
 });
 
 // ─────────────────────────────────────────────────────────────
@@ -348,15 +384,15 @@ test("Company preservation: adapted plan still uses company-specific problems", 
 // ─────────────────────────────────────────────────────────────
 // 14. TIME BUDGET RESPECTED
 // ─────────────────────────────────────────────────────────────
-test("Time budget: every adapted future day stays within dailyStudyMinutes + 15 tolerance", () => {
+test("Time budget: every adapted future day stays within dailyStudyMinutes (hard constraint)", () => {
   const adaptiveState = buildAdaptiveState(BASE_PROFILE, BASE_PLAN, {}, null, NOW_MS);
   const { adaptedPlan } = adaptFutureDays(BASE_PLAN, adaptiveState, BASE_PROFILE, {}, NOW_MS);
 
   const budget = BASE_PROFILE.dailyStudyMinutes;
   for (const day of adaptedPlan.days) {
     assert.ok(
-      day.estimatedMinutes <= budget + 15,
-      `Day ${day.dayIndex} exceeded budget: ${day.estimatedMinutes} > ${budget + 15}`
+      day.estimatedMinutes <= budget,
+      `Day ${day.dayIndex} exceeded hard budget: ${day.estimatedMinutes} > ${budget}`
     );
   }
 });
@@ -537,6 +573,130 @@ test("No infinite adaptation: cooldown prevents immediate re-adaptation", () => 
 
   const nullDate = canAdaptNow(null, NOW_MS);
   assert.strictEqual(nullDate, true, "Should adapt if never adapted before");
+});
+
+// ─────────────────────────────────────────────────────────────
+// 24. PATTERN SUCCESS RATE — ACCURATE ATTEMPTS DENOMINATOR
+// ─────────────────────────────────────────────────────────────
+test("Pattern success rate: denominator reflects actual attempts (not inflated)", () => {
+  // Use canonical problem #209 which is mapped to "Sliding Window" in curated taxonomy
+  const problem209 = {
+    id: 209,
+    difficulty: "Medium",
+  };
+
+  // User attempted 5 times before solving 1 time
+  const progressMap = {
+    "209": {
+      status: "solved",
+      attempts: 5,
+      lastAttempted: ONE_DAY_AGO,
+      hintsUsed: 1,
+      solutionViewed: false,
+      confidence: "medium",
+    }
+  };
+
+  const signals = computeAdaptivePatternSignals(progressMap, [problem209], NOW_MS);
+  const swSig = signals.get("Sliding Window");
+  assert.ok(swSig, "Sliding Window signal must exist");
+  assert.strictEqual(swSig.attempts, 5, "Total attempts must be 5");
+  assert.strictEqual(swSig.solved, 1, "Solved count must be 1");
+  // 1 solve / 5 attempts = 0.20 (NOT 1 / (1+1) = 0.50)
+  assert.strictEqual(swSig.successRate, 0.20, "Success rate must be exactly 1/5 = 0.20");
+});
+
+// ─────────────────────────────────────────────────────────────
+// 25. TRUE REVISION SPACING — DETERMINISTIC PER-PROBLEM SCHEDULE
+// ─────────────────────────────────────────────────────────────
+test("True revision spacing: intervals scale deterministically from performance", () => {
+  // Failed / forgot approach → 1 day
+  const failedProg = { status: "forgot_approach", attempts: 2 };
+  assert.strictEqual(computeRevisionIntervalDays(failedProg), REVISION_INTERVALS.FAILED);
+  assert.strictEqual(computeRevisionIntervalDays(failedProg), 1);
+
+  // Low confidence solve → 2 days
+  const lowConfProg = { status: "solved", confidence: "low", hintsUsed: 0, solutionViewed: false };
+  assert.strictEqual(computeRevisionIntervalDays(lowConfProg), REVISION_INTERVALS.LOW_QUALITY);
+  assert.strictEqual(computeRevisionIntervalDays(lowConfProg), 2);
+
+  // Assisted solve with hints → 4 days
+  const assistedProg = { status: "solved", confidence: "medium", hintsUsed: 2, solutionViewed: false };
+  assert.strictEqual(computeRevisionIntervalDays(assistedProg), REVISION_INTERVALS.ASSISTED);
+  assert.strictEqual(computeRevisionIntervalDays(assistedProg), 4);
+
+  // Strong independent solve → 7 days
+  const strongProg = { status: "solved", confidence: "high", hintsUsed: 0, solutionViewed: false, consecutiveSuccesses: 1 };
+  assert.strictEqual(computeRevisionIntervalDays(strongProg), REVISION_INTERVALS.STRONG);
+  assert.strictEqual(computeRevisionIntervalDays(strongProg), 7);
+
+  // Mastered streak (consecutiveSuccesses >= 3, quality >= 85) → 14 days
+  const masteredProg = {
+    status: "solved", confidence: "high", hintsUsed: 0, solutionViewed: false,
+    consecutiveSuccesses: 3, timeSpentSeconds: 900
+  };
+  assert.strictEqual(computeRevisionIntervalDays(masteredProg), REVISION_INTERVALS.MASTERED);
+  assert.strictEqual(computeRevisionIntervalDays(masteredProg), 14);
+
+  // Date calculation from base
+  const baseIso = "2026-09-08T12:00:00.000Z";
+  const nextDateFailed = computeNextRevisionDate(failedProg, baseIso, "UTC");
+  assert.strictEqual(nextDateFailed, "2026-09-09", "1-day interval from 2026-09-08 is 2026-09-09");
+
+  const nextDateStrong = computeNextRevisionDate(strongProg, baseIso, "UTC");
+  assert.strictEqual(nextDateStrong, "2026-09-15", "7-day interval from 2026-09-08 is 2026-09-15");
+});
+
+// ─────────────────────────────────────────────────────────────
+// 26. PAST/TODAY/FUTURE BOUNDARY & TIMEZONE AWARENESS
+// ─────────────────────────────────────────────────────────────
+test("Calendar boundary: classifyPlanDay correctly assigns past, today, future and immutability", () => {
+  const nowUtc = new Date("2026-09-08T12:00:00.000Z").getTime();
+
+  // Past day (strictly before today)
+  const pastDay = { dayIndex: 1, date: "2026-09-07", completed: false };
+  const pastClass = classifyPlanDay(pastDay, nowUtc, "UTC");
+  assert.strictEqual(pastClass.status, "past");
+  assert.strictEqual(pastClass.isLocked, true, "Past days must be locked even if uncompleted");
+
+  // Today (uncompleted)
+  const todayDay = { dayIndex: 2, date: "2026-09-08", completed: false };
+  const todayClass = classifyPlanDay(todayDay, nowUtc, "UTC");
+  assert.strictEqual(todayClass.status, "today");
+  assert.strictEqual(todayClass.isLocked, false, "Today uncompleted is unlocked");
+
+  // Today (completed)
+  const todayCompleted = { dayIndex: 2, date: "2026-09-08", completed: true };
+  const todayCompClass = classifyPlanDay(todayCompleted, nowUtc, "UTC");
+  assert.strictEqual(todayCompClass.isLocked, true, "Today completed is locked");
+
+  // Future day
+  const futureDay = { dayIndex: 3, date: "2026-09-09", completed: false };
+  const futureClass = classifyPlanDay(futureDay, nowUtc, "UTC");
+  assert.strictEqual(futureClass.status, "future");
+  assert.strictEqual(futureClass.isLocked, false, "Future uncompleted is unlocked");
+
+  // Verify in adaptFutureDays that past uncompleted days are untouched
+  const planWithPastUncompleted = {
+    ...BASE_PLAN,
+    days: [
+      { ...BASE_PLAN.days[0], date: "2026-09-07", completed: false }, // yesterday, uncompleted
+      { ...BASE_PLAN.days[1], date: "2026-09-08", completed: false }, // today
+      { ...BASE_PLAN.days[2], date: "2026-09-09", completed: false }, // tomorrow
+    ]
+  };
+
+  const { adaptedPlan } = adaptFutureDays(
+    planWithPastUncompleted,
+    buildAdaptiveState(BASE_PROFILE, planWithPastUncompleted, {}, null, nowUtc),
+    BASE_PROFILE, {}, nowUtc
+  );
+
+  assert.deepStrictEqual(
+    adaptedPlan.days[0].problemIds,
+    planWithPastUncompleted.days[0].problemIds,
+    "Past day problems must be immutable even if completed flag was false"
+  );
 });
 
 // ─────────────────────────────────────────────────────────────

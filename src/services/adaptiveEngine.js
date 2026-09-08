@@ -47,6 +47,18 @@ export const HIGH_REVISION_PRESSURE = 60;
 /** Time tolerance multiplier: solved within 1.5x expected time is "on time" */
 export const TIME_TOLERANCE_MULTIPLIER = 1.5;
 
+/** Additional revision pressure points when a problem is solved with low confidence */
+export const LOW_CONFIDENCE_PRESSURE = 12;
+
+/** Spaced revision intervals (in days) based on performance evidence */
+export const REVISION_INTERVALS = {
+  FAILED: 1,         // Unsolved or forgot_approach: 1 day
+  LOW_QUALITY: 2,    // Solved with low confidence / quality < 50 / recent failures: 2 days
+  ASSISTED: 4,       // Solved with hints or medium quality (50-74): 4 days
+  STRONG: 7,         // Independent solve, high confidence, quality >= 75: 7 days
+  MASTERED: 14,      // Sustained mastery (streak >= 3, independent, high confidence): 14 days
+};
+
 // ──────────────────────────────────────────────────────────────
 // 1. SOLVE QUALITY  (0 – 100)
 // ──────────────────────────────────────────────────────────────
@@ -136,6 +148,78 @@ export function computeRecencyWeight(timestampIso, nowMs = Date.now()) {
 }
 
 // ──────────────────────────────────────────────────────────────
+// 2B. DETERMINISTIC REVISION SPACING
+// ──────────────────────────────────────────────────────────────
+
+/**
+ * Computes deterministic revision interval in days based on problem performance.
+ *
+ * Spacing rules:
+ *   - Unsolved / forgot_approach: 1 day
+ *   - Low confidence / quality < 50 / consecutive failures >= 1: 2 days
+ *   - Hints used / solution viewed / quality < 75: 4 days
+ *   - Solved independently, high confidence, streak >= 3, quality >= 85: 14 days
+ *   - Solved independently, high confidence / quality >= 75: 7 days
+ *   - Default (moderate / okay): 4 days
+ *
+ * @param {Object} prog - ProblemProgress entry
+ * @param {string} difficulty - "Easy"|"Medium"|"Hard"
+ * @returns {number} interval in days (1, 2, 4, 7, 14)
+ */
+export function computeRevisionIntervalDays(prog, difficulty = "Medium") {
+  if (!prog) return REVISION_INTERVALS.ASSISTED;
+
+  // Unsolved, forgot approach, or explicit need_revision with failures
+  if (prog.status !== "solved" || prog.status === "forgot_approach") {
+    return REVISION_INTERVALS.FAILED;
+  }
+
+  const quality = computeSolveQuality(prog, difficulty);
+  const consecSucc = prog.consecutiveSuccesses || 0;
+  const isClean = !prog.solutionViewed && (prog.hintsUsed || 0) === 0;
+
+  // Mastered streak: 14 days
+  if (isClean && prog.confidence === "high" && quality >= 85 && consecSucc >= 3) {
+    return REVISION_INTERVALS.MASTERED;
+  }
+
+  // Strong: 7 days
+  if (isClean && (prog.confidence === "high" || quality >= 75)) {
+    return REVISION_INTERVALS.STRONG;
+  }
+
+  // Low confidence or low quality: 2 days
+  if (prog.confidence === "low" || quality < 50 || (prog.consecutiveFailures || 0) > 0) {
+    return REVISION_INTERVALS.LOW_QUALITY;
+  }
+
+  // Assisted or moderate quality: 4 days
+  return REVISION_INTERVALS.ASSISTED;
+}
+
+/**
+ * Computes the next scheduled revision date (YYYY-MM-DD) for a problem.
+ *
+ * @param {Object} prog - ProblemProgress entry
+ * @param {string|null} lastAttemptedIso
+ * @param {string} timezone - e.g. "UTC" or profile.timezone
+ * @param {string} difficulty
+ * @returns {string} YYYY-MM-DD
+ */
+export function computeNextRevisionDate(prog, lastAttemptedIso = null, timezone = "UTC", difficulty = "Medium") {
+  const interval = computeRevisionIntervalDays(prog, difficulty);
+  const baseMs = lastAttemptedIso
+    ? new Date(lastAttemptedIso).getTime()
+    : Date.now();
+  const nextMs = baseMs + interval * 24 * 60 * 60 * 1000;
+  try {
+    return new Date(nextMs).toLocaleDateString("en-CA", { timeZone: timezone || "UTC" });
+  } catch {
+    return new Date(nextMs).toISOString().split("T")[0];
+  }
+}
+
+// ──────────────────────────────────────────────────────────────
 // 3. ADAPTIVE PATTERN SIGNALS
 // ──────────────────────────────────────────────────────────────
 
@@ -217,20 +301,17 @@ export function computeAdaptivePatternSignals(progressMap, problems = null, nowM
     }
   }
 
-  // Post-process: compute rates
+  // Post-process: compute rates reflecting actual attempts
   for (const [, sig] of signals) {
-    const total = Math.max(1, sig.solved + (sig.attempts - sig.solved > 0 ? 1 : 0));
-    const totalProblems = Math.max(1, sig.solved + (sig.attempts > 0 ? 1 : 0));
-
-    sig.successRate = sig.attempts > 0 ? sig.solved / Math.max(1, totalProblems) : 0;
+    sig.successRate = sig.attempts > 0 ? sig.solved / sig.attempts : 0;
     sig.independentSolveRate = sig.solved > 0 ? sig.independent / sig.solved : 0;
-    sig.hintRate = sig.attempts > 0 ? sig.hintAssisted / Math.max(1, totalProblems) : 0;
-    sig.solutionViewRate = sig.attempts > 0 ? sig.solutionViewed / Math.max(1, totalProblems) : 0;
+    sig.hintRate = sig.attempts > 0 ? sig.hintAssisted / sig.attempts : 0;
+    sig.solutionViewRate = sig.attempts > 0 ? sig.solutionViewed / sig.attempts : 0;
     sig.avgConfidence = sig.confidenceCount > 0 ? sig.confidenceSum / sig.confidenceCount : 3;
     sig.avgQuality = sig.qualityCount > 0 ? Math.round(sig.qualitySum / sig.qualityCount) : 50;
-    // Weighted success rate: raw success * recency factor
-    sig.weightedSuccessRate = sig.attempts > 0
-      ? sig.recentSuccesses / (sig.recentSuccesses + sig.recentFailures + 0.001)
+    // Weighted success rate based on recency-weighted successes vs failures
+    sig.weightedSuccessRate = (sig.recentSuccesses + sig.recentFailures) > 0
+      ? sig.recentSuccesses / (sig.recentSuccesses + sig.recentFailures)
       : 0.5; // neutral for unstarted patterns
   }
 
@@ -470,6 +551,10 @@ export function computeRevisionPressure(progressMap, nowMs = Date.now()) {
 
     const quality = computeSolveQuality(prog, "Medium");
     if (quality < 40) pressure += 8 * w;
+
+    // Low confidence directly contributes to revision pressure (bounded)
+    // This captures the case: solved, no hints, but user reports low confidence
+    if (prog.confidence === "low") pressure += LOW_CONFIDENCE_PRESSURE * w;
   }
 
   return Math.max(0, Math.min(100, Math.round(pressure)));
@@ -492,7 +577,7 @@ export function computeRevisionPressure(progressMap, nowMs = Date.now()) {
  * @param {number} nowMs
  * @returns {"increase"|"maintain"|"reduce"}
  */
-export function computeDifficultyTrend(progressMap, planDays = null, nowMs = Date.now()) {
+export function computeDifficultyTrend(progressMap, planDays = null, nowMs = Date.now(), problems = null) {
   const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
   let recentFailedMedHard = 0;
   let recentCleanEasy = 0;
@@ -504,7 +589,7 @@ export function computeDifficultyTrend(progressMap, planDays = null, nowMs = Dat
     }
   }
 
-  const normList = Array.from(NORMALIZED_PROBLEMS.values());
+  const normList = problems || Array.from(NORMALIZED_PROBLEMS.values());
 
   for (const p of normList) {
     const pKey = getProblemKey(p);
@@ -621,6 +706,59 @@ export function buildAdaptiveState(profile, plan, progressMap, existingAdaptiveS
 }
 
 // ──────────────────────────────────────────────────────────────
+// 9B. TEMPORAL DAY CLASSIFICATION
+// ──────────────────────────────────────────────────────────────
+
+/**
+ * Classifies a plan day's temporal status based on calendar date, current date, and timezone.
+ *
+ * Temporal boundaries:
+ *   - "past":     day.date < todayDateStr (strictly before today in profile timezone)
+ *   - "today":    day.date === todayDateStr
+ *   - "future":   day.date > todayDateStr
+ *
+ * Immutability:
+ *   - Past days are ALWAYS locked (even if uncompleted).
+ *   - Completed days are ALWAYS locked.
+ *   - Future and uncompleted today are eligible for adaptation.
+ *
+ * @param {Object} day - DailyPlan day object (with day.date e.g. "2026-09-08")
+ * @param {number} nowMs - timestamp in ms (Date.now())
+ * @param {string} timezone - e.g. profile.timezone || "UTC"
+ * @returns {{ status: "past"|"today"|"future", isLocked: boolean }}
+ */
+export function classifyPlanDay(day, nowMs = Date.now(), timezone = "UTC") {
+  if (!day) return { status: "past", isLocked: true };
+
+  let todayDateStr;
+  try {
+    todayDateStr = new Date(nowMs).toLocaleDateString("en-CA", { timeZone: timezone || "UTC" });
+  } catch {
+    todayDateStr = new Date(nowMs).toISOString().split("T")[0];
+  }
+
+  const isCompleted = day.completed === true;
+  const dayDate = day.date;
+
+  if (!dayDate) {
+    return {
+      status: isCompleted ? "past" : "future",
+      isLocked: isCompleted,
+    };
+  }
+
+  if (dayDate < todayDateStr) {
+    return { status: "past", isLocked: true };
+  }
+
+  if (dayDate === todayDateStr) {
+    return { status: "today", isLocked: isCompleted };
+  }
+
+  return { status: "future", isLocked: isCompleted };
+}
+
+// ──────────────────────────────────────────────────────────────
 // 10. ADAPT FUTURE DAYS  (Core Mutation)
 // ──────────────────────────────────────────────────────────────
 
@@ -652,9 +790,26 @@ export function adaptFutureDays(plan, adaptiveState, profile, progressMap, nowMs
   const reasons = [];
   const delta = { addedRevision: 0, removedHard: 0, addedWeakPatternProblems: 0, shiftedFamilies: [] };
 
-  // Determine the current day index (find the last completed or in-progress day)
+  // FIX: Determine locked/today/future using actual calendar date + timezone.
+  // Phase 3.1 established timezone-aware planning — we must respect it here.
+  // A day is "past" if its calendar date is strictly before today (in profile timezone).
+  // A day is "today" if its date === today's date.
+  // A day is "future" if its date > today.
+  const nowDateStr = (() => {
+    try {
+      const tz = profile?.timezone || "UTC";
+      return new Date(nowMs).toLocaleDateString("en-CA", { timeZone: tz });
+    } catch {
+      return new Date(nowMs).toISOString().split("T")[0];
+    }
+  })();
+
+  // A day is locked if: explicitly completed OR its calendar date is strictly before today
+  const isDayLocked = (day) => classifyPlanDay(day, nowMs, profile?.timezone || "UTC").isLocked;
+
+  // For backward compatibility compute currentDayIndex too (used for weak-family cap)
   const currentDayIndex = plan.days
-    .filter(d => d.completed)
+    .filter(d => isDayLocked(d))
     .reduce((max, d) => Math.max(max, d.dayIndex), 0);
 
   // Build solved-with-high-quality set for dedup
@@ -717,40 +872,56 @@ export function adaptFutureDays(plan, adaptiveState, profile, progressMap, nowMs
     weakFamilyPools[family] = pool;
   }
 
-  // Revision candidates not yet in plan
+  // Revision candidates with true spaced repetition schedule
   const revisionCandidates = [];
   const sortedProgKeys = Object.keys(progressMap).sort((a, b) => a.localeCompare(b));
   for (const key of sortedProgKeys) {
     const prog = progressMap[key];
     if (!prog) continue;
-    if (prog.status !== "forgot_approach" && prog.status !== "need_revision") continue;
+    const needsRev =
+      prog.status === "forgot_approach" ||
+      prog.status === "need_revision" ||
+      prog.confidence === "low" ||
+      computeSolveQuality(prog, "Medium") < 50;
+
+    if (!needsRev) continue;
     if (assignedInPlan.has(key)) continue;
+
     const normProb = NORMALIZED_PROBLEMS.get(key);
     if (!normProb) continue;
-    const urgency = prog.status === "forgot_approach" ? 2 : 1;
+
+    const urgency =
+      prog.status === "forgot_approach" ? 3 :
+      (prog.status === "need_revision" ? 2 :
+      (prog.confidence === "low" ? 2 : 1));
+
+    const nextRevDate = computeNextRevisionDate(prog, prog.lastAttempted, profile?.timezone || "UTC", normProb.difficulty || "Medium");
+    const intervalDays = computeRevisionIntervalDays(prog, normProb.difficulty || "Medium");
     const w = computeRecencyWeight(prog.lastAttempted, nowMs);
-    revisionCandidates.push({ key, prob: normProb, urgency, w });
+
+    revisionCandidates.push({ key, prob: normProb, urgency, w, nextRevDate, intervalDays });
   }
+
   revisionCandidates.sort((a, b) => {
     if (b.urgency !== a.urgency) return b.urgency - a.urgency;
+    if (a.nextRevDate !== b.nextRevDate) return a.nextRevDate.localeCompare(b.nextRevDate);
     if (Math.abs(b.w - a.w) > 0.01) return b.w - a.w;
     return a.key.localeCompare(b.key);
   });
 
+  const assignedRevisionKeys = new Set();
+
   // Max weak days per family (40% cap)
-  const futureDays = plan.days.filter(d => d.dayIndex > currentDayIndex && !d.completed && !d.isMockDay);
+  const futureDays = plan.days.filter(d => !isDayLocked(d) && !d.isMockDay);
   const maxWeakFamilyDays = Math.max(1, Math.floor(futureDays.length * MAX_WEAK_FAMILY_FRACTION));
 
   // Track how many extra days each weak family has been boosted
   const weakFamilyBoostCount = {};
 
-  // Revision injection pointer
-  let revisionPtr = 0;
-
   // Build adapted days (deep copy to avoid mutating original)
   const adaptedDays = plan.days.map(day => {
-    // LOCK: past or completed days
-    const isLocked = day.completed === true || day.dayIndex <= currentDayIndex;
+    // LOCK: past or completed days (calendar-aware, timezone-safe)
+    const isLocked = isDayLocked(day);
     if (isLocked) return { ...day }; // unchanged copy
 
     if (day.isMockDay) return { ...day }; // mock days unchanged
@@ -762,20 +933,25 @@ export function adaptFutureDays(plan, adaptiveState, profile, progressMap, nowMs
     let adaptedRevision = [...(day.revisionProblems || [])];
     let dayModified = false;
 
-    // ─── A. Revision pressure injection ───
+    // ─── A. Revision pressure injection (with spaced repetition date gate) ───
     if (
       adaptiveState.revisionPressure > HIGH_REVISION_PRESSURE &&
-      adaptedRevision.length === 0 &&
-      revisionPtr < revisionCandidates.length
+      adaptedRevision.length === 0
     ) {
-      const revItem = revisionCandidates[revisionPtr];
-      const enriched = enrichForAdaptation(revItem.prob);
-      enriched.isRevision = true;
-      adaptedRevision = [enriched];
-      revisionPtr++;
-      budgetLeft -= REVISION_MINUTES;
-      delta.addedRevision++;
-      dayModified = true;
+      // Find highest-urgency candidate whose scheduled nextRevDate <= day.date
+      const revCandidate = revisionCandidates.find(
+        cand => !assignedRevisionKeys.has(cand.key) && (!day.date || day.date >= cand.nextRevDate)
+      );
+
+      if (revCandidate) {
+        const enriched = enrichForAdaptation(revCandidate.prob);
+        enriched.isRevision = true;
+        adaptedRevision = [enriched];
+        assignedRevisionKeys.add(revCandidate.key);
+        budgetLeft -= REVISION_MINUTES;
+        delta.addedRevision++;
+        dayModified = true;
+      }
     }
 
     // ─── B. Weak family reinforcement ───
@@ -790,11 +966,11 @@ export function adaptFutureDays(plan, adaptiveState, profile, progressMap, nowMs
       const candidate = pool.find(p =>
         !alreadyInDay.has(p.key) &&
         !assignedInPlan.has(p.key) &&
-        budgetLeft - p.estMinutes >= -15
+        budgetLeft - p.estMinutes >= 0
       );
       if (candidate && adaptedProblems.length < 5) {
         // Remove weakest problem if over capacity
-        if (adaptedProblems.reduce((s, p) => s + (p.estMinutes || 35), 0) + candidate.estMinutes > dayBudget + 15) {
+        if (adaptedProblems.reduce((s, p) => s + (p.estMinutes || 35), 0) + candidate.estMinutes > dayBudget) {
           // Replace lowest-priority non-revision problem
           adaptedProblems.sort((a, b) => (a.priorityScore || 50) - (b.priorityScore || 50));
           adaptedProblems.shift(); // remove lowest
@@ -858,15 +1034,41 @@ export function adaptFutureDays(plan, adaptiveState, profile, progressMap, nowMs
       dayModified = true;
     }
 
-    // ─── E. Enforce time budget ───
+    // ─── E. Enforce time budget (HARD constraint: estimatedMinutes <= dailyStudyMinutes) ───
     let totalEst = adaptedProblems.reduce((s, p) => s + (p.estMinutes || 35), 0) +
                    adaptedRevision.reduce((s, p) => s + REVISION_MINUTES, 0);
 
-    while (totalEst > dayBudget + 15 && adaptedProblems.length > 1) {
+    // Hard cap: no +15 tolerance — prune lowest priority problems
+    while (totalEst > dayBudget && adaptedProblems.length > 1) {
       adaptedProblems.sort((a, b) => (a.priorityScore || 50) - (b.priorityScore || 50));
       adaptedProblems.shift();
       totalEst = adaptedProblems.reduce((s, p) => s + (p.estMinutes || 35), 0) +
                  adaptedRevision.reduce((s, p) => s + REVISION_MINUTES, 0);
+    }
+
+    // If still over budget, prune revision items
+    while (totalEst > dayBudget && adaptedRevision.length > 0) {
+      adaptedRevision.pop();
+      totalEst = adaptedProblems.reduce((s, p) => s + (p.estMinutes || 35), 0) +
+                 adaptedRevision.reduce((s, p) => s + REVISION_MINUTES, 0);
+    }
+
+    // If a single remaining problem exceeds budget, swap for a smaller candidate if available
+    if (totalEst > dayBudget && adaptedProblems.length === 1) {
+      const p = adaptedProblems[0];
+      if ((p.estMinutes || 35) > dayBudget) {
+        const smaller = companyEnriched.find(cand =>
+          cand.family === dayFamily &&
+          (cand.estMinutes || 35) <= dayBudget &&
+          !assignedInPlan.has(cand.key) &&
+          !highQualitySolved.has(cand.key)
+        );
+        if (smaller) {
+          adaptedProblems = [smaller];
+          assignedInPlan.add(smaller.key);
+          totalEst = (smaller.estMinutes || 35) + adaptedRevision.reduce((s, p) => s + REVISION_MINUTES, 0);
+        }
+      }
     }
 
     const updatedPatSet = new Set();
