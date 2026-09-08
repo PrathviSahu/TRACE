@@ -29,10 +29,9 @@ export function getAllProgress() {
   try {
     if (typeof localStorage === "undefined" || !localStorage) return {};
     const rawProgress = localStorage.getItem(PROGRESS_KEY);
-    const progressMap = rawProgress ? JSON.parse(rawProgress) : {};
-
-    // Legacy compatibility: check trace_solved_problems
     const rawLegacy = localStorage.getItem(LEGACY_KEY);
+
+    const progressMap = rawProgress ? JSON.parse(rawProgress) : {};
     const legacySolved = rawLegacy ? JSON.parse(rawLegacy) : [];
 
     let migrated = false;
@@ -453,4 +452,96 @@ export function useProblemProgress(problemOrId) {
   }, [key]);
 
   return [prog, update];
+}
+
+/**
+ * Returns a Set of all solved problem IDs (supporting both string and numeric queries).
+ */
+export function getSolvedProblemIds() {
+  const all = getAllProgress();
+  const set = new Set();
+  for (const [key, prog] of Object.entries(all)) {
+    if (prog && prog.status === "solved") {
+      set.add(key);
+      const num = Number(key);
+      if (!isNaN(num)) set.add(num);
+    }
+  }
+  return set;
+}
+
+/**
+ * Checks if a specific problem is marked as solved.
+ */
+export function isProblemSolved(problemOrId) {
+  const key = getProblemKey(problemOrId);
+  const prog = getProblemProgress(key);
+  return prog.status === "solved";
+}
+
+/**
+ * Toggles solved status for a problem between "solved" and "unsolved".
+ * Centralized updater that synchronizes trace_problem_progress and trace_solved_problems.
+ */
+export function toggleProblemSolved(problemOrId) {
+  const key = getProblemKey(problemOrId);
+  const current = getProblemProgress(key);
+  const isSolved = current.status === "solved";
+  const nextStatus = isSolved ? "unsolved" : "solved";
+
+  return updateProblemProgress(key, {
+    status: nextStatus,
+    lastSolvedAt: nextStatus === "solved" ? new Date().toISOString() : current.lastSolvedAt,
+    attempts: nextStatus === "solved" ? Math.max(1, current.attempts || 0) : current.attempts,
+    reviewStatus: nextStatus === "solved" ? "completed" : "none",
+  });
+}
+
+/**
+ * Resets all problem progress and solved states cleanly across both stores.
+ */
+export function resetAllProgress() {
+  try {
+    if (typeof localStorage !== "undefined" && localStorage) {
+      localStorage.setItem(PROGRESS_KEY, "{}");
+      localStorage.setItem(LEGACY_KEY, "[]");
+    }
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("trace_progress_updated", {
+        detail: { reset: true }
+      }));
+    }
+  } catch (err) {
+    console.error("Failed to reset progress store:", err);
+  }
+}
+
+/**
+ * React hook to subscribe to solved problem IDs.
+ * Returns { solvedIds, toggleSolved, resetAllSolved } with instant reactive updates.
+ */
+export function useSolvedProblemIds() {
+  const [solvedIds, setSolvedIds] = useState(() => getSolvedProblemIds());
+
+  useEffect(() => {
+    function handleUpdate() {
+      setSolvedIds(getSolvedProblemIds());
+    }
+    window.addEventListener("trace_progress_updated", handleUpdate);
+    window.addEventListener("storage", handleUpdate);
+    return () => {
+      window.removeEventListener("trace_progress_updated", handleUpdate);
+      window.removeEventListener("storage", handleUpdate);
+    };
+  }, []);
+
+  const toggleSolved = useCallback((problemOrId) => {
+    toggleProblemSolved(problemOrId);
+  }, []);
+
+  const resetAllSolved = useCallback(() => {
+    resetAllProgress();
+  }, []);
+
+  return { solvedIds, toggleSolved, resetAllSolved };
 }

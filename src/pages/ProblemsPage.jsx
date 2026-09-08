@@ -5,8 +5,7 @@ import { ALL_PROBLEMS, TOPICS, TOPIC_ORDER, ROADMAP_PROBLEMS } from '../data/roa
 import { getProblemTemplate, PRESET_SOLUTIONS } from '../data/problemTemplates.js';
 import { getProblemDescription } from '../data/problemDescriptions.js';
 import ProblemModal from '../components/ProblemModal.jsx';
-
-const STORAGE_KEY = 'trace_solved_problems';
+import { useSolvedProblemIds } from '../services/progressStore.js';
 
 export default function ProblemsPage() {
   const navigate = useNavigate();
@@ -33,36 +32,12 @@ export default function ProblemsPage() {
     setModalDesc(null);
   }
 
-  // ── Solved status stored in localStorage
-  const [solvedIds, setSolvedIds] = useState(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      return saved ? new Set(JSON.parse(saved)) : new Set([1, 704, 1480, 283]);
-    } catch {
-      return new Set([1, 704, 1480, 283]);
-    }
-  });
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(solvedIds)));
-    } catch (e) {
-      console.error('Failed to persist solved problems', e);
-    }
-  }, [solvedIds]);
-
-  function toggleSolved(id) {
-    setSolvedIds(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }
+  // ── Solved status stored via unified progressStore
+  const { solvedIds, toggleSolved, resetAllSolved } = useSolvedProblemIds();
 
   function resetProgress() {
     if (window.confirm('Are you sure you want to reset all solved problems?')) {
-      setSolvedIds(new Set());
+      resetAllSolved();
     }
   }
 

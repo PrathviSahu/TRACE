@@ -3,8 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ROADMAP_PROBLEMS, ALL_PROBLEMS } from '../data/roadmapProblems.js';
 import { getProblemTemplate, PRESET_SOLUTIONS } from '../data/problemTemplates.js';
 import { useTraceStore } from '../store/traceStore.js';
-
-const STORAGE_KEY = 'trace_solved_problems';
+import { useSolvedProblemIds } from '../services/progressStore.js';
 
 const ROADMAP_LEVELS = [
   {
@@ -50,32 +49,8 @@ export default function RoadmapPage() {
   const navigate = useNavigate();
   const { setCode, setInputs } = useTraceStore();
 
-  // ── Solved status stored in localStorage
-  const [solvedIds, setSolvedIds] = useState(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      return saved ? new Set(JSON.parse(saved)) : new Set([1, 704, 1480, 283]);
-    } catch {
-      return new Set([1, 704, 1480, 283]);
-    }
-  });
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(solvedIds)));
-    } catch (e) {
-      console.error('Failed to persist solved problems', e);
-    }
-  }, [solvedIds]);
-
-  function toggleSolved(id) {
-    setSolvedIds(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }
+  // ── Solved status stored via unified progressStore
+  const { solvedIds, toggleSolved } = useSolvedProblemIds();
 
   // State for which topic accordion is expanded: { levelNum, topicName }
   const [expandedTopic, setExpandedTopic] = useState(null);
