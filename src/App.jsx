@@ -10,6 +10,8 @@ import CompanyDetailPage from "./pages/CompanyDetailPage.jsx";
 import InterviewSetupPage from "./pages/InterviewSetupPage.jsx";
 import InterviewPlanPage from "./pages/InterviewPlanPage.jsx";
 import LearnPage from "./pages/LearnPage.jsx";
+import InterviewSessionPage from "./pages/InterviewSessionPage.jsx";
+import InterviewResultPage from "./pages/InterviewResultPage.jsx";
 
 export default function App() {
   return (
@@ -25,6 +27,8 @@ export default function App() {
         <Route path="/interview/setup"          element={<InterviewSetupPage />} />
         <Route path="/interview/plan"           element={<InterviewPlanPage />} />
         <Route path="/learn"                    element={<LearnPage />} />
+        <Route path="/interview/session/:sessionId"  element={<InterviewSessionPage />} />
+        <Route path="/interview/result/:sessionId"   element={<InterviewResultPage />} />
       </Routes>
       <DSABrain />
     </div>

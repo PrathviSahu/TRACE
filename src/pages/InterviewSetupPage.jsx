@@ -8,6 +8,10 @@ import { COMPANY_DATA, COMPANIES } from "../data/companyData.js";
 import { DSA_TOPICS, DSA_PATTERNS, DSA_PATTERN_FAMILIES } from "../data/patternMapping.js";
 import { SUPPORTED_LANGUAGES } from "../services/aiService.js";
 import { generateDailyPlan } from "../services/dailyPlanGenerator.js";
+import { selectInterviewProblem } from "../services/interviewSimulationEngine.js";
+import { createSessionRecord, saveInterviewSession, setActiveSessionId } from "../services/interviewSimulationStore.js";
+import { getAllProgress } from "../services/progressStore.js";
+import InterviewHistoryModal from "../components/interview/InterviewHistoryModal.jsx";
 import {
   saveDailyPlan,
   PREPARATION_LEVELS,
@@ -85,6 +89,12 @@ export default function InterviewSetupPage() {
   // Company search query for selector
   const [companySearch, setCompanySearch] = useState("");
   const [saveStatus, setSaveStatus] = useState(null);
+  // Simulation Launchpad state (Phase 3.4)
+  const [simMode, setSimMode] = useState("company"); // "company" | "pattern" | "random" | "weakness"
+  const [simPattern, setSimPattern] = useState("Sliding Window");
+  const [simDuration, setSimDuration] = useState(45);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+
 
   // Sync if query param changes
   useEffect(() => {
@@ -177,6 +187,57 @@ export default function InterviewSetupPage() {
       setTimeout(() => setSaveStatus(null), 6000);
     } catch (err) {
       setSaveStatus({ type: "error", message: err.message });
+    }
+  };
+
+  const handleLaunchSimulation = () => {
+    try {
+      const problem = selectInterviewProblem({
+        mode: simMode,
+        companyId,
+        pattern: simPattern,
+        profile: currentDraft,
+        progressMap: getAllProgress(),
+      });
+
+      const session = createSessionRecord({
+        profileId: currentDraft.id || "profile_default",
+        companyId,
+        companyName: selectedCompany.name,
+        role,
+        problemId: problem.id,
+        problemTitle: problem.title || problem.name,
+        mode: simMode,
+        modeParam: simMode === "pattern" ? simPattern : null,
+        durationMinutes: simDuration,
+        language: preferredLanguage.toLowerCase(),
+      });
+
+      session.followUps = [
+        {
+          id: "f1",
+          question: "How would your solution scale if the input data cannot fit entirely in memory?",
+          answer: "",
+          source: "deterministic",
+          askedAt: new Date().toISOString(),
+          answeredAt: null,
+        },
+        {
+          id: "f2",
+          question: "What are the primary performance trade-offs in your chosen algorithm?",
+          answer: "",
+          source: "deterministic",
+          askedAt: new Date().toISOString(),
+          answeredAt: null,
+        }
+      ];
+
+      saveInterviewSession(session);
+      setActiveSessionId(session.id);
+      navigate(`/interview/session/${session.id}`);
+    } catch (err) {
+      console.error("Failed to launch interview simulation:", err);
+      setSaveStatus({ type: "error", message: `Could not start simulation: ${err.message}` });
     }
   };
 
@@ -643,7 +704,149 @@ export default function InterviewSetupPage() {
               </div>
             </div>
 
-            {/* Strategy Toggles */}
+            {/* ── Section 5: Timed Interview Simulation Launchpad (Phase 3.4) ── */}
+          <div style={{
+            ...cardStyle,
+            border: "1px solid rgba(99, 102, 241, 0.3)",
+            background: "linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(13, 19, 34, 0.9))",
+          }}>
+            <div style={sectionHeaderStyle}>
+              <span style={iconBadgeStyle}>🎯</span>
+              <div>
+                <h3 style={{ ...sectionTitleStyle, color: "var(--txt-bright, #f8fafc)" }}>
+                  5. Timed Interview Simulation Launcher
+                </h3>
+                <p style={sectionDescStyle}>
+                  Live mock interview environment with authoritative timer, real execution, and FAANG rubric evaluation.
+                </p>
+              </div>
+            </div>
+
+            {/* Mode Picker */}
+            <div style={{ marginTop: "1rem" }}>
+              <label style={labelStyle}>Interview Mode</label>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "0.5rem" }}>
+                {[
+                  { id: "company", label: "🏢 Company", desc: "Company top questions" },
+                  { id: "pattern", label: "🧩 Pattern", desc: "Target DSA pattern" },
+                  { id: "random",  label: "🎲 Random",  desc: "Deterministic PRNG" },
+                  { id: "weakness", label: "🎯 Weakness", desc: "Phase 3.3 weakness focus" },
+                ].map(m => (
+                  <button
+                    key={m.id}
+                    type="button"
+                    id={`mode-btn-${m.id}`}
+                    onClick={() => setSimMode(m.id)}
+                    style={{
+                      padding: "0.6rem 0.5rem",
+                      borderRadius: "6px",
+                      fontSize: "0.82rem",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      border: simMode === m.id ? "1px solid var(--accent-indigo, #6366f1)" : "1px solid #1c2842",
+                      background: simMode === m.id ? "rgba(99, 102, 241, 0.25)" : "#0f1728",
+                      color: simMode === m.id ? "var(--txt-bright, #f8fafc)" : "var(--txt-muted, #94a3b8)",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      gap: "0.2rem",
+                    }}
+                  >
+                    <span>{m.label}</span>
+                    <span style={{ fontSize: "0.65rem", color: "#64748b" }}>{m.desc}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Pattern picker if pattern mode */}
+            {simMode === "pattern" && (
+              <div style={{ marginTop: "1rem" }}>
+                <label style={labelStyle}>Select Pattern or Family</label>
+                <select
+                  id="sim-pattern-select"
+                  value={simPattern}
+                  onChange={e => setSimPattern(e.target.value)}
+                  style={inputStyle}
+                >
+                  {DSA_PATTERNS.slice(0, 30).map(p => (
+                    <option key={p} value={p}>{p}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Duration Selector */}
+            <div style={{ marginTop: "1rem" }}>
+              <label style={labelStyle}>Session Duration</label>
+              <div style={{ display: "flex", gap: "0.5rem" }}>
+                {[30, 45, 60, 90].map(mins => (
+                  <button
+                    key={mins}
+                    type="button"
+                    id={`duration-btn-${mins}`}
+                    onClick={() => setSimDuration(mins)}
+                    style={{
+                      flex: 1,
+                      padding: "0.5rem",
+                      borderRadius: "6px",
+                      fontSize: "0.85rem",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      border: simDuration === mins ? "1px solid #38bdf8" : "1px solid #1c2842",
+                      background: simDuration === mins ? "rgba(56, 189, 248, 0.15)" : "#0f1728",
+                      color: simDuration === mins ? "#38bdf8" : "#94a3b8",
+                    }}
+                  >
+                    ⏱️ {mins} mins
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Launcher Buttons */}
+            <div style={{ display: "flex", gap: "0.75rem", marginTop: "1.25rem" }}>
+              <button
+                id="launch-simulation-btn"
+                type="button"
+                onClick={handleLaunchSimulation}
+                style={{
+                  flex: 2,
+                  padding: "0.75rem 1.25rem",
+                  borderRadius: "6px",
+                  fontSize: "0.95rem",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  border: "none",
+                  background: "linear-gradient(135deg, #10b981, #059669)",
+                  color: "#ffffff",
+                  boxShadow: "0 4px 14px rgba(16, 185, 129, 0.4)",
+                }}
+              >
+                🎯 Start {simDuration}-Min Interview Simulation
+              </button>
+              <button
+                id="view-sim-history-btn"
+                type="button"
+                onClick={() => setShowHistoryModal(true)}
+                style={{
+                  flex: 1,
+                  padding: "0.75rem",
+                  borderRadius: "6px",
+                  fontSize: "0.85rem",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  border: "1px solid #233152",
+                  background: "#080c16",
+                  color: "#cbd5e1",
+                }}
+              >
+                📜 History
+              </button>
+            </div>
+          </div>
+
+          {/* Strategy Toggles */}
             <div style={{ marginTop: "1.5rem", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
               <label style={checkboxLabelStyle}>
                 <input
@@ -895,6 +1098,10 @@ export default function InterviewSetupPage() {
           </div>
         </div>
       </div>
+
+      {showHistoryModal && (
+        <InterviewHistoryModal isOpen={showHistoryModal} onClose={() => setShowHistoryModal(false)} />
+      )}
     </div>
   );
 }

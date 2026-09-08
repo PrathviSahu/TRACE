@@ -193,6 +193,11 @@ export function updateProblemProgress(problemOrId, updates) {
     }
   }
 
+  const nextInterviewHistory = updates.interviewMetadata
+    ? [...(current.interviewHistory || []), updates.interviewMetadata]
+    : (current.interviewHistory || []);
+  const nextLastInterview = updates.interviewMetadata || current.lastInterviewPerformance || null;
+
   const nextEntry = {
     status: nextStatus,
     attempts: nextAttempts,
@@ -206,6 +211,8 @@ export function updateProblemProgress(problemOrId, updates) {
     reviewStatus: nextReviewStatus,
     consecutiveSuccesses: nextConsecutiveSuccesses,
     consecutiveFailures: nextConsecutiveFailures,
+    interviewHistory: nextInterviewHistory,
+    lastInterviewPerformance: nextLastInterview,
   };
 
   all[key] = nextEntry;

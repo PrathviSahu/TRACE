@@ -19,6 +19,7 @@ import { PRESET_SOLUTIONS, getProblemTemplate } from "../data/problemTemplates.j
 import ProblemModal from "../components/ProblemModal.jsx";
 import AdaptiveInsightsPanel from "../components/AdaptiveInsightsPanel.jsx";
 import { buildAdaptiveState, adaptFutureDays, canAdaptNow } from "../services/adaptiveEngine.js";
+import { createInterviewSession } from "../services/interviewSimulationStore.js";
 import { useAdaptiveState, saveAdaptiveState } from "../services/adaptiveStore.js";
 
 const DIFF_COLORS = { Easy: "#00b8a3", Medium: "#ffa116", Hard: "#ef4743" };
@@ -504,17 +505,27 @@ export default function InterviewPlanPage() {
                           {day.focusFamily}
                         </span>
                         {day.isMockDay && (
-                          <span style={{
-                            fontSize: "0.7rem",
-                            fontWeight: 700,
-                            padding: "0.15rem 0.45rem",
-                            borderRadius: "4px",
-                            background: "rgba(245, 158, 11, 0.2)",
-                            color: "#fbbf24",
-                            border: "1px solid rgba(245, 158, 11, 0.4)"
-                          }}>
-                            🎲 MOCK INTERVIEW DAY
-                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleStartMockSimulation(day)}
+                            style={{
+                              fontSize: "0.72rem",
+                              fontWeight: 700,
+                              padding: "0.2rem 0.6rem",
+                              borderRadius: "4px",
+                              background: "linear-gradient(135deg, #f59e0b, #d97706)",
+                              color: "#0f1728",
+                              border: "none",
+                              cursor: "pointer",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "0.3rem",
+                              boxShadow: "0 2px 6px rgba(245, 158, 11, 0.3)"
+                            }}
+                            title="Start timed mock interview simulation"
+                          >
+                            🎯 Start Mock Simulation
+                          </button>
                         )}
                       </div>
                       <span style={{ fontSize: "0.75rem", color: "var(--txt-dim, #64748b)" }}>
@@ -631,6 +642,14 @@ export default function InterviewPlanPage() {
                                 </button>
                                 <button
                                   type="button"
+                                  onClick={() => handleStartProblemInterview(p)}
+                                  style={{ ...actionBtnStyle, background: "rgba(16, 185, 129, 0.15)", borderColor: "var(--accent-green, #10b981)", color: "#34d399" }}
+                                  title="Simulate Timed Interview"
+                                >
+                                  ⏱️ Interview
+                                </button>
+                                <button
+                                  type="button"
                                   onClick={() => handleVisualizeCode(p)}
                                   style={{ ...actionBtnStyle, background: "rgba(99, 102, 241, 0.2)", borderColor: "var(--accent-indigo, #6366f1)", color: "var(--txt-bright, #f8fafc)" }}
                                 >
@@ -701,6 +720,14 @@ export default function InterviewPlanPage() {
                                   style={actionBtnStyle}
                                 >
                                   ⚡ Practice
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleStartProblemInterview(p)}
+                                  style={{ ...actionBtnStyle, background: "rgba(16, 185, 129, 0.15)", borderColor: "var(--accent-green, #10b981)", color: "#34d399" }}
+                                  title="Simulate Timed Interview"
+                                >
+                                  ⏱️ Interview
                                 </button>
                                 <button
                                   type="button"
