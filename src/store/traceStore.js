@@ -110,8 +110,12 @@ export const useTraceStore = create((set, get) => ({
 
   // ── Run
   run: () => {
-    const { code, inputs, inputText, language } = get();
-    set({ status: 'running', error: null, isPlaying: false });
+    const { code, inputs, inputText, language, playTimer } = get();
+    // P2 fix: kill any active play timer before starting a new execution.
+    // Without this, a running interval can still mutate currentStep for ~10ms
+    // (the setTimeout delay) against the old trace while the new run is pending.
+    if (playTimer) clearInterval(playTimer);
+    set({ status: 'running', error: null, isPlaying: false, playTimer: null });
 
     setTimeout(() => {
       try {
@@ -159,7 +163,16 @@ export const useTraceStore = create((set, get) => ({
           currentStep: 0,
         });
       } catch (e) {
-        set({ status: 'error', error: e.message });
+        // P1 fix: clear stale trace so the UI never displays a previous successful
+        // execution after the current run has failed.
+        set({
+          status: 'error',
+          error: e.message,
+          trace: [],
+          currentStep: 0,
+          outputs: [],
+          returnValue: undefined,
+        });
       }
     }, 10);
   },
