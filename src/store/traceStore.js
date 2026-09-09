@@ -21,6 +21,38 @@ if (typeof document !== "undefined") {
   }
 }
 
+
+export function parseInputText(text) {
+  if (!text || typeof text !== "string") return {};
+  const trimmed = text.trim();
+  if (!trimmed) return {};
+
+  // JSON object input: {"nums": [3, 2, 4], "target": 6}
+  if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (typeof parsed === "object" && !Array.isArray(parsed)) {
+        return parsed;
+      }
+    } catch (_) {}
+  }
+
+  const result = {};
+  const lines = trimmed.split("\n").map(l => l.trim()).filter(Boolean);
+  let posIdx = 0;
+
+  for (const line of lines) {
+    // Match "name = value" or "name: value"
+    const match = line.match(/^([a-zA-Z_$][a-zA-Z0-9_$]*)\s*[:=]\s*(.+)$/);
+    if (match) {
+      result[match[1]] = match[2].trim();
+    } else {
+      result[posIdx++] = line;
+    }
+  }
+  return result;
+}
+
 export const useTraceStore = create((set, get) => ({
   // ── Theme State
   theme: initialTheme,
@@ -89,7 +121,13 @@ export const useTraceStore = create((set, get) => ({
   },
 
   setCode: (code) => set({ code }),
-  setInputText: (text) => set({ inputText: text }),
+  setInputText: (text) => {
+    const parsed = parseInputText(text);
+    set(s => ({
+      inputText: text,
+      inputs: { ...s.inputs, ...parsed }
+    }));
+  },
   setInput: (name, value) => set(s => ({ inputs: { ...s.inputs, [name]: value } })),
   setInputs: (inputs) => set({ inputs }),
   setViewMode: (viewMode) => set({ viewMode }),
@@ -126,7 +164,8 @@ export const useTraceStore = create((set, get) => ({
         if (language === 'python') {
           result = runPython(code, inputText);
         } else if (language === 'java') {
-          result = runJava(code, inputs);
+          const effectiveInputs = { ...inputs, ...parseInputText(inputText) };
+          result = runJava(code, effectiveInputs);
         } else {
           // Editor-only languages (cpp, javascript, etc.)
           result = {
@@ -243,6 +282,6 @@ setTimeout(() => {
   useTraceStore.getState().run();
 }, 0);
 
-if (import.meta.env.DEV && typeof window !== "undefined") {
+if (import.meta.env?.DEV && typeof window !== "undefined") {
   window.__traceStore = useTraceStore;
 }

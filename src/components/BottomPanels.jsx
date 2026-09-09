@@ -35,6 +35,7 @@ export default function BottomPanels() {
           <textarea
             className="input-textarea"
             value={inputText}
+            placeholder={"e.g.\nnums = [2, 7, 11, 15]\ntarget = 9"}
             onChange={(e) => setInputText(e.target.value)}
             spellCheck={false}
           />
@@ -105,22 +106,34 @@ export default function BottomPanels() {
 
       {/* ── 3. Call Stack Panel ───────────────────────────────── */}
       <div className="studio-card stack-card">
-        <div className="card-header-bar">
+        <div className="card-header-bar" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <span className="card-main-title">Call Stack</span>
+          {callStack.length > 0 && (
+            <span style={{ fontSize: 10, color: "var(--accent-amber)", fontFamily: "var(--font-mono)" }}>
+              {callStack.length} frame{callStack.length > 1 ? "s" : ""}
+            </span>
+          )}
         </div>
         <div className="card-scroll-body stack-frames-list">
           {callStack.length > 0 ? (
-            callStack.map((frame, idx) => (
-              <div
-                key={idx}
-                className={'stack-frame-item ' + (idx === 0 ? 'active-frame' : 'inactive-frame')}
-              >
-                {frame}
-              </div>
-            ))
+            [...callStack].reverse().map((frame, idx) => {
+              const isTop = idx === 0;
+              return (
+                <div
+                  key={idx}
+                  className={"stack-frame-item " + (isTop ? "active-frame" : "inactive-frame")}
+                  style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}
+                >
+                  <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{frame}</span>
+                  <span style={{ fontSize: 9, opacity: 0.7, marginLeft: 6 }}>
+                    {isTop ? "ACTIVE" : "#" + (callStack.length - 1 - idx)}
+                  </span>
+                </div>
+              );
+            })
           ) : (
-            <div style={{ fontSize: 12, opacity: 0.5, padding: '12px 8px', textAlign: 'center' }}>
-              {trace && trace.length > 0 ? 'No active stack frames' : 'Ready'}
+            <div style={{ fontSize: 12, opacity: 0.5, padding: "12px 8px", textAlign: "center" }}>
+              {trace && trace.length > 0 ? "No active stack frames" : "Ready"}
             </div>
           )}
         </div>

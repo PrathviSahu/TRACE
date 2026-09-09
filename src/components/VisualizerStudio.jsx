@@ -25,7 +25,7 @@ export default function VisualizerStudio() {
 
   // Normalized visualizer state derived directly from engine trace
   const normalized = normalizeStepData(stepData, prevStepData);
-  const { hasData, arrays, collections, objects, explanation } = normalized;
+  const { hasData, arrays, collections, objects, callStack, explanation } = normalized;
 
   // Global keyboard navigation
   useEffect(() => {
@@ -166,7 +166,7 @@ export default function VisualizerStudio() {
       <div className="viz-body-split">
         {/* Left Canvas: Data Structures */}
         <div className="ds-canvas">
-          {hasData ? (
+          {hasData || (callStack && callStack.length > 0) ? (
             <>
               {/* 1. Arrays */}
               {arrays.map((arr) => (
@@ -251,22 +251,44 @@ export default function VisualizerStudio() {
                 if (col.type === "Stack") {
                   return (
                     <div key={col.name} className="ds-block" style={{ marginBottom: 20 }}>
-                      <div className="ds-title">Stack: {col.name}</div>
-                      <div className="stack-wrap" style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                      <div className="ds-title" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span>Stack (LIFO): {col.name}</span>
+                        <span style={{ fontSize: 10, padding: "2px 6px", background: "rgba(255, 159, 67, 0.15)", color: "var(--accent-amber, #FF9F43)", borderRadius: 4, fontWeight: 500 }}>
+                          LIFO Container ({col.items?.length || 0} items)
+                        </span>
+                      </div>
+                      <div className="stack-beaker-wrap" style={{ marginTop: 8 }}>
                         {col.items && col.items.length > 0 ? (
-                          [...col.items].reverse().map((v, idx) => (
-                            <div
-                              key={idx}
-                              className="stack-cell"
-                              style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 8px", background: "var(--bg2)", borderRadius: 4 }}
-                            >
-                              <span>{String(v)}</span>
-                              {idx === 0 && <span className="top-badge" style={{ fontSize: 10, color: "var(--accent)" }}>← top</span>}
-                            </div>
-                          ))
+                          [...col.items].reverse().map((v, idx) => {
+                            const isTop = idx === 0;
+                            const origIdx = col.items.length - 1 - idx;
+                            return (
+                              <div
+                                key={idx}
+                                className={`stack-cell ${isTop ? "stack-top-cell" : ""}`}
+                              >
+                                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                  <span style={{ fontSize: 10, color: "var(--txt-dim, #6E7681)", fontFamily: "var(--font-mono)" }}>[{origIdx}]</span>
+                                  <span style={{ fontWeight: isTop ? 700 : 500, color: isTop ? "var(--txt-bright, #F0F6FC)" : "var(--txt-main, #C9D1D9)", fontFamily: "var(--font-mono)" }}>
+                                    {String(v)}
+                                  </span>
+                                </div>
+                                {isTop && (
+                                  <span style={{ fontSize: 9, fontWeight: 700, padding: "1px 6px", background: "var(--accent-amber, #FF9F43)", color: "#090B0E", borderRadius: 3 }}>
+                                    TOP
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          })
                         ) : (
-                          <div style={{ fontSize: 11, color: "var(--txt3)" }}>empty stack</div>
+                          <div style={{ fontSize: 11, color: "var(--txt-dim, #6E7681)", textAlign: "center", padding: "20px 8px", fontFamily: "var(--font-mono)" }}>
+                            [ Empty Stack — Push elements to visualize ]
+                          </div>
                         )}
+                        <div style={{ fontSize: 9, color: "var(--txt-dim, #6E7681)", textAlign: "center", borderTop: "1px solid var(--border-subtle, #21262D)", paddingTop: 4, letterSpacing: "0.5px", fontFamily: "var(--font-mono)" }}>
+                          BOTTOM (BASE)
+                        </div>
                       </div>
                     </div>
                   );
@@ -275,19 +297,44 @@ export default function VisualizerStudio() {
                 if (col.type === "Queue" || col.type === "ArrayDeque") {
                   return (
                     <div key={col.name} className="ds-block" style={{ marginBottom: 20 }}>
-                      <div className="ds-title">Queue: {col.name}</div>
-                      <div className="queue-wrap" style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                        <span style={{ fontSize: 11, color: "var(--txt3)" }}>front →</span>
+                      <div className="ds-title" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span>Queue (FIFO): {col.name}</span>
+                        <span style={{ fontSize: 10, padding: "2px 6px", background: "rgba(56, 217, 197, 0.15)", color: "var(--accent-cyan, #38D9C5)", borderRadius: 4, fontWeight: 500 }}>
+                          FIFO Pipeline ({col.items?.length || 0} items)
+                        </span>
+                      </div>
+                      <div className="queue-wrap" style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
+                        <span style={{ fontSize: 11, color: "var(--accent-amber, #FF9F43)", fontWeight: 600 }}>front (dequeue) →</span>
                         {col.items && col.items.length > 0 ? (
                           col.items.map((v, idx) => (
-                            <div key={idx} className="queue-cell" style={{ padding: "4px 8px", background: "var(--bg2)", borderRadius: 4 }}>
-                              {String(v)}
+                            <div
+                              key={idx}
+                              className="queue-cell"
+                              style={{
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "center",
+                                padding: "4px 10px",
+                                background: idx === 0 ? "rgba(255, 159, 67, 0.15)" : "var(--bg-raised, #1C2128)",
+                                border: idx === 0 ? "1px solid var(--accent-amber, #FF9F43)" : "1px solid var(--border-subtle, #21262D)",
+                                borderRadius: 4,
+                                minWidth: 32,
+                                textAlign: "center",
+                                fontFamily: "var(--font-mono)"
+                              }}
+                            >
+                              <span style={{ fontSize: 9, color: idx === 0 ? "var(--accent-amber, #FF9F43)" : "var(--txt-dim, #6E7681)", marginBottom: 2 }}>
+                                [{idx}]
+                              </span>
+                              <span style={{ fontWeight: idx === 0 ? 700 : 500, color: idx === 0 ? "var(--txt-bright, #F0F6FC)" : "var(--txt-main, #C9D1D9)" }}>
+                                {String(v)}
+                              </span>
                             </div>
                           ))
                         ) : (
-                          <span style={{ fontSize: 11, color: "var(--txt3)" }}>empty queue</span>
+                          <span style={{ fontSize: 11, color: "var(--txt-dim, #6E7681)" }}>empty queue</span>
                         )}
-                        <span style={{ fontSize: 11, color: "var(--txt3)" }}>← rear</span>
+                        <span style={{ fontSize: 11, color: "var(--txt-dim, #6E7681)" }}>← rear (enqueue)</span>
                       </div>
                     </div>
                   );
@@ -353,16 +400,32 @@ export default function VisualizerStudio() {
                 if (col.type === "HashSet" || col.type === "TreeSet" || col.type === "LinkedHashSet") {
                   return (
                     <div key={col.name} className="ds-block" style={{ marginBottom: 20 }}>
-                      <div className="ds-title">HashSet: {col.name}</div>
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                      <div className="ds-title" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span>HashSet: {col.name}</span>
+                        <span style={{ fontSize: 10, padding: "2px 6px", background: "rgba(56, 217, 197, 0.15)", color: "var(--accent-cyan, #38D9C5)", borderRadius: 4, fontWeight: 500 }}>
+                          Unique Set ({col.items?.length || 0} items)
+                        </span>
+                      </div>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
                         {col.items && col.items.length > 0 ? (
                           col.items.map((v, idx) => (
-                            <span key={idx} style={{ padding: "2px 8px", background: "var(--bg2)", borderRadius: 12, fontSize: 12 }}>
+                            <span
+                              key={idx}
+                              style={{
+                                padding: "3px 10px",
+                                background: "var(--bg-raised, #1C2128)",
+                                border: "1px solid var(--border-subtle, #21262D)",
+                                borderRadius: 14,
+                                fontSize: 11,
+                                fontFamily: "var(--font-mono)",
+                                color: "var(--txt-bright, #F0F6FC)"
+                              }}
+                            >
                               {String(v)}
                             </span>
                           ))
                         ) : (
-                          <span style={{ fontSize: 11, color: "var(--txt3)" }}>empty set</span>
+                          <span style={{ fontSize: 11, color: "var(--txt-dim, #6E7681)" }}>empty set</span>
                         )}
                       </div>
                     </div>
@@ -391,15 +454,15 @@ export default function VisualizerStudio() {
                   </div>
                   <div
                     className="object-tree-box"
-                    style={{ padding: "8px 12px", background: "var(--bg2)", borderRadius: 6, fontFamily: "monospace", fontSize: 12, lineHeight: 1.6 }}
+                    style={{ padding: "8px 12px", background: "var(--bg-raised, #1C2128)", border: "1px solid var(--border-subtle, #21262D)", borderRadius: 6, fontFamily: "monospace", fontSize: 12, lineHeight: 1.6 }}
                   >
                     {formatObjectTree(obj.value, obj.name).map((node, nIdx) => (
                       <div key={nIdx} style={{ paddingLeft: node.depth * 18, display: "flex", alignItems: "center", gap: 6 }}>
-                        <span style={{ color: "var(--txt3)", userSelect: "none" }}>
+                        <span style={{ color: "var(--txt-dim, #6E7681)", userSelect: "none" }}>
                           {node.depth === 0 ? "●" : "├──"}
                         </span>
-                        <span style={{ color: "var(--accent)", fontWeight: 500 }}>{node.key}: </span>
-                        <span style={{ color: node.value === "null" ? "var(--txt3)" : "var(--txt1)" }}>
+                        <span style={{ color: "var(--accent-amber, #FF9F43)", fontWeight: 500 }}>{node.key}: </span>
+                        <span style={{ color: node.value === "null" ? "var(--txt-dim, #6E7681)" : "var(--txt-bright, #F0F6FC)" }}>
                           {node.value}
                         </span>
                       </div>
@@ -407,6 +470,53 @@ export default function VisualizerStudio() {
                   </div>
                 </div>
               ))}
+
+              {/* 4. Active Call Stack */}
+              {callStack && callStack.length > 0 && (
+                <div className="ds-block" style={{ marginBottom: 20 }}>
+                  <div className="ds-title" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span>Call Stack</span>
+                    <span style={{ fontSize: 10, padding: "2px 6px", background: "rgba(56, 217, 197, 0.15)", color: "var(--accent-cyan, #38D9C5)", borderRadius: 4, fontWeight: 500 }}>
+                      {callStack.length} active frame{callStack.length > 1 ? "s" : ""}
+                    </span>
+                  </div>
+                  <div className="callstack-canvas-wrap" style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 8, maxWidth: 360 }}>
+                    {[...callStack].reverse().map((frame, idx) => {
+                      const isTop = idx === 0;
+                      return (
+                        <div
+                          key={idx}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            padding: "6px 10px",
+                            background: isTop ? "rgba(255, 159, 67, 0.12)" : "var(--bg-raised, #1C2128)",
+                            border: isTop ? "1px solid rgba(255, 159, 67, 0.4)" : "1px solid var(--border-subtle, #21262D)",
+                            borderLeft: isTop ? "3px solid var(--accent-amber, #FF9F43)" : "1px solid var(--border-subtle, #21262D)",
+                            borderRadius: 4,
+                            fontFamily: "var(--font-mono, monospace)",
+                            fontSize: 11
+                          }}
+                        >
+                          <span style={{ fontWeight: isTop ? 600 : 400, color: isTop ? "var(--txt-bright, #F0F6FC)" : "var(--txt-main, #C9D1D9)" }}>
+                            {frame}
+                          </span>
+                          {isTop ? (
+                            <span style={{ fontSize: 9, color: "var(--accent-amber, #FF9F43)", fontWeight: 700, padding: "1px 4px", background: "rgba(255, 159, 67, 0.2)", borderRadius: 2 }}>
+                              ACTIVE
+                            </span>
+                          ) : (
+                            <span style={{ fontSize: 9, color: "var(--txt-dim, #6E7681)" }}>
+                              #{callStack.length - 1 - idx}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </>
           ) : (
             <div className="ds-empty-state" style={{ padding: "32px 16px", textAlign: "center", color: "var(--txt3)" }}>

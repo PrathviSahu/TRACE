@@ -41,6 +41,13 @@
   --radius-md: 6px;
   --radius-lg: 10px;
   --radius-xl: 14px;
+
+  /* Compatibility aliases for component styles */
+  --bg2:           var(--bg-raised);
+  --bg3:           var(--bg-hover);
+  --txt1:          var(--txt-bright);
+  --txt2:          var(--txt-muted);
+  --txt3:          var(--txt-dim);
 }
 
 /* ── TRACE — Amber Terminal Light Theme Tokens ────────────────── */
@@ -78,6 +85,11 @@ body.light-theme,
   --txt-muted:  #475569;
   --txt-dim:    #64748B;
   color-scheme: light;
+  --bg2:           var(--bg-raised);
+  --bg3:           var(--bg-hover);
+  --txt1:          var(--txt-bright);
+  --txt2:          var(--txt-muted);
+  --txt3:          var(--txt-dim);
 }
 
 [data-theme="light"] .theme-icon-btn.active {
@@ -2087,4 +2099,38 @@ body.light-theme,
   .dev-hub-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* Stack Visualization (LIFO Beaker) */
+.stack-beaker-wrap {
+  width: 100%;
+  max-width: 260px;
+  min-height: 120px;
+  border-left: 2px solid var(--border-strong);
+  border-right: 2px solid var(--border-strong);
+  border-bottom: 3px solid var(--accent-amber);
+  border-top: 1px dashed var(--border-subtle);
+  border-radius: 0 0 6px 6px;
+  padding: 10px 8px 8px 8px;
+  display: flex;
+  flex-direction: column;
+  justifyContent: flex-end;
+  gap: 6px;
+  background: var(--bg-surface);
+}
+.stack-cell {
+  display: flex;
+  align-items: center;
+  justifyContent: space-between;
+  padding: 6px 10px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  transition: all 0.15s ease;
+}
+.stack-cell.stack-top-cell {
+  background: rgba(255, 159, 67, 0.16);
+  border: 1px solid var(--accent-amber);
+  box-shadow: 0 0 8px rgba(255, 159, 67, 0.25);
 }
