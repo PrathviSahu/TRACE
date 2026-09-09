@@ -144,23 +144,26 @@ export default function ProblemModal({ problem, onClose }) {
     }
 
     const codeToUse = customCode || (() => {
-      const preset = PRESET_SOLUTIONS[problem.id];
+      const preset = problem?.id ? PRESET_SOLUTIONS[problem.id] : null;
       if (preset && selectedLanguage === 'java') return preset.code;
-      const template = getProblemTemplate(problem.name, problem.difficulty);
+      const template = getProblemTemplate(problem);
       if (template?.code) return template.code;
       return null;
     })();
 
     if (codeToUse) {
       setCode(codeToUse);
-      const preset = PRESET_SOLUTIONS[problem.id];
-      if (preset?.inputs) setInputs(preset.inputs);
-      const template = getProblemTemplate(problem.name, problem.difficulty);
-      if (template?.inputs && !preset?.inputs) setInputs(template.inputs);
+      const preset = problem?.id ? PRESET_SOLUTIONS[problem.id] : null;
+      if (preset?.inputs && (!selectedLanguage || selectedLanguage === 'java')) {
+        setInputs(preset.inputs);
+      } else {
+        const template = getProblemTemplate(problem);
+        if (template?.inputs) setInputs(template.inputs);
+      }
       onClose();
       navigate('/');
     } else {
-      const template = getProblemTemplate(problem.name, problem.difficulty);
+      const template = getProblemTemplate(problem);
       if (template?.code) {
         setCode(template.code);
         if (template.inputs) setInputs(template.inputs);
@@ -281,7 +284,7 @@ Guidelines:
   ];
 
   return (
-    <div ref={overlayRef} onClick={handleOverlayClick} style={{
+    <div className="pm-modal-overlay" ref={overlayRef} onClick={handleOverlayClick} style={{
       position: 'fixed', inset: 0, zIndex: 9000,
       background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -352,7 +355,7 @@ Guidelines:
         }
       `}</style>
 
-      <div style={{
+      <div className="pm-modal-content" style={{
         background:'#161b22', border:'1px solid rgba(255,255,255,0.1)', borderRadius:14,
         width:'100%', maxWidth:880, maxHeight:'92vh',
         display:'flex', flexDirection:'column',

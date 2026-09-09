@@ -163,6 +163,12 @@ class Interpreter {
     if (typeof raw !== 'string') return raw;
     raw = raw.trim();
     if (ptype?.isArray) {
+      if (raw.startsWith('[')) {
+        try {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) return parsed;
+        } catch (_) {}
+      }
       // [1,2,3] or 1,2,3
       const inner = raw.startsWith('[') ? raw.slice(1,-1) : raw;
       return inner.split(',').map(s => {

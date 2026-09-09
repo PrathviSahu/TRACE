@@ -536,33 +536,44 @@ export const PRESET_SOLUTIONS = {
  * Returns either a full preset solution or generates an intelligent
  * runnable Java Solution starter template for the given problem.
  */
-export function getProblemTemplate(problem) {
-  if (PRESET_SOLUTIONS[problem.id]) {
-    const p = PRESET_SOLUTIONS[problem.id];
+export function getProblemTemplate(problemOrName, maybeDifficulty = 'Medium') {
+  // Support both getProblemTemplate(problemObject) AND getProblemTemplate(name, difficulty)
+  const p = typeof problemOrName === 'string'
+    ? { name: problemOrName, difficulty: maybeDifficulty }
+    : (problemOrName || {});
+
+  const id = p.id ?? '';
+  const rawName = p.name || p.title || 'Solve Problem';
+  const difficulty = (p.difficulty || 'Medium').toString().toUpperCase();
+  const topic = (p.topic || (Array.isArray(p.topics) ? p.topics[0] : '') || 'General').toString();
+  const url = p.url || (id ? `https://leetcode.com/problems/` : '');
+
+  if (id && PRESET_SOLUTIONS[id]) {
+    const preset = PRESET_SOLUTIONS[id];
     return {
-      code: p.code,
-      inputs: p.inputs,
+      code: preset.code,
+      inputs: preset.inputs,
       isPreset: true,
-      description: p.description
+      description: preset.description
     };
   }
 
   // Derive method name from problem title (camelCase)
-  const cleanName = problem.name.replace(/[^a-zA-Z0-9 ]/g, '').trim();
-  const words = cleanName.split(/\s+/);
+  const cleanName = rawName.replace(/[^a-zA-Z0-9 ]/g, '').trim();
+  const words = cleanName.split(/\s+/).filter(Boolean);
   const methodName = words.length === 0 ? 'solve' :
     words[0].toLowerCase() + words.slice(1).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join('');
-
-  const topic = problem.topic || 'General';
 
   // Tailor template based on topic
   let code = '';
   let inputs = {};
 
+  const idHeader = id ? `LeetCode #${id}` : 'Problem Solution';
+
   if (topic.includes('String')) {
-    code = `// LeetCode #${problem.id}: ${problem.name} (${problem.difficulty.toUpperCase()})
+    code = `// ${idHeader}: ${rawName} (${difficulty})
 // Topic: ${topic}
-// URL: ${problem.url}
+// URL: ${url}
 
 class Solution {
     public int ${methodName}(String s) {
@@ -580,9 +591,9 @@ class Solution {
 }`;
     inputs = { s: 'leetcode' };
   } else if (topic.includes('Matrix')) {
-    code = `// LeetCode #${problem.id}: ${problem.name} (${problem.difficulty.toUpperCase()})
+    code = `// ${idHeader}: ${rawName} (${difficulty})
 // Topic: ${topic}
-// URL: ${problem.url}
+// URL: ${url}
 
 class Solution {
     public int ${methodName}(int[][] matrix) {
@@ -601,9 +612,9 @@ class Solution {
 }`;
     inputs = { matrix: '[[1,2,3],[4,5,6],[7,8,9]]' };
   } else if (topic.includes('Binary Search')) {
-    code = `// LeetCode #${problem.id}: ${problem.name} (${problem.difficulty.toUpperCase()})
+    code = `// ${idHeader}: ${rawName} (${difficulty})
 // Topic: ${topic}
-// URL: ${problem.url}
+// URL: ${url}
 
 class Solution {
     public int ${methodName}(int[] nums, int target) {
@@ -627,9 +638,9 @@ class Solution {
 }`;
     inputs = { nums: '[1, 3, 5, 8, 12, 17]', target: '8' };
   } else if (topic.includes('Two Pointers') || topic.includes('Sliding Window')) {
-    code = `// LeetCode #${problem.id}: ${problem.name} (${problem.difficulty.toUpperCase()})
+    code = `// ${idHeader}: ${rawName} (${difficulty})
 // Topic: ${topic}
-// URL: ${problem.url}
+// URL: ${url}
 
 class Solution {
     public int ${methodName}(int[] nums) {
@@ -649,9 +660,9 @@ class Solution {
 }`;
     inputs = { nums: '[2, 1, 5, 1, 3, 2]' };
   } else if (topic.includes('Dynamic Programming') || topic.includes('Recursion')) {
-    code = `// LeetCode #${problem.id}: ${problem.name} (${problem.difficulty.toUpperCase()})
+    code = `// ${idHeader}: ${rawName} (${difficulty})
 // Topic: ${topic}
-// URL: ${problem.url}
+// URL: ${url}
 
 class Solution {
     public int ${methodName}(int n) {
@@ -670,9 +681,9 @@ class Solution {
 }`;
     inputs = { n: '6' };
   } else {
-    code = `// LeetCode #${problem.id}: ${problem.name} (${problem.difficulty.toUpperCase()})
+    code = `// ${idHeader}: ${rawName} (${difficulty})
 // Topic: ${topic}
-// URL: ${problem.url}
+// URL: ${url}
 
 class Solution {
     public int ${methodName}(int[] nums) {
@@ -694,6 +705,6 @@ class Solution {
     code,
     inputs,
     isPreset: false,
-    description: `LeetCode #${problem.id} starter template for ${problem.name}`
+    description: id ? `LeetCode #${id} starter template for ${rawName}` : `Starter template for ${rawName}`
   };
 }
