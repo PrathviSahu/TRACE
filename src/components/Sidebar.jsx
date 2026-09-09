@@ -98,7 +98,35 @@ export const SIDEBAR_CATEGORIES = [
   },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ width = 220, setWidth }) {
+  const [isDraggingSidebar, setIsDraggingSidebar] = useState(false);
+
+  const handleSidebarResize = (e) => {
+    e.preventDefault();
+    setIsDraggingSidebar(true);
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+
+    const onMouseMove = (moveEvent) => {
+      let newWidth = moveEvent.clientX;
+      if (newWidth < 160) newWidth = 160;
+      if (newWidth > 400) newWidth = 400;
+      if (setWidth) setWidth(newWidth);
+      localStorage.setItem("trace_sidebar_width", String(Math.round(newWidth)));
+    };
+
+    const onMouseUp = () => {
+      setIsDraggingSidebar(false);
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+      window.dispatchEvent(new Event("resize"));
+    };
+
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+  };
   const { language, setLanguage, activeExampleId, selectExample, sidebarOpen, toggleSidebar } = useTraceStore();
   const [openCategories, setOpenCategories] = useState({ arrays: true });
   const [langDropdownOpen, setLangDropdownOpen] = useState(false);
@@ -108,7 +136,18 @@ export default function Sidebar() {
   }
 
   return (
-    <aside className={`sidebar ${!sidebarOpen ? "collapsed" : ""}`} aria-hidden={!sidebarOpen}>
+    <aside
+      className={`sidebar ${!sidebarOpen ? "collapsed" : ""} ${isDraggingSidebar ? "is-resizing" : ""}`}
+      style={{ width: sidebarOpen ? `${width}px` : "0px", position: "relative" }}
+      aria-hidden={!sidebarOpen}
+    >
+      {sidebarOpen && (
+        <div
+          className={`sidebar-edge-resizer ${isDraggingSidebar ? "dragging" : ""}`}
+          onMouseDown={handleSidebarResize}
+          title="Drag to resize sidebar width"
+        />
+      )}
       {/* ── Language Selector ─────────────────────────────────── */}
       <div className="sidebar-section">
         <div className="sidebar-header-row">

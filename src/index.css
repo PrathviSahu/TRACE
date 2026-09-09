@@ -3378,3 +3378,232 @@ body.light-theme,
   font-size: 11px;
   color: var(--txt-dim);
 }
+
+
+/* ── 9. Dynamic Draggable Resizers ───────────────────────────── */
+
+/* Sidebar width resizer edge */
+.sidebar.is-resizing {
+  transition: none !important;
+}
+
+.sidebar-edge-resizer {
+  position: absolute;
+  top: 0;
+  right: -4px;
+  width: 8px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 50;
+  background: transparent;
+  transition: background 0.15s ease;
+}
+
+.sidebar-edge-resizer::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 2px;
+  transform: translateY(-50%);
+  width: 2px;
+  height: 48px;
+  background: var(--border-card, #262B35);
+  border-radius: 2px;
+  transition: all 0.15s ease;
+}
+
+.sidebar-edge-resizer:hover::after,
+.sidebar-edge-resizer.dragging::after {
+  background: var(--accent-amber, #FF9F43);
+  height: 80px;
+  box-shadow: 0 0 8px rgba(255, 159, 67, 0.7);
+}
+
+.sidebar-edge-resizer:hover,
+.sidebar-edge-resizer.dragging {
+  background: rgba(255, 159, 67, 0.08);
+}
+
+/* Upper Split: Resizable Flexbox */
+.studio-upper-split-resizable {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 0;
+  width: 100%;
+  position: relative;
+  min-height: 260px;
+  max-height: 850px;
+}
+
+.split-resizer-h {
+  width: 10px;
+  flex-shrink: 0;
+  cursor: col-resize;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  transition: background 0.15s ease;
+  z-index: 15;
+  user-select: none;
+}
+
+.split-resizer-h::before {
+  content: "";
+  width: 2px;
+  height: 42px;
+  background: var(--border-card, #262B35);
+  border-radius: 2px;
+  transition: all 0.15s ease;
+}
+
+.split-resizer-h:hover::before,
+.split-resizer-h.dragging::before {
+  background: var(--accent-amber, #FF9F43);
+  height: 72px;
+  box-shadow: 0 0 10px rgba(255, 159, 67, 0.7);
+}
+
+.split-resizer-h:hover,
+.split-resizer-h.dragging {
+  background: rgba(255, 159, 67, 0.08);
+}
+
+/* Vertical splitter between Upper Split & Bottom Section */
+.split-resizer-v {
+  height: 12px;
+  width: 100%;
+  cursor: row-resize;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  margin: 3px 0;
+  z-index: 15;
+  user-select: none;
+  transition: background 0.15s ease;
+}
+
+.split-resizer-v::before {
+  content: "";
+  height: 2px;
+  width: 54px;
+  background: var(--border-card, #262B35);
+  border-radius: 2px;
+  transition: all 0.15s ease;
+}
+
+.split-resizer-v:hover::before,
+.split-resizer-v.dragging::before {
+  background: var(--accent-amber, #FF9F43);
+  width: 110px;
+  box-shadow: 0 0 10px rgba(255, 159, 67, 0.7);
+}
+
+.split-resizer-v:hover,
+.split-resizer-v.dragging {
+  background: rgba(255, 159, 67, 0.08);
+  border-radius: 4px;
+}
+
+/* Bottom Resizable Cards & Splitters */
+.bottom-resizable-wrapper {
+  position: relative;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.bottom-cards-resizable {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  width: 100%;
+  gap: 0;
+  min-height: 150px;
+  max-height: 600px;
+}
+
+.bottom-card-item {
+  height: 100%;
+  min-width: 120px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.bottom-splitter {
+  width: 8px;
+  flex-shrink: 0;
+  cursor: col-resize;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  transition: background 0.15s ease;
+  z-index: 15;
+  user-select: none;
+}
+
+.bottom-splitter::before {
+  content: "";
+  width: 2px;
+  height: 36px;
+  background: var(--border-card, #262B35);
+  border-radius: 2px;
+  transition: all 0.15s ease;
+}
+
+.bottom-splitter:hover::before,
+.bottom-splitter.dragging::before {
+  background: var(--accent-amber, #FF9F43);
+  height: 60px;
+  box-shadow: 0 0 8px rgba(255, 159, 67, 0.7);
+}
+
+.bottom-splitter:hover,
+.bottom-splitter.dragging {
+  background: rgba(255, 159, 67, 0.08);
+}
+
+.bottom-panel-v-resizer {
+  height: 10px;
+  width: 100%;
+  cursor: row-resize;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  margin-top: 4px;
+  margin-bottom: 2px;
+  z-index: 15;
+  user-select: none;
+  transition: background 0.15s ease;
+}
+
+.bottom-panel-v-resizer::before {
+  content: "";
+  height: 2px;
+  width: 50px;
+  background: var(--border-card, #262B35);
+  border-radius: 2px;
+  transition: all 0.15s ease;
+}
+
+.bottom-panel-v-resizer:hover::before,
+.bottom-panel-v-resizer.dragging::before {
+  background: var(--accent-amber, #FF9F43);
+  width: 100px;
+  box-shadow: 0 0 8px rgba(255, 159, 67, 0.7);
+}
+
+.bottom-panel-v-resizer:hover,
+.bottom-panel-v-resizer.dragging {
+  background: rgba(255, 159, 67, 0.08);
+  border-radius: 4px;
+}
