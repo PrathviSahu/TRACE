@@ -1,5 +1,92 @@
 @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap');
 
+/* ── 0. Base Reset & Full-Bleed Dark Theme ───────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #090B0E;
+  color-scheme: dark;
+}
+
+html[data-theme="light"] {
+  background-color: #F1F5F9;
+  color-scheme: light;
+}
+
+body {
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100%;
+  min-height: 100vh;
+  background-color: #090B0E;
+  color: #F4F5F7;
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+body.light-theme,
+body[data-theme="light"] {
+  background-color: #F1F5F9;
+  color: #1E293B;
+}
+
+#root {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: inherit;
+}
+
+.app-container {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: inherit;
+}
+
+/* ── Custom Dark Scrollbars & Eliminating White Corner Squares ── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent !important;
+}
+
+[data-theme="light"] ::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
 /* ── TRACE — Amber Terminal Dark Theme Tokens ─────────────────── */
 :root {
   --bg-darkest: #090B0E;
