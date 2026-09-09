@@ -1,4 +1,6 @@
+import { useEffect } from "react";
 import { Routes, Route } from "react-router-dom";
+import { useTraceStore } from "./store/traceStore.js";
 import DSABrain from "./components/DSABrain.jsx";
 import Navbar from "./components/Navbar.jsx";
 import VisualizerPage from "./pages/VisualizerPage.jsx";
@@ -14,6 +16,17 @@ import InterviewSessionPage from "./pages/InterviewSessionPage.jsx";
 import InterviewResultPage from "./pages/InterviewResultPage.jsx";
 
 export default function App() {
+  useEffect(() => {
+    function handleKeyDown(e) {
+      if ((e.ctrlKey || e.metaKey) && (e.key === "b" || e.key === "B")) {
+        e.preventDefault();
+        useTraceStore.getState().toggleSidebar();
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   return (
     <div className="app-container">
       <Navbar />

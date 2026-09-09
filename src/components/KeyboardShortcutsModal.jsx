@@ -20,6 +20,7 @@ export default function KeyboardShortcutsModal({ isOpen, onClose }) {
     { key: "Home", label: "Jump to Start", desc: "Go immediately to the first step" },
     { key: "End", label: "Jump to End", desc: "Go immediately to the final step" },
     { key: "?", label: "Toggle Shortcuts", desc: "Open or close this helper dialog" },
+    { key: "Ctrl+B", label: "Toggle Sidebar", desc: "Slide sidebar inside/outside for maximum space" },
     { key: "Esc", label: "Close Modal", desc: "Dismiss open dialog or shortcuts" }
   ];
 

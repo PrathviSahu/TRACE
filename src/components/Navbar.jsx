@@ -13,20 +13,41 @@ export default function Navbar() {
       navigate(`/problems?search=${encodeURIComponent(navSearch.trim())}`);
     }
   }
-  const { language, theme, setTheme } = useTraceStore();
+  const { language, theme, setTheme, sidebarOpen, toggleSidebar } = useTraceStore();
 
   return (
     <header className="navbar">
-      {/* ── Brand Logo ────────────────────────────────────────── */}
-      <Link to="/" className="nav-brand">
-        <div className="brand-logo-badge" title="TRACE — Visual DSA Debugger">
-          <TraceLogo size={20} />
-        </div>
-        <div className="brand-text-wrap">
-          <span className="brand-name">TRACE</span>
-          <span className="brand-tagline">See Your Algorithm Think</span>
-        </div>
-      </Link>
+      {/* ── Brand Logo & Sidebar Toggle ────────────────────────── */}
+      <div className="nav-left-section">
+        {loc.pathname === "/" && (
+          <button
+            type="button"
+            className={`nav-sidebar-toggle-btn ${!sidebarOpen ? "collapsed" : ""}`}
+            onClick={toggleSidebar}
+            title={sidebarOpen ? "Slide sidebar inside (Ctrl+B) for more space" : "Show sidebar (Ctrl+B)"}
+            aria-label="Toggle sidebar"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
+              <line x1="9" y1="3" x2="9" y2="21"/>
+              {sidebarOpen ? (
+                <path d="m14 9-3 3 3 3"/>
+              ) : (
+                <path d="m11 9 3 3-3 3"/>
+              )}
+            </svg>
+          </button>
+        )}
+        <Link to="/" className="nav-brand">
+          <div className="brand-logo-badge" title="TRACE — Visual DSA Debugger">
+            <TraceLogo size={20} />
+          </div>
+          <div className="brand-text-wrap">
+            <span className="brand-name">TRACE</span>
+            <span className="brand-tagline">See Your Algorithm Think</span>
+          </div>
+        </Link>
+      </div>
 
       {/* ── Nav Links ─────────────────────────────────────────── */}
       <nav className="nav-menu">

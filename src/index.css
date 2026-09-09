@@ -309,6 +309,109 @@ body.light-theme,
   gap: 14px;
   flex-shrink: 0;
   overflow-y: auto;
+  overflow-x: hidden;
+  transition: width 0.24s cubic-bezier(0.4, 0, 0.2, 1),
+              padding 0.24s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.2s;
+  will-change: width, padding;
+  white-space: nowrap;
+}
+
+.sidebar.collapsed {
+  width: 0 !important;
+  min-width: 0 !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  border-right-color: transparent !important;
+  overflow: hidden !important;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.nav-left-section {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nav-sidebar-toggle-btn {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-card);
+  color: var(--txt-normal);
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.nav-sidebar-toggle-btn:hover {
+  background: var(--bg-hover);
+  color: var(--accent-amber);
+  border-color: var(--border-glow);
+  transform: scale(1.04);
+}
+
+.nav-sidebar-toggle-btn.collapsed {
+  background: rgba(255, 159, 67, 0.14);
+  border-color: rgba(255, 159, 67, 0.45);
+  color: var(--accent-amber);
+}
+
+.sidebar-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sidebar-collapse-icon-btn {
+  background: transparent;
+  border: none;
+  color: var(--txt-dim);
+  cursor: pointer;
+  padding: 3px 6px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.sidebar-collapse-icon-btn:hover {
+  color: var(--accent-amber);
+  background: var(--bg-hover);
+}
+
+.sidebar-edge-expand-btn {
+  position: absolute;
+  left: 0;
+  top: 72px;
+  z-index: 45;
+  width: 18px;
+  height: 40px;
+  border-top-right-radius: 8px;
+  border-bottom-right-radius: 8px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-card);
+  border-left: none;
+  color: var(--accent-amber);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.4);
+  transition: all 0.15s;
+}
+
+.sidebar-edge-expand-btn:hover {
+  width: 22px;
+  background: var(--bg-hover);
+  color: var(--accent-amber-bright);
 }
 .sidebar-section {
   display: flex;

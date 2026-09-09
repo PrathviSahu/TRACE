@@ -79,6 +79,24 @@ export const useTraceStore = create((set, get) => ({
     get().setTheme(next);
   },
 
+  // ── Sidebar State
+  sidebarOpen: typeof window !== "undefined" && window.localStorage
+    ? localStorage.getItem("trace_sidebar_open") !== "false"
+    : true,
+  setSidebarOpen: (open) => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("trace_sidebar_open", String(open));
+    }
+    set({ sidebarOpen: open });
+  },
+  toggleSidebar: () => {
+    const next = !get().sidebarOpen;
+    if (typeof window !== "undefined") {
+      localStorage.setItem("trace_sidebar_open", String(next));
+    }
+    set({ sidebarOpen: next });
+  },
+
   // ── Language & Active Selection
   language: 'java', // 'python' | 'java' | 'cpp'
   activeExampleId: 'two-sum',
