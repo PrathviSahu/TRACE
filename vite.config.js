@@ -82,25 +82,17 @@ function geminiProxyMiddleware(server) {
         return;
       }
 
-      // Detect common wrong key formats (OAuth tokens start with AQ., ya29.)
-      if (apiKey.startsWith('AQ.') || apiKey.startsWith('ya29.') || !apiKey.startsWith('AIza')) {
-        res.statusCode = 401;
-        res.setHeader('Content-Type', 'application/json');
-        res.end(JSON.stringify({
-          error: {
-            code: 401,
-            message: 'Invalid API key format. A Gemini API key must start with "AIza". Get yours free at aistudio.google.com/app/apikey'
-          }
-        }));
-        return;
-      }
-
       // 5. Upstream call with timeout and sanitized error handling
       try {
+        // Send key both as x-goog-api-key header and query parameter for maximum compatibility
+        // across legacy AIza keys and new Google AI Studio AQ. authorization keys
         const targetUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
         const response = await fetch(targetUrl, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'x-goog-api-key': apiKey
+          },
           body: JSON.stringify(payload),
           signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
         });
