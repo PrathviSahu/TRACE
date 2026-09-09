@@ -20,8 +20,8 @@ export default function InterviewResultPage() {
     return (
       <div style={{
         minHeight: "100vh",
-        background: "#070a12",
-        color: "#f8fafc",
+        background: "var(--bg-darkest, #070a12)",
+        color: "var(--txt-bright, #f8fafc)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -29,7 +29,7 @@ export default function InterviewResultPage() {
       }}>
         <div style={{ textAlign: "center" }}>
           <h2>Session Not Found</h2>
-          <p style={{ color: "#94a3b8" }}>Could not find interview result for {sessionId}</p>
+          <p style={{ color: "var(--txt-muted, #94a3b8)" }}>Could not find interview result for {sessionId}</p>
           <button
             onClick={() => navigate("/interview/plan")}
             style={{
@@ -54,8 +54,8 @@ export default function InterviewResultPage() {
   return (
     <div className="interview-result-page" style={{
       minHeight: "100vh",
-      background: "#070a12",
-      color: "#e2e8f0",
+      background: "var(--bg-darkest, #070a12)",
+      color: "var(--txt-main, #e2e8f0)",
       fontFamily: "var(--font-ui, Inter, sans-serif)",
       padding: "2rem 1.5rem 4rem 1.5rem",
     }}>
@@ -67,8 +67,8 @@ export default function InterviewResultPage() {
               onClick={() => navigate("/interview/plan")}
               style={{
                 background: "none",
-                border: "1px solid #233152",
-                color: "#94a3b8",
+                border: "1px solid var(--border-card, #233152)",
+                color: "var(--txt-muted, #94a3b8)",
                 padding: "0.4rem 0.8rem",
                 borderRadius: "6px",
                 fontSize: "0.82rem",
@@ -97,9 +97,9 @@ export default function InterviewResultPage() {
             <button
               onClick={() => setShowHistoryModal(true)}
               style={{
-                background: "#0d1322",
-                border: "1px solid #1c2842",
-                color: "#cbd5e1",
+                background: "var(--bg-surface, #0d1322)",
+                border: "1px solid var(--border-card, #1c2842)",
+                color: "var(--txt-main, #cbd5e1)",
                 padding: "0.45rem 0.85rem",
                 borderRadius: "6px",
                 fontSize: "0.82rem",
@@ -132,7 +132,7 @@ export default function InterviewResultPage() {
           <h1 style={{
             fontSize: "1.8rem",
             fontWeight: 800,
-            color: "#f8fafc",
+            color: "var(--txt-bright, #f8fafc)",
             margin: "0 0 0.4rem 0",
           }}>
             Interview Assessment: {session.problemTitle}
@@ -163,7 +163,7 @@ export default function InterviewResultPage() {
         <div style={{
           display: "flex",
           gap: "0.5rem",
-          borderBottom: "1px solid #1c2842",
+          borderBottom: "1px solid var(--border-subtle, #1c2842)",
           paddingBottom: "0.25rem",
         }}>
           <button
@@ -171,10 +171,10 @@ export default function InterviewResultPage() {
             onClick={() => setActiveReviewTab("rubric")}
             style={{
               padding: "0.5rem 1rem",
-              background: activeReviewTab === "rubric" ? "#161f36" : "transparent",
+              background: activeReviewTab === "rubric" ? "var(--bg-surface, #161f36)" : "transparent",
               border: "none",
               borderBottom: activeReviewTab === "rubric" ? "2px solid #38bdf8" : "2px solid transparent",
-              color: activeReviewTab === "rubric" ? "#f8fafc" : "#94a3b8",
+              color: activeReviewTab === "rubric" ? "var(--txt-bright, #f8fafc)" : "var(--txt-muted, #94a3b8)",
               fontSize: "0.85rem",
               fontWeight: 600,
               cursor: "pointer",
@@ -188,10 +188,10 @@ export default function InterviewResultPage() {
             onClick={() => setActiveReviewTab("code")}
             style={{
               padding: "0.5rem 1rem",
-              background: activeReviewTab === "code" ? "#161f36" : "transparent",
+              background: activeReviewTab === "code" ? "var(--bg-surface, #161f36)" : "transparent",
               border: "none",
               borderBottom: activeReviewTab === "code" ? "2px solid #38bdf8" : "2px solid transparent",
-              color: activeReviewTab === "code" ? "#f8fafc" : "#94a3b8",
+              color: activeReviewTab === "code" ? "var(--txt-bright, #f8fafc)" : "var(--txt-muted, #94a3b8)",
               fontSize: "0.85rem",
               fontWeight: 600,
               cursor: "pointer",
@@ -205,10 +205,10 @@ export default function InterviewResultPage() {
             onClick={() => setActiveReviewTab("approach")}
             style={{
               padding: "0.5rem 1rem",
-              background: activeReviewTab === "approach" ? "#161f36" : "transparent",
+              background: activeReviewTab === "approach" ? "var(--bg-surface, #161f36)" : "transparent",
               border: "none",
               borderBottom: activeReviewTab === "approach" ? "2px solid #38bdf8" : "2px solid transparent",
-              color: activeReviewTab === "approach" ? "#f8fafc" : "#94a3b8",
+              color: activeReviewTab === "approach" ? "var(--txt-bright, #f8fafc)" : "var(--txt-muted, #94a3b8)",
               fontSize: "0.85rem",
               fontWeight: 600,
               cursor: "pointer",
@@ -230,8 +230,8 @@ export default function InterviewResultPage() {
 
         {activeReviewTab === "code" && (
           <div style={{
-            background: "#080c16",
-            border: "1px solid #1c2842",
+            background: "var(--bg-darkest, #080c16)",
+            border: "1px solid var(--border-card, #1c2842)",
             borderRadius: "8px",
             overflow: "hidden",
             display: "flex",
@@ -240,10 +240,10 @@ export default function InterviewResultPage() {
           }}>
             <div style={{
               padding: "0.5rem 1rem",
-              background: "#0d1322",
-              borderBottom: "1px solid #1c2842",
+              background: "var(--bg-surface, #0d1322)",
+              borderBottom: "1px solid var(--border-subtle, #1c2842)",
               fontSize: "0.8rem",
-              color: "#94a3b8",
+              color: "var(--txt-muted, #94a3b8)",
               display: "flex",
               justifyContent: "space-between",
             }}>
@@ -273,24 +273,24 @@ export default function InterviewResultPage() {
             display: "flex",
             flexDirection: "column",
             gap: "1rem",
-            background: "#080c16",
-            border: "1px solid #1c2842",
+            background: "var(--bg-surface, #080c16)",
+            border: "1px solid var(--border-card, #1c2842)",
             borderRadius: "8px",
             padding: "1.25rem",
           }}>
             <div>
               <div style={{ fontSize: "0.75rem", color: "#64748b", textTransform: "uppercase", fontWeight: 700 }}>Algorithm & Approach</div>
-              <p style={{ margin: "0.25rem 0 0 0", fontSize: "0.9rem", color: "#e2e8f0" }}>{session.approach?.summary || "None recorded."}</p>
+              <p style={{ margin: "0.25rem 0 0 0", fontSize: "0.9rem", color: "var(--txt-main, #e2e8f0)" }}>{session.approach?.summary || "None recorded."}</p>
             </div>
             <div>
               <div style={{ fontSize: "0.75rem", color: "#64748b", textTransform: "uppercase", fontWeight: 700 }}>Reasoning & Invariant</div>
-              <p style={{ margin: "0.25rem 0 0 0", fontSize: "0.9rem", color: "#e2e8f0" }}>{session.approach?.reasoning || "None recorded."}</p>
+              <p style={{ margin: "0.25rem 0 0 0", fontSize: "0.9rem", color: "var(--txt-main, #e2e8f0)" }}>{session.approach?.reasoning || "None recorded."}</p>
             </div>
             <div>
               <div style={{ fontSize: "0.75rem", color: "#64748b", textTransform: "uppercase", fontWeight: 700 }}>Edge Cases Considered</div>
-              <p style={{ margin: "0.25rem 0 0 0", fontSize: "0.9rem", color: "#e2e8f0" }}>{session.approach?.edgeCases || "None recorded."}</p>
+              <p style={{ margin: "0.25rem 0 0 0", fontSize: "0.9rem", color: "var(--txt-main, #e2e8f0)" }}>{session.approach?.edgeCases || "None recorded."}</p>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", borderTop: "1px solid #1c2842", paddingTop: "0.75rem" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", borderTop: "1px solid var(--border-subtle, #1c2842)", paddingTop: "0.75rem" }}>
               <div>
                 <div style={{ fontSize: "0.75rem", color: "#64748b", textTransform: "uppercase", fontWeight: 700 }}>Time Complexity</div>
                 <div style={{ fontSize: "0.95rem", fontFamily: "monospace", color: "#38bdf8", marginTop: "0.2rem" }}>{session.approach?.timeComplexity || "Not specified"}</div>

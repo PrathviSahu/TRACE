@@ -118,11 +118,11 @@ export default function InterviewProblemPanel({
       <div style={{
         lineHeight: 1.65,
         fontSize: "0.92rem",
-        color: "#cbd5e1",
-        background: "#0d1322",
+        color: "var(--txt-main, #cbd5e1)",
+        background: "var(--bg-surface, #0d1322)",
         padding: "1rem",
         borderRadius: "8px",
-        border: "1px solid #1c2842",
+        border: "1px solid var(--border-subtle, #1c2842)",
       }}>
         {descObj?.description ? (
           <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(descObj.description) }} />
@@ -142,8 +142,8 @@ export default function InterviewProblemPanel({
           </h4>
           {examples.map((ex, i) => (
             <div key={i} style={{
-              background: "#080c16",
-              border: "1px solid #161f36",
+              background: "var(--bg-darkest, #080c16)",
+              border: "1px solid var(--border-card, #161f36)",
               borderRadius: "6px",
               padding: "0.75rem 1rem",
               fontSize: "0.85rem",

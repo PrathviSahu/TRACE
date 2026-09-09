@@ -287,8 +287,8 @@ export default function CompanyDetailPage() {
             align-items: center;
             justify-content: center;
             height: calc(100vh - 60px);
-            background: #0d1117;
-            color: #c9d1d9;
+            background: var(--bg-darkest, #0d1117);
+            color: var(--txt-main, #c9d1d9);
           }
           .cnf-title { font-size: 22px; font-weight: 700; margin-bottom: 12px; }
           .cnf-btn {
@@ -297,7 +297,7 @@ export default function CompanyDetailPage() {
           }
         `}</style>
         <div className="cnf-title">Company Not Found</div>
-        <p style={{ color: "#8b949e", marginBottom: 20 }}>No dataset entries found for \"${companyId}\".</p>
+        <p style={{ color: "var(--txt-muted, #8b949e)", marginBottom: 20 }}>No dataset entries found for \"${companyId}\".</p>
         <Link to="/companies" className="cnf-btn">← Back to Company Directory</Link>
       </div>
     );
@@ -308,8 +308,8 @@ export default function CompanyDetailPage() {
       <style>{`
         .company-dashboard {
           min-height: calc(100vh - 56px);
-          background: #090d13;
-          color: #c9d1d9;
+          background: var(--bg-darkest, #090d13);
+          color: var(--txt-main, #c9d1d9);
           font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
           padding: 24px 32px 64px;
         }
@@ -320,7 +320,7 @@ export default function CompanyDetailPage() {
           align-items: center;
           gap: 8px;
           font-size: 12px;
-          color: #8b949e;
+          color: var(--txt-muted, #8b949e);
           margin-bottom: 16px;
         }
         .cd-breadcrumb a { color: #79a8ff; text-decoration: none; }
@@ -331,8 +331,8 @@ export default function CompanyDetailPage() {
           display: flex;
           align-items: flex-start;
           justify-content: space-between;
-          background: #0d1117;
-          border: 1px solid rgba(255,255,255,0.08);
+          background: var(--bg-surface, #0d1117);
+          border: 1px solid var(--border-card, rgba(255,255,255,0.08));
           border-radius: 12px;
           padding: 24px 28px;
           margin-bottom: 24px;
@@ -365,7 +365,7 @@ export default function CompanyDetailPage() {
         .cd-company-name {
           font-size: 26px;
           font-weight: 800;
-          color: #f0f6fc;
+          color: var(--txt-bright, #f0f6fc);
           letter-spacing: -0.02em;
           display: flex;
           align-items: center;
@@ -378,9 +378,9 @@ export default function CompanyDetailPage() {
           letter-spacing: 0.05em;
           padding: 2px 8px;
           border-radius: 12px;
-          border: 1px solid rgba(255,255,255,0.15);
-          background: rgba(255,255,255,0.06);
-          color: #c9d1d9;
+          border: 1px solid var(--border-subtle, rgba(255,255,255,0.15));
+          background: var(--bg-raised, rgba(255,255,255,0.06));
+          color: var(--txt-main, #c9d1d9);
         }
         .cd-meta-row {
           display: flex;
@@ -388,7 +388,7 @@ export default function CompanyDetailPage() {
           gap: 16px;
           margin-top: 6px;
           font-size: 13px;
-          color: #8b949e;
+          color: var(--txt-muted, #8b949e);
         }
         .cd-trust-badge {
           display: inline-flex;
@@ -435,8 +435,8 @@ export default function CompanyDetailPage() {
 
         /* Readiness Card */
         .cd-readiness-card {
-          background: #0d1117;
-          border: 1px solid rgba(255,255,255,0.08);
+          background: var(--bg-surface, #0d1117);
+          border: 1px solid var(--border-card, rgba(255,255,255,0.08));
           border-radius: 12px;
           padding: 20px;
           display: flex;
@@ -457,12 +457,12 @@ export default function CompanyDetailPage() {
         .cd-readiness-num {
           font-size: 38px;
           font-weight: 900;
-          color: #f0f6fc;
+          color: var(--txt-bright, #f0f6fc);
           font-family: var(--font-mono, monospace);
         }
         .cd-readiness-sub {
           font-size: 14px;
-          color: #8b949e;
+          color: var(--txt-muted, #8b949e);
           font-weight: 600;
         }
 
@@ -477,7 +477,7 @@ export default function CompanyDetailPage() {
           align-items: center;
           justify-content: space-between;
           font-size: 11.5px;
-          color: #8b949e;
+          color: var(--txt-muted, #8b949e);
         }
         .cd-readiness-mini-fill {
           height: 4px;
@@ -489,8 +489,8 @@ export default function CompanyDetailPage() {
 
         /* Focus Areas Banner */
         .cd-focus-card {
-          background: #0d1117;
-          border: 1px solid rgba(255,255,255,0.08);
+          background: var(--bg-surface, #0d1117);
+          border: 1px solid var(--border-card, rgba(255,255,255,0.08));
           border-radius: 12px;
           padding: 20px;
           display: flex;
@@ -509,8 +509,8 @@ export default function CompanyDetailPage() {
           gap: 12px;
         }
         .cd-focus-item-box {
-          background: rgba(255,255,255,0.02);
-          border: 1px solid rgba(255,255,255,0.06);
+          background: var(--bg-darkest, rgba(255,255,255,0.02));
+          border: 1px solid var(--border-subtle, rgba(255,255,255,0.06));
           border-radius: 8px;
           padding: 12px;
         }
@@ -520,8 +520,8 @@ export default function CompanyDetailPage() {
           display: flex;
           align-items: center;
           gap: 8px;
-          background: #0d1117;
-          border: 1px solid rgba(255,255,255,0.08);
+          background: var(--bg-surface, #0d1117);
+          border: 1px solid var(--border-card, rgba(255,255,255,0.08));
           border-radius: 12px;
           padding: 8px 12px;
           margin-bottom: 20px;
@@ -530,7 +530,7 @@ export default function CompanyDetailPage() {
         .cd-mode-btn {
           background: transparent;
           border: 1px solid transparent;
-          color: #8b949e;
+          color: var(--txt-muted, #8b949e);
           font-size: 12.5px;
           font-weight: 600;
           padding: 8px 16px;
@@ -543,8 +543,8 @@ export default function CompanyDetailPage() {
           transition: all 0.15s;
         }
         .cd-mode-btn:hover {
-          background: rgba(255,255,255,0.04);
-          color: #c9d1d9;
+          background: var(--bg-hover, rgba(255,255,255,0.04));
+          color: var(--txt-main, #c9d1d9);
         }
         .cd-mode-btn.active {
           background: rgba(88,166,255,0.15);
@@ -554,8 +554,8 @@ export default function CompanyDetailPage() {
 
         /* ── Patterns Row ────────────────────────────────────── */
         .cd-patterns-card {
-          background: #0d1117;
-          border: 1px solid rgba(255,255,255,0.08);
+          background: var(--bg-surface, #0d1117);
+          border: 1px solid var(--border-card, rgba(255,255,255,0.08));
           border-radius: 12px;
           padding: 16px 20px;
           margin-bottom: 20px;
@@ -572,9 +572,9 @@ export default function CompanyDetailPage() {
           gap: 6px;
         }
         .cd-pat-chip {
-          background: rgba(255,255,255,0.04);
-          border: 1px solid rgba(255,255,255,0.08);
-          color: #c9d1d9;
+          background: var(--bg-darkest, rgba(255,255,255,0.04));
+          border: 1px solid var(--border-subtle, rgba(255,255,255,0.08));
+          color: var(--txt-main, #c9d1d9);
           font-size: 11.5px;
           padding: 4px 10px;
           border-radius: 6px;
@@ -605,9 +605,9 @@ export default function CompanyDetailPage() {
           flex-wrap: wrap;
         }
         .cd-input-search {
-          background: #0d1117;
-          border: 1px solid rgba(255,255,255,0.1);
-          color: #c9d1d9;
+          background: var(--bg-main, #0d1117);
+          border: 1px solid var(--border-card, rgba(255,255,255,0.1));
+          color: var(--txt-main, #c9d1d9);
           font-size: 12px;
           padding: 6px 12px;
           border-radius: 6px;
@@ -616,9 +616,9 @@ export default function CompanyDetailPage() {
         }
         .cd-input-search:focus { border-color: #58a6ff; }
         .cd-select {
-          background: #0d1117;
-          border: 1px solid rgba(255,255,255,0.1);
-          color: #c9d1d9;
+          background: var(--bg-main, #0d1117);
+          border: 1px solid var(--border-card, rgba(255,255,255,0.1));
+          color: var(--txt-main, #c9d1d9);
           font-size: 12px;
           padding: 6px 10px;
           border-radius: 6px;
@@ -626,8 +626,8 @@ export default function CompanyDetailPage() {
           cursor: pointer;
         }
         .cd-table-card {
-          background: #0d1117;
-          border: 1px solid rgba(255,255,255,0.08);
+          background: var(--bg-surface, #0d1117);
+          border: 1px solid var(--border-card, rgba(255,255,255,0.08));
           border-radius: 12px;
           overflow: hidden;
         }
@@ -637,8 +637,8 @@ export default function CompanyDetailPage() {
           font-size: 12.5px;
         }
         .cd-table th {
-          background: rgba(255,255,255,0.02);
-          color: #8b949e;
+          background: var(--bg-darkest, rgba(255,255,255,0.02));
+          color: var(--txt-muted, #8b949e);
           font-size: 11px;
           font-weight: 700;
           text-transform: uppercase;
@@ -653,7 +653,7 @@ export default function CompanyDetailPage() {
           vertical-align: middle;
         }
         .cd-table tr:hover td {
-          background: rgba(255,255,255,0.02);
+          background: var(--bg-hover, rgba(255,255,255,0.02));
         }
 
         /* Priority Tag Pill */
@@ -672,7 +672,7 @@ export default function CompanyDetailPage() {
 
         .cd-prob-title {
           font-weight: 600;
-          color: #f0f6fc;
+          color: var(--txt-bright, #f0f6fc);
           cursor: pointer;
           transition: color 0.15s;
         }
@@ -694,9 +694,9 @@ export default function CompanyDetailPage() {
           border: 1px solid transparent;
         }
         .cd-btn-practice {
-          background: rgba(255,255,255,0.05);
-          border-color: rgba(255,255,255,0.1);
-          color: #c9d1d9;
+          background: var(--bg-raised, rgba(255,255,255,0.05));
+          border-color: var(--border-subtle, rgba(255,255,255,0.1));
+          color: var(--txt-main, #c9d1d9);
         }
         .cd-btn-practice:hover { background: rgba(255,255,255,0.1); color: #fff; }
         .cd-btn-visualize {
@@ -711,7 +711,7 @@ export default function CompanyDetailPage() {
       <div className="cd-breadcrumb">
         <Link to="/companies">Companies</Link>
         <span>/</span>
-        <span style={{ color: "#f0f6fc", fontWeight: 600 }}>{company.name}</span>
+        <span style={{ color: "var(--txt-bright, #f0f6fc)", fontWeight: 600 }}>{company.name}</span>
       </div>
 
       {/* Header Box */}
@@ -751,7 +751,7 @@ export default function CompanyDetailPage() {
           <div>
             <div className="cd-readiness-top">
               <div>
-                <div style={{ fontSize: 13, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "#8b949e" }}>
+                <div style={{ fontSize: 13, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--txt-muted, #8b949e)" }}>
                   TRACE Interview Readiness
                 </div>
                 <div style={{ fontSize: 11, color: "#6e7681", marginTop: 2 }}>
@@ -820,10 +820,10 @@ export default function CompanyDetailPage() {
         <div className="cd-focus-card">
           <div className="cd-focus-header">
             <div>
-              <div style={{ fontSize: 13, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "#f0f6fc" }}>
+              <div style={{ fontSize: 13, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--txt-bright, #f0f6fc)" }}>
                 Target Focus Areas
               </div>
-              <div style={{ fontSize: 11.5, color: "#8b949e", marginTop: 2 }}>
+              <div style={{ fontSize: 11.5, color: "var(--txt-muted, #8b949e)", marginTop: 2 }}>
                 Identified from unattempted patterns and revision status
               </div>
             </div>
@@ -841,8 +841,8 @@ export default function CompanyDetailPage() {
             {focusAreas.weakPatterns.length > 0 ? (
               focusAreas.weakPatterns.slice(0, 3).map(wp => (
                 <div key={wp.pattern} className="cd-focus-item-box">
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#8b949e", marginBottom: 4 }}>
-                    <span style={{ fontWeight: 700, color: "#c9d1d9" }}>{wp.pattern}</span>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "var(--txt-muted, #8b949e)", marginBottom: 4 }}>
+                    <span style={{ fontWeight: 700, color: "var(--txt-main, #c9d1d9)" }}>{wp.pattern}</span>
                     <span>{wp.solved}/{wp.total}</span>
                   </div>
                   <div style={{ fontSize: 11, color: "#79a8ff", cursor: "pointer", fontWeight: 600 }}
@@ -860,7 +860,7 @@ export default function CompanyDetailPage() {
                 <div style={{ fontSize: 11, fontWeight: 700, color: "#ef4743", marginBottom: 4 }}>
                   Hard Difficulty Gap
                 </div>
-                <div style={{ fontSize: 11, color: "#8b949e" }}>
+                <div style={{ fontSize: 11, color: "var(--txt-muted, #8b949e)" }}>
                   {focusAreas.weakDifficulty.solved}/{focusAreas.weakDifficulty.total} solved ({focusAreas.weakDifficulty.pct}%)
                 </div>
               </div>
@@ -887,7 +887,7 @@ export default function CompanyDetailPage() {
           <button
             style={{
               marginLeft: "auto", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
-              color: "#c9d1d9", fontSize: 11.5, padding: "5px 12px", borderRadius: 6, cursor: "pointer"
+              color: "var(--txt-main, #c9d1d9)", fontSize: 11.5, padding: "5px 12px", borderRadius: 6, cursor: "pointer"
             }}
             onClick={() => setMockSeed(s => s + 1)}
           >
@@ -899,9 +899,9 @@ export default function CompanyDetailPage() {
       {/* Curated Pattern Layer */}
       <div className="cd-patterns-card">
         <div className="cd-patterns-title-row">
-          <div style={{ fontSize: 12, fontWeight: 700, color: "#f0f6fc", display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: "var(--txt-bright, #f0f6fc)", display: "flex", alignItems: "center", gap: 8 }}>
             <span>Top Algorithmic Patterns</span>
-            <span style={{ fontSize: 10, color: "#8b949e", fontWeight: 400 }}>({PATTERN_SOURCE_LABEL})</span>
+            <span style={{ fontSize: 10, color: "var(--txt-dim, #8b949e)", fontWeight: 400 }}>({PATTERN_SOURCE_LABEL})</span>
           </div>
           <button
             style={{ background: "transparent", border: "none", color: "#79a8ff", fontSize: 11, cursor: "pointer" }}
@@ -965,7 +965,7 @@ export default function CompanyDetailPage() {
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <span style={{ fontSize: 12, color: "#8b949e" }}>Sort by:</span>
+          <span style={{ fontSize: 12, color: "var(--txt-muted, #8b949e)" }}>Sort by:</span>
           <select className="cd-select" value={sortBy} onChange={e => setSortBy(e.target.value)}>
             <option value="priority_desc">Priority Score (Highest)</option>
             <option value="frequency_desc">Frequency (Highest)</option>
@@ -975,7 +975,7 @@ export default function CompanyDetailPage() {
             <option value="acceptance_desc">Acceptance Rate</option>
           </select>
 
-          <span style={{ fontSize: 12, color: "#8b949e", marginLeft: 8 }}>
+          <span style={{ fontSize: 12, color: "var(--txt-muted, #8b949e)", marginLeft: 8 }}>
             {filteredProblems.length} shown
           </span>
         </div>

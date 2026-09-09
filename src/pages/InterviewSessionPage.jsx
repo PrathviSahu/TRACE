@@ -239,8 +239,8 @@ export default function InterviewSessionPage() {
     return (
       <div style={{
         minHeight: "100vh",
-        background: "#070a12",
-        color: "#f8fafc",
+        background: "var(--bg-darkest, #070a12)",
+        color: "var(--txt-bright, #f8fafc)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -248,7 +248,7 @@ export default function InterviewSessionPage() {
       }}>
         <div style={{ textAlign: "center" }}>
           <h2>Interview Session Not Found</h2>
-          <p style={{ color: "#94a3b8" }}>The requested session ID does not exist in local storage.</p>
+          <p style={{ color: "var(--txt-muted, #94a3b8)" }}>The requested session ID does not exist in local storage.</p>
           <button
             onClick={() => navigate("/interview/setup")}
             style={{
@@ -273,8 +273,8 @@ export default function InterviewSessionPage() {
   return (
     <div className="interview-session-page" style={{
       minHeight: "100vh",
-      background: "#070a12",
-      color: "#e2e8f0",
+      background: "var(--bg-darkest, #070a12)",
+      color: "var(--txt-main, #e2e8f0)",
       fontFamily: "var(--font-ui, Inter, sans-serif)",
       display: "flex",
       flexDirection: "column",
@@ -285,8 +285,8 @@ export default function InterviewSessionPage() {
         justifyContent: "space-between",
         alignItems: "center",
         padding: "0.6rem 1.25rem",
-        background: "#0d1322",
-        borderBottom: "1px solid #1c2842",
+        background: "var(--bg-surface, #0d1322)",
+        borderBottom: "1px solid var(--border-subtle, #1c2842)",
         flexWrap: "wrap",
         gap: "1rem",
       }}>
@@ -297,14 +297,14 @@ export default function InterviewSessionPage() {
             style={{
               background: "none",
               border: "none",
-              color: "#94a3b8",
+              color: "var(--txt-muted, #94a3b8)",
               cursor: "pointer",
               fontSize: "0.85rem",
             }}
           >
             ← Exit
           </button>
-          <div style={{ width: "1px", height: "18px", background: "#1c2842" }} />
+          <div style={{ width: "1px", height: "18px", background: "var(--border-subtle, #1c2842)" }} />
           <span style={{
             background: "rgba(99, 102, 241, 0.15)",
             border: "1px solid rgba(99, 102, 241, 0.3)",
@@ -316,7 +316,7 @@ export default function InterviewSessionPage() {
           }}>
             {session.companyName} • {session.role}
           </span>
-          <span style={{ fontSize: "0.92rem", fontWeight: 700, color: "#f8fafc" }}>
+          <span style={{ fontSize: "0.92rem", fontWeight: 700, color: "var(--txt-bright, #f8fafc)" }}>
             {session.problemTitle}
           </span>
         </div>
@@ -376,12 +376,12 @@ export default function InterviewSessionPage() {
         display: "grid",
         gridTemplateColumns: "minmax(350px, 42%) 1fr",
         gap: "1px",
-        background: "#1c2842",
+        background: "var(--border-subtle, #1c2842)",
         overflow: "hidden",
       }}>
         {/* ── Left Column: Problem, Approach, Follow-ups ── */}
         <div style={{
-          background: "#0a0e1a",
+          background: "var(--bg-main, #0a0e1a)",
           display: "flex",
           flexDirection: "column",
           overflow: "hidden",
@@ -389,8 +389,8 @@ export default function InterviewSessionPage() {
           {/* Subtabs */}
           <div style={{
             display: "flex",
-            borderBottom: "1px solid #1c2842",
-            background: "#0d1322",
+            borderBottom: "1px solid var(--border-subtle, #1c2842)",
+            background: "var(--bg-surface, #0d1322)",
           }}>
             <button
               id="tab-problem-btn"
@@ -398,10 +398,10 @@ export default function InterviewSessionPage() {
               style={{
                 flex: 1,
                 padding: "0.6rem",
-                background: activeTab === "problem" ? "#0a0e1a" : "transparent",
+                background: activeTab === "problem" ? "var(--bg-main, #0a0e1a)" : "transparent",
                 border: "none",
                 borderBottom: activeTab === "problem" ? "2px solid #38bdf8" : "2px solid transparent",
-                color: activeTab === "problem" ? "#f8fafc" : "#94a3b8",
+                color: activeTab === "problem" ? "var(--txt-bright, #f8fafc)" : "var(--txt-muted, #94a3b8)",
                 fontSize: "0.82rem",
                 fontWeight: 600,
                 cursor: "pointer",
@@ -415,10 +415,10 @@ export default function InterviewSessionPage() {
               style={{
                 flex: 1,
                 padding: "0.6rem",
-                background: activeTab === "approach" ? "#0a0e1a" : "transparent",
+                background: activeTab === "approach" ? "var(--bg-main, #0a0e1a)" : "transparent",
                 border: "none",
                 borderBottom: activeTab === "approach" ? "2px solid #38bdf8" : "2px solid transparent",
-                color: activeTab === "approach" ? "#f8fafc" : "#94a3b8",
+                color: activeTab === "approach" ? "var(--txt-bright, #f8fafc)" : "var(--txt-muted, #94a3b8)",
                 fontSize: "0.82rem",
                 fontWeight: 600,
                 cursor: "pointer",
@@ -432,10 +432,10 @@ export default function InterviewSessionPage() {
               style={{
                 flex: 1,
                 padding: "0.6rem",
-                background: activeTab === "followup" ? "#0a0e1a" : "transparent",
+                background: activeTab === "followup" ? "var(--bg-main, #0a0e1a)" : "transparent",
                 border: "none",
                 borderBottom: activeTab === "followup" ? "2px solid #38bdf8" : "2px solid transparent",
-                color: activeTab === "followup" ? "#f8fafc" : "#94a3b8",
+                color: activeTab === "followup" ? "var(--txt-bright, #f8fafc)" : "var(--txt-muted, #94a3b8)",
                 fontSize: "0.82rem",
                 fontWeight: 600,
                 cursor: "pointer",
@@ -475,7 +475,7 @@ export default function InterviewSessionPage() {
 
         {/* ── Right Column: Execution & Monaco Editor ── */}
         <div style={{
-          background: "#080c16",
+          background: "var(--bg-darkest, #080c16)",
           display: "flex",
           flexDirection: "column",
           overflow: "hidden",
@@ -512,29 +512,29 @@ export default function InterviewSessionPage() {
           padding: "1rem",
         }}>
           <div style={{
-            background: "#0d1322",
-            border: "1px solid #1c2842",
+            background: "var(--bg-surface, #0d1322)",
+            border: "1px solid var(--border-card, #1c2842)",
             borderRadius: "12px",
             width: "100%",
             maxWidth: "480px",
             padding: "1.5rem",
             boxShadow: "0 20px 40px rgba(0,0,0,0.6)",
           }}>
-            <h3 style={{ margin: "0 0 0.5rem 0", color: "#f8fafc", fontSize: "1.2rem", fontWeight: 700 }}>
+            <h3 style={{ margin: "0 0 0.5rem 0", color: "var(--txt-bright, #f8fafc)", fontSize: "1.2rem", fontWeight: 700 }}>
               Ready to Submit Your Interview?
             </h3>
-            <p style={{ color: "#94a3b8", fontSize: "0.86rem", lineHeight: 1.5, margin: "0 0 1rem 0" }}>
+            <p style={{ color: "var(--txt-muted, #94a3b8)", fontSize: "0.86rem", lineHeight: 1.5, margin: "0 0 1rem 0" }}>
               Submitting freezes your code, timer, and notes. TRACE will evaluate your submission against the 8-category rubric and feed your performance back into your preparation plan.
             </p>
 
             <div style={{
-              background: "#080c16",
-              border: "1px solid #161f36",
+              background: "var(--bg-darkest, #080c16)",
+              border: "1px solid var(--border-subtle, #161f36)",
               borderRadius: "6px",
               padding: "0.75rem",
               marginBottom: "1.25rem",
               fontSize: "0.8rem",
-              color: "#cbd5e1",
+              color: "var(--txt-main, #cbd5e1)",
               display: "flex",
               flexDirection: "column",
               gap: "0.25rem",
@@ -549,8 +549,8 @@ export default function InterviewSessionPage() {
                 onClick={() => setShowSubmitModal(false)}
                 style={{
                   background: "none",
-                  border: "1px solid #2a3a5a",
-                  color: "#94a3b8",
+                  border: "1px solid var(--border-card, #2a3a5a)",
+                  color: "var(--txt-muted, #94a3b8)",
                   padding: "0.5rem 1rem",
                   borderRadius: "6px",
                   fontSize: "0.84rem",

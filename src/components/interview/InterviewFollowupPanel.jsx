@@ -35,17 +35,17 @@ export default function InterviewFollowupPanel({
           padding: "2rem",
           color: "#64748b",
           fontSize: "0.88rem",
-          background: "#080c16",
+          background: "var(--bg-surface, #080c16)",
           borderRadius: "8px",
-          border: "1px dashed #1c2842",
+          border: "1px dashed var(--border-card, #1c2842)",
         }}>
           No follow-up questions assigned for this session yet.
         </div>
       ) : (
         followUps.map((item, idx) => (
           <div key={item.id || idx} style={{
-            background: "#090d18",
-            border: "1px solid #1c2842",
+            background: "var(--bg-surface, #090d18)",
+            border: "1px solid var(--border-card, #1c2842)",
             borderRadius: "8px",
             padding: "1rem",
             display: "flex",

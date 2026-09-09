@@ -18,10 +18,10 @@ export default function InterviewRubricPanel({ rubricResult, evidence, session }
       <div style={{
         padding: "2rem",
         textAlign: "center",
-        color: "#64748b",
-        background: "#080c16",
+        color: "var(--txt-dim, #64748b)",
+        background: "var(--bg-surface, #080c16)",
         borderRadius: "8px",
-        border: "1px dashed #1c2842",
+        border: "1px dashed var(--border-card, #1c2842)",
       }}>
         Rubric evaluation will appear here once the interview is submitted.
       </div>
@@ -71,7 +71,7 @@ export default function InterviewRubricPanel({ rubricResult, evidence, session }
               width: "100%",
               height: "100%",
               borderRadius: "50%",
-              background: "#070a12",
+              background: "var(--bg-darkest, #070a12)",
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
@@ -86,7 +86,7 @@ export default function InterviewRubricPanel({ rubricResult, evidence, session }
 
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem" }}>
-              <h3 style={{ fontSize: "1.35rem", fontWeight: 700, margin: 0, color: "#f8fafc" }}>
+              <h3 style={{ fontSize: "1.35rem", fontWeight: 700, margin: 0, color: "var(--txt-bright, #f8fafc)" }}>
                 {decision.label}
               </h3>
               <span style={{
@@ -101,7 +101,7 @@ export default function InterviewRubricPanel({ rubricResult, evidence, session }
                 {isGeminiEvaluated ? "🤖 AI Bar Raiser + Deterministic Execution" : "⚙️ TRACE Deterministic Objective Rubric"}
               </span>
             </div>
-            <p style={{ margin: 0, fontSize: "0.85rem", color: "#94a3b8" }}>
+            <p style={{ margin: 0, fontSize: "0.85rem", color: "var(--txt-muted, #94a3b8)" }}>
               {feedback.generalNotes || "Comprehensive technical interview assessment."}
             </p>
           </div>
@@ -111,10 +111,10 @@ export default function InterviewRubricPanel({ rubricResult, evidence, session }
         <div style={{
           display: "flex",
           gap: "0.75rem",
-          background: "#080c16",
+          background: "var(--bg-darkest, #080c16)",
           padding: "0.75rem 1rem",
           borderRadius: "8px",
-          border: "1px solid #161f36",
+          border: "1px solid var(--border-subtle, #161f36)",
         }}>
           <div>
             <div style={statLabelStyle}>Tests Passed</div>
@@ -160,8 +160,8 @@ export default function InterviewRubricPanel({ rubricResult, evidence, session }
 
             return (
               <div key={catKey} style={{
-                background: "#0d1322",
-                border: "1px solid #1c2842",
+                background: "var(--bg-surface, #0d1322)",
+                border: "1px solid var(--border-card, #1c2842)",
                 borderRadius: "8px",
                 padding: "0.85rem",
                 display: "flex",
@@ -169,7 +169,7 @@ export default function InterviewRubricPanel({ rubricResult, evidence, session }
                 gap: "0.4rem",
               }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ fontSize: "0.82rem", fontWeight: 600, color: "#f8fafc" }}>
+                  <span style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--txt-bright, #f8fafc)" }}>
                     {meta.icon} {meta.label}
                   </span>
                   <span style={{ fontSize: "0.7rem", color: "#64748b" }}>{meta.weight}</span>
@@ -177,7 +177,7 @@ export default function InterviewRubricPanel({ rubricResult, evidence, session }
 
                 {/* Score bar */}
                 <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                  <div style={{ flex: 1, height: "6px", background: "#1c2842", borderRadius: "3px", overflow: "hidden" }}>
+                  <div style={{ flex: 1, height: "6px", background: "var(--border-subtle, #1c2842)", borderRadius: "3px", overflow: "hidden" }}>
                     <div style={{ width: `${barPct}%`, height: "100%", background: barColor, borderRadius: "3px" }} />
                   </div>
                   <span style={{ fontSize: "0.85rem", fontWeight: 700, color: barColor, minWidth: "30px", textAlign: "right" }}>
@@ -185,7 +185,7 @@ export default function InterviewRubricPanel({ rubricResult, evidence, session }
                   </span>
                 </div>
 
-                <div style={{ fontSize: "0.75rem", color: "#94a3b8", lineHeight: 1.4, marginTop: "0.2rem" }}>
+                <div style={{ fontSize: "0.75rem", color: "var(--txt-muted, #94a3b8)", lineHeight: 1.4, marginTop: "0.2rem" }}>
                   {cat.reasoning || "Evaluation recorded."}
                 </div>
               </div>
@@ -206,7 +206,7 @@ export default function InterviewRubricPanel({ rubricResult, evidence, session }
           <h5 style={{ margin: "0 0 0.5rem 0", color: "#10b981", fontSize: "0.85rem", fontWeight: 700 }}>
             🌟 Demonstrated Strengths
           </h5>
-          <ul style={{ margin: 0, paddingLeft: "1.2rem", fontSize: "0.82rem", color: "#cbd5e1", display: "flex", flexDirection: "column", gap: "0.3rem" }}>
+          <ul style={{ margin: 0, paddingLeft: "1.2rem", fontSize: "0.82rem", color: "var(--txt-main, #cbd5e1)", display: "flex", flexDirection: "column", gap: "0.3rem" }}>
             {(feedback.strengths || []).map((s, i) => (
               <li key={i}>{s}</li>
             ))}
@@ -223,7 +223,7 @@ export default function InterviewRubricPanel({ rubricResult, evidence, session }
           <h5 style={{ margin: "0 0 0.5rem 0", color: "#f59e0b", fontSize: "0.85rem", fontWeight: 700 }}>
             📈 Areas for Growth
           </h5>
-          <ul style={{ margin: 0, paddingLeft: "1.2rem", fontSize: "0.82rem", color: "#cbd5e1", display: "flex", flexDirection: "column", gap: "0.3rem" }}>
+          <ul style={{ margin: 0, paddingLeft: "1.2rem", fontSize: "0.82rem", color: "var(--txt-main, #cbd5e1)", display: "flex", flexDirection: "column", gap: "0.3rem" }}>
             {(feedback.improvements || []).map((imp, i) => (
               <li key={i}>{imp}</li>
             ))}
@@ -244,11 +244,11 @@ const statLabelStyle = {
 const statValueStyle = {
   fontSize: "0.95rem",
   fontWeight: 700,
-  color: "#f8fafc",
+  color: "var(--txt-bright, #f8fafc)",
   marginTop: "0.15rem",
 };
 
 const statDividerStyle = {
   width: "1px",
-  background: "#1c2842",
+  background: "var(--border-subtle, #1c2842)",
 };

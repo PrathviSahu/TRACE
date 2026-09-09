@@ -295,12 +295,12 @@ Guidelines:
         @keyframes slideInModal  { from { opacity:0;transform:translateY(24px) scale(0.97) } to { opacity:1;transform:none } }
         .pm-body::-webkit-scrollbar { width: 5px; }
         .pm-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
-        .pm-example { background: rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:14px 16px; margin-bottom:10px; }
-        .pm-example pre { margin:0; font-family:var(--mono,'JetBrains Mono',monospace); font-size:12px; color:#c9d1d9; white-space:pre-wrap; word-break:break-all; }
-        .pm-section-title { font-size:11px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:#6e7681; margin:0 0 10px; }
-        .pm-hint-item { background:rgba(255,161,22,0.07); border-left:3px solid rgba(255,161,22,0.5); padding:8px 12px; border-radius:0 6px 6px 0; margin-bottom:6px; font-size:12.5px; color:#c9d1d9; }
+        .pm-example { background: var(--bg-darkest, rgba(255,255,255,0.04)); border:1px solid var(--border-subtle, rgba(255,255,255,0.08)); border-radius:8px; padding:14px 16px; margin-bottom:10px; }
+        .pm-example pre { margin:0; font-family:var(--mono,'JetBrains Mono',monospace); font-size:12px; color:var(--txt-main, #c9d1d9); white-space:pre-wrap; word-break:break-all; }
+        .pm-section-title { font-size:11px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--txt-dim, #6e7681); margin:0 0 10px; }
+        .pm-hint-item { background:rgba(255,161,22,0.07); border-left:3px solid rgba(255,161,22,0.5); padding:8px 12px; border-radius:0 6px 6px 0; margin-bottom:6px; font-size:12.5px; color:var(--txt-main, #c9d1d9); }
         .pm-topic-chip { background:rgba(82,130,255,0.12); color:#79a8ff; border:1px solid rgba(82,130,255,0.25); padding:3px 10px; border-radius:20px; font-size:11px; }
-        .pm-company-chip { background:rgba(255,255,255,0.06); color:#8b949e; border:1px solid rgba(255,255,255,0.1); padding:3px 10px; border-radius:20px; font-size:11px; cursor:pointer; transition:all 0.15s; }
+        .pm-company-chip { background:var(--bg-raised, rgba(255,255,255,0.06)); color:var(--txt-muted, #8b949e); border:1px solid var(--border-subtle, rgba(255,255,255,0.1)); padding:3px 10px; border-radius:20px; font-size:11px; cursor:pointer; transition:all 0.15s; }
         .pm-company-chip:hover { background:rgba(255,161,22,0.1); color:#ffa116; border-color:rgba(255,161,22,0.3); }
         .pm-btn { display:inline-flex; align-items:center; gap:6px; padding:9px 18px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; border:none; transition:all 0.18s; }
         .pm-btn-primary { background:linear-gradient(135deg,#5282ff,#8b6ff0); color:#fff; }
@@ -309,16 +309,16 @@ Guidelines:
         .pm-btn-brain:hover { background:rgba(139,111,240,0.25); color:#fff; }
         .pm-btn-lc { background:rgba(255,161,22,0.12); color:#ffa116; border:1px solid rgba(255,161,22,0.25); text-decoration:none; }
         .pm-btn-lc:hover { background:rgba(255,161,22,0.2); }
-        .pm-btn-close { background:rgba(255,255,255,0.07); color:#8b949e; }
-        .pm-btn-close:hover { background:rgba(255,255,255,0.12); color:#c9d1d9; }
-        .pm-tab { padding:10px 18px; font-size:13px; font-weight:600; cursor:pointer; border:none; background:transparent; color:#8b949e; border-bottom:2px solid transparent; transition:all 0.15s; white-space:nowrap; display:flex; align-items:center; gap:6px; }
-        .pm-tab:hover { color:#c9d1d9; }
+        .pm-btn-close { background:var(--bg-raised, rgba(255,255,255,0.07)); color:var(--txt-muted, #8b949e); }
+        .pm-btn-close:hover { background:var(--bg-hover, rgba(255,255,255,0.12)); color:var(--txt-main, #c9d1d9); }
+        .pm-tab { padding:10px 18px; font-size:13px; font-weight:600; cursor:pointer; border:none; background:transparent; color:var(--txt-muted, #8b949e); border-bottom:2px solid transparent; transition:all 0.15s; white-space:nowrap; display:flex; align-items:center; gap:6px; }
+        .pm-tab:hover { color:var(--txt-main, #c9d1d9); }
         .pm-tab.active { color:#79a8ff; border-bottom-color:#79a8ff; }
         
         /* Language Selector Pills */
-        .pm-lang-bar { display:flex; align-items:center; gap:6px; background:rgba(0,0,0,0.25); padding:3px 6px; border-radius:8px; border:1px solid rgba(255,255,255,0.08); }
-        .pm-lang-pill { background:transparent; border:none; color:#8b949e; font-size:11.5px; font-weight:600; padding:4px 8px; border-radius:6px; cursor:pointer; transition:all 0.15s; display:flex; align-items:center; gap:4px; }
-        .pm-lang-pill:hover { color:#e6edf3; background:rgba(255,255,255,0.05); }
+        .pm-lang-bar { display:flex; align-items:center; gap:6px; background:var(--bg-darkest, rgba(0,0,0,0.25)); padding:3px 6px; border-radius:8px; border:1px solid var(--border-subtle, rgba(255,255,255,0.08)); }
+        .pm-lang-pill { background:transparent; border:none; color:var(--txt-muted, #8b949e); font-size:11.5px; font-weight:600; padding:4px 8px; border-radius:6px; cursor:pointer; transition:all 0.15s; display:flex; align-items:center; gap:4px; }
+        .pm-lang-pill:hover { color:var(--txt-bright, #e6edf3); background:var(--bg-hover, rgba(255,255,255,0.05)); }
         .pm-lang-pill.active { color:#fff; background:linear-gradient(135deg,#5282ff,#8b6ff0); box-shadow:0 2px 8px rgba(82,130,255,0.3); }
 
         .approach-card { border-radius:10px; overflow:hidden; margin-bottom:12px; transition:all 0.2s; }
@@ -326,13 +326,13 @@ Guidelines:
         .approach-header:hover { filter:brightness(1.1); }
         .approach-title { font-size:14px; font-weight:700; flex:1; }
         .approach-complexity { display:flex; gap:8px; }
-        .complexity-chip { font-size:11px; font-family:var(--mono,monospace); padding:2px 8px; border-radius:4px; background:rgba(255,255,255,0.08); color:#8b949e; }
+        .complexity-chip { font-size:11px; font-family:var(--mono,monospace); padding:2px 8px; border-radius:4px; background:var(--bg-raised, rgba(255,255,255,0.08)); color:var(--txt-muted, #8b949e); }
         .approach-body { padding:0 16px 16px; }
-        .approach-idea { font-size:13px; color:#c9d1d9; line-height:1.7; margin-bottom:12px; padding:10px 14px; background:rgba(255,255,255,0.04); border-radius:6px; border-left:3px solid; }
+        .approach-idea { font-size:13px; color:var(--txt-main, #c9d1d9); line-height:1.7; margin-bottom:12px; padding:10px 14px; background:var(--bg-darkest, rgba(255,255,255,0.04)); border-radius:6px; border-left:3px solid; }
         .code-block-wrap { position:relative; }
-        .code-block { background:#0d1117; border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:16px; overflow-x:auto; font-family:var(--mono,'JetBrains Mono',monospace); font-size:12px; line-height:1.7; color:#c9d1d9; margin:0; white-space:pre; }
-        .copy-btn { position:absolute; top:8px; right:8px; padding:4px 10px; border-radius:5px; font-size:11px; font-weight:600; cursor:pointer; border:1px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.07); color:#8b949e; transition:all 0.15s; }
-        .copy-btn:hover { background:rgba(255,255,255,0.12); color:#c9d1d9; }
+        .code-block { background:var(--bg-darkest, #0d1117); border:1px solid var(--border-card, rgba(255,255,255,0.08)); border-radius:8px; padding:16px; overflow-x:auto; font-family:var(--mono,'JetBrains Mono',monospace); font-size:12px; line-height:1.7; color:var(--txt-main, #c9d1d9); margin:0; white-space:pre; }
+        .copy-btn { position:absolute; top:8px; right:8px; padding:4px 10px; border-radius:5px; font-size:11px; font-weight:600; cursor:pointer; border:1px solid var(--border-subtle, rgba(255,255,255,0.15)); background:var(--bg-raised, rgba(255,255,255,0.07)); color:var(--txt-muted, #8b949e); transition:all 0.15s; }
+        .copy-btn:hover { background:var(--bg-hover, rgba(255,255,255,0.12)); color:var(--txt-main, #c9d1d9); }
         .copy-btn.copied { color:#00b8a3; border-color:rgba(0,184,163,0.4); }
         .trace-this-btn { display:flex; align-items:center; gap:6px; padding:7px 16px; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer; border:1px solid rgba(82,130,255,0.35); background:rgba(82,130,255,0.1); color:#79a8ff; margin-top:10px; transition:all 0.15s; }
         .trace-this-btn:hover { background:rgba(82,130,255,0.2); color:#fff; }
@@ -356,14 +356,14 @@ Guidelines:
       `}</style>
 
       <div className="pm-modal-content" style={{
-        background:'#161b22', border:'1px solid rgba(255,255,255,0.1)', borderRadius:14,
+        background:'var(--bg-surface, #161b22)', border:'1px solid var(--border-card, rgba(255,255,255,0.1))', borderRadius:14,
         width:'100%', maxWidth:880, maxHeight:'92vh',
         display:'flex', flexDirection:'column',
         animation:'slideInModal 0.2s cubic-bezier(0.34,1.56,0.64,1)',
         boxShadow:'0 24px 80px rgba(0,0,0,0.6)'
       }}>
         {/* ── Header ─────────────────────────────────────── */}
-        <div style={{ padding:'18px 24px 0', borderBottom:'1px solid rgba(255,255,255,0.08)' }}>
+        <div style={{ padding:'18px 24px 0', borderBottom:'1px solid var(--border-subtle, rgba(255,255,255,0.08))' }}>
           <div style={{ display:'flex', alignItems:'flex-start', gap:14, marginBottom:14 }}>
             <div style={{ flex:1, minWidth:0 }}>
               <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap', marginBottom:6 }}>
@@ -389,12 +389,12 @@ Guidelines:
               {/* User Progress & Multi-Company Badges */}
               <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginTop: 8 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <span style={{ fontSize: 11, color: "#8b949e", fontWeight: 600 }}>Status:</span>
+                  <span style={{ fontSize: 11, color: "var(--txt-muted, #8b949e)", fontWeight: 600 }}>Status:</span>
                   <select
                     value={prog?.status || "unsolved"}
                     onChange={e => setProg({ status: e.target.value })}
                     style={{
-                      background: "#0d1117",
+                      background: "var(--bg-main, #0d1117)",
                       color: prog?.status === "solved" ? "#00b8a3" : prog?.status === "need_revision" ? "#ffa116" : prog?.status === "forgot_approach" ? "#ef4743" : "#8b949e",
                       border: "1px solid rgba(255,255,255,0.15)",
                       fontSize: 11.5,
@@ -412,14 +412,14 @@ Guidelines:
                 </div>
 
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <span style={{ fontSize: 11, color: "#8b949e", fontWeight: 600 }}>Confidence:</span>
+                  <span style={{ fontSize: 11, color: "var(--txt-muted, #8b949e)", fontWeight: 600 }}>Confidence:</span>
                   <select
                     value={prog?.confidence || "medium"}
                     onChange={e => setProg({ confidence: e.target.value })}
                     style={{
-                      background: "#0d1117",
-                      color: "#c9d1d9",
-                      border: "1px solid rgba(255,255,255,0.15)",
+                      background: "var(--bg-main, #0d1117)",
+                      color: "var(--txt-main, #c9d1d9)",
+                      border: "1px solid var(--border-card, rgba(255,255,255,0.15))",
                       fontSize: 11.5,
                       padding: "2px 8px",
                       borderRadius: 6,
@@ -440,7 +440,7 @@ Guidelines:
 
                 {crossref && crossref.companies && crossref.companies.length > 0 && (
                   <div style={{ display: "flex", alignItems: "center", gap: 6, marginLeft: "auto", flexWrap: "wrap" }}>
-                    <span style={{ fontSize: 11, color: "#8b949e", fontWeight: 600 }}>Asked by {crossref.companies.length} companies:</span>
+                    <span style={{ fontSize: 11, color: "var(--txt-muted, #8b949e)", fontWeight: 600 }}>Asked by {crossref.companies.length} companies:</span>
                     <span style={{ fontSize: 11, color: "#79a8ff", fontWeight: 600 }}>
                       {crossref.companies.slice(0, 4).map(c => c.name).join(", ")}
                       {crossref.companies.length > 4 ? " (+" + (crossref.companies.length - 4) + " more)" : ""}
@@ -508,7 +508,7 @@ Guidelines:
               <>
                 <div style={{ marginBottom:22 }}>
                   <p className="pm-section-title">Problem</p>
-                  <div style={{ fontSize:14, lineHeight:1.75, color:'#c9d1d9' }} dangerouslySetInnerHTML={{ __html: sanitizeHtml(desc.description) }} />
+                  <div style={{ fontSize:14, lineHeight:1.75, color:'var(--txt-main, #c9d1d9)' }} dangerouslySetInnerHTML={{ __html: sanitizeHtml(desc.description) }} />
                 </div>
                 {desc.examples?.length > 0 && (
                   <div style={{ marginBottom:22 }}>
@@ -526,7 +526,7 @@ Guidelines:
                           </div>
                         </div>
                         {ex.explanation && (
-                          <div style={{ marginTop:8, fontSize:12, color:'#8b949e', borderTop:'1px solid rgba(255,255,255,0.05)', paddingTop:8 }}>
+                          <div style={{ marginTop:8, fontSize:12, color:'var(--txt-muted, #8b949e)', borderTop:'1px solid var(--border-subtle, rgba(255,255,255,0.05))', paddingTop:8 }}>
                             <strong style={{ color:'#6e7681' }}>Explanation: </strong>{ex.explanation}
                           </div>
                         )}
@@ -587,7 +587,7 @@ Guidelines:
               <div style={{ textAlign:'center', padding:'40px 20px', background:'rgba(255,255,255,0.02)', borderRadius:12, border:'1px solid rgba(255,255,255,0.07)' }}>
                 <div style={{ fontSize:40, marginBottom:12 }}>📋</div>
                 <div style={{ fontSize:17, fontWeight:700, color:'#e6edf3', marginBottom:6 }}>LeetCode #{problem.id} {problem.name}</div>
-                <div style={{ fontSize:13, color:'#8b949e', maxWidth:460, margin:'0 auto 20px', lineHeight:1.6 }}>
+                <div style={{ fontSize:13, color:'var(--txt-muted, #8b949e)', maxWidth:460, margin:'0 auto 20px', lineHeight:1.6 }}>
                   Generate full problem description, test examples, and constraints on the fly with AI.
                 </div>
                 {generatingDesc ? (
@@ -669,7 +669,7 @@ Guidelines:
                 <div style={{ fontSize:18, fontWeight:700, color:'#e6edf3', marginBottom:8 }}>
                   Generate 3 Approaches in {activeLangObj.label}
                 </div>
-                <div style={{ fontSize:13, color:'#8b949e', maxWidth:520, margin:'0 auto 24px', lineHeight:1.6 }}>
+                <div style={{ fontSize:13, color:'var(--txt-muted, #8b949e)', maxWidth:520, margin:'0 auto 24px', lineHeight:1.6 }}>
                   Generate <strong>Brute Force (🔴)</strong>, <strong>Better (🟡)</strong>, and <strong>Optimal (🟢)</strong> solutions in <strong>{activeLangObj.label}</strong> for <strong>#{problem.id} {problem.name}</strong>, complete with time/space complexity analysis and runnable visualizer code.
                 </div>
                 {generatingSolutions ? (
@@ -702,11 +702,11 @@ Guidelines:
           {/* ── TAB: AI Tutor ─────────── */}
           {activeTab === 'ai-tutor' && (
             <div style={{ display:'flex', flexDirection:'column', height:'100%', minHeight:380 }}>
-              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12, paddingBottom:8, borderBottom:'1px solid rgba(255,255,255,0.08)' }}>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12, paddingBottom:8, borderBottom:'1px solid var(--border-subtle, rgba(255,255,255,0.08))' }}>
                 <div style={{ fontSize:13, color:'#79a8ff', display:'flex', alignItems:'center', gap:6 }}>
                   <span>🧠</span> <strong>TRACE DSA Tutor</strong> · #{problem.id} {problem.name} ({activeLangObj.icon} {activeLangObj.label})
                 </div>
-                <button onClick={openInFloatingBrain} style={{ background:'transparent', border:'1px solid rgba(255,255,255,0.15)', color:'#8b949e', borderRadius:6, padding:'3px 10px', fontSize:11, cursor:'pointer' }}>
+                <button onClick={openInFloatingBrain} style={{ background:'transparent', border:'1px solid var(--border-subtle, rgba(255,255,255,0.15))', color:'var(--txt-muted, #8b949e)', borderRadius:6, padding:'3px 10px', fontSize:11, cursor:'pointer' }}>
                   Pop out to Brain ↗
                 </button>
               </div>

@@ -36,8 +36,8 @@ export default function CompanyComparisonModal({ initialCompanyId, onClose, onPr
         }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .comp-modal-card {
-          background: #111620;
-          border: 1px solid rgba(255, 255, 255, 0.12);
+          background: var(--bg-surface, #111620);
+          border: 1px solid var(--border-card, rgba(255, 255, 255, 0.12));
           border-radius: 14px;
           max-width: 900px;
           width: 100%;
@@ -49,11 +49,11 @@ export default function CompanyComparisonModal({ initialCompanyId, onClose, onPr
         }
         .comp-modal-header {
           padding: 20px 24px;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+          border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
           display: flex;
           align-items: center;
           justify-content: space-between;
-          background: #0d1117;
+          background: var(--bg-surface, #0d1117);
         }
         .comp-modal-body {
           padding: 20px 24px;
@@ -69,9 +69,9 @@ export default function CompanyComparisonModal({ initialCompanyId, onClose, onPr
           gap: 16px;
         }
         .comp-select {
-          background: #0d1117;
-          border: 1px solid rgba(255, 255, 255, 0.12);
-          color: #f0f6fc;
+          background: var(--bg-main, #0d1117);
+          border: 1px solid var(--border-card, rgba(255, 255, 255, 0.12));
+          color: var(--txt-bright, #f0f6fc);
           font-size: 14px;
           font-weight: 600;
           padding: 10px 14px;
@@ -88,8 +88,8 @@ export default function CompanyComparisonModal({ initialCompanyId, onClose, onPr
           gap: 12px;
         }
         .comp-stat-card {
-          background: rgba(255, 255, 255, 0.03);
-          border: 1px solid rgba(255, 255, 255, 0.06);
+          background: var(--bg-darkest, rgba(255, 255, 255, 0.03));
+          border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06));
           border-radius: 8px;
           padding: 12px 14px;
           text-align: center;
@@ -97,12 +97,12 @@ export default function CompanyComparisonModal({ initialCompanyId, onClose, onPr
         .comp-stat-val {
           font-size: 22px;
           font-weight: 800;
-          color: #f0f6fc;
+          color: var(--txt-bright, #f0f6fc);
           font-family: var(--font-mono, monospace);
         }
         .comp-stat-lbl {
           font-size: 11px;
-          color: #8b949e;
+          color: var(--txt-muted, #8b949e);
           text-transform: uppercase;
           letter-spacing: 0.04em;
           margin-top: 4px;
@@ -115,12 +115,12 @@ export default function CompanyComparisonModal({ initialCompanyId, onClose, onPr
         }
         .comp-shared-table th {
           background: rgba(255,255,255,0.02);
-          color: #8b949e;
+          color: var(--txt-muted, #8b949e);
           font-size: 11px;
           font-weight: 700;
           text-transform: uppercase;
           padding: 10px 14px;
-          border-bottom: 1px solid rgba(255,255,255,0.08);
+          border-bottom: 1px solid var(--border-subtle, rgba(255,255,255,0.08));
           text-align: left;
         }
         .comp-shared-table td {
@@ -158,17 +158,17 @@ export default function CompanyComparisonModal({ initialCompanyId, onClose, onPr
         {/* Header */}
         <div className="comp-modal-header">
           <div>
-            <div style={{ fontSize: 18, fontWeight: 800, color: "#f0f6fc", letterSpacing: "-0.01em" }}>
+            <div style={{ fontSize: 18, fontWeight: 800, color: "var(--txt-bright, #f0f6fc)", letterSpacing: "-0.01em" }}>
               Company Interview Overlap Intelligence
             </div>
-            <div style={{ fontSize: 12.5, color: "#8b949e", marginTop: 2 }}>
+            <div style={{ fontSize: 12.5, color: "var(--txt-muted, #8b949e)", marginTop: 2 }}>
               Normalized dataset comparison showing shared LeetCode questions and pattern overlap.
             </div>
           </div>
           <button
             onClick={onClose}
             style={{
-              background: "rgba(255,255,255,0.06)", border: "none", color: "#8b949e",
+              background: "var(--bg-raised, rgba(255,255,255,0.06))", border: "none", color: "var(--txt-muted, #8b949e)",
               padding: "6px 12px", borderRadius: 6, cursor: "pointer", fontSize: 13, fontWeight: 700
             }}
           >
@@ -181,7 +181,7 @@ export default function CompanyComparisonModal({ initialCompanyId, onClose, onPr
           {/* Selectors */}
           <div className="comp-select-row">
             <div>
-              <label style={{ display: "block", fontSize: 11.5, fontWeight: 600, color: "#8b949e", marginBottom: 6 }}>
+              <label style={{ display: "block", fontSize: 11.5, fontWeight: 600, color: "var(--txt-muted, #8b949e)", marginBottom: 6 }}>
                 Company A
               </label>
               <select
@@ -200,7 +200,7 @@ export default function CompanyComparisonModal({ initialCompanyId, onClose, onPr
             </div>
 
             <div>
-              <label style={{ display: "block", fontSize: 11.5, fontWeight: 600, color: "#8b949e", marginBottom: 6 }}>
+              <label style={{ display: "block", fontSize: 11.5, fontWeight: 600, color: "var(--txt-muted, #8b949e)", marginBottom: 6 }}>
                 Company B
               </label>
               <select
@@ -241,13 +241,13 @@ export default function CompanyComparisonModal({ initialCompanyId, onClose, onPr
             background: "rgba(255,255,255,0.02)", padding: 14, borderRadius: 8, border: "1px solid rgba(255,255,255,0.06)"
           }}>
             <div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "#f0f6fc", marginBottom: 8 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--txt-bright, #f0f6fc)", marginBottom: 8 }}>
                 {companyA.name} Top Patterns:
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                 {companyA.topPatterns.map(p => (
                   <span key={p.pattern} style={{
-                    fontSize: 11, background: "rgba(255,255,255,0.05)", padding: "2px 8px", borderRadius: 4, color: "#c9d1d9"
+                    fontSize: 11, background: "var(--bg-darkest, rgba(255,255,255,0.05))", padding: "2px 8px", borderRadius: 4, color: "var(--txt-main, #c9d1d9)"
                   }}>
                     {p.pattern} ({p.count})
                   </span>
@@ -256,13 +256,13 @@ export default function CompanyComparisonModal({ initialCompanyId, onClose, onPr
             </div>
 
             <div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "#f0f6fc", marginBottom: 8 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "var(--txt-bright, #f0f6fc)", marginBottom: 8 }}>
                 {companyB.name} Top Patterns:
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                 {companyB.topPatterns.map(p => (
                   <span key={p.pattern} style={{
-                    fontSize: 11, background: "rgba(255,255,255,0.05)", padding: "2px 8px", borderRadius: 4, color: "#c9d1d9"
+                    fontSize: 11, background: "var(--bg-darkest, rgba(255,255,255,0.05))", padding: "2px 8px", borderRadius: 4, color: "var(--txt-main, #c9d1d9)"
                   }}>
                     {p.pattern} ({p.count})
                   </span>
@@ -273,7 +273,7 @@ export default function CompanyComparisonModal({ initialCompanyId, onClose, onPr
 
           {/* Shared Problems List */}
           <div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "#f0f6fc", marginBottom: 10 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "var(--txt-bright, #f0f6fc)", marginBottom: 10 }}>
               Top Shared Questions ({sharedCount}):
             </div>
             <div style={{ maxHeight: 320, overflowY: "auto", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8 }}>
@@ -291,10 +291,10 @@ export default function CompanyComparisonModal({ initialCompanyId, onClose, onPr
                 <tbody>
                   {sharedProblems.slice(0, 30).map(p => (
                     <tr key={p.id || p.title}>
-                      <td style={{ fontFamily: "var(--font-mono, monospace)", color: "#8b949e", fontSize: 11 }}>
+                      <td style={{ fontFamily: "var(--font-mono, monospace)", color: "var(--txt-muted, #8b949e)", fontSize: 11 }}>
                         #{p.id || "—"}
                       </td>
-                      <td style={{ fontWeight: 600, color: "#f0f6fc" }}>
+                      <td style={{ fontWeight: 600, color: "var(--txt-bright, #f0f6fc)" }}>
                         {p.title}
                       </td>
                       <td>
