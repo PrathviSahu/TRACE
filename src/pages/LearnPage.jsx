@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ALL_PROBLEMS } from '../data/roadmapProblems.js';
 
 export const GUIDES = [
   {
@@ -281,16 +282,16 @@ export default function LearnPage() {
       {/* ── Telemetry Stats Strip ─────────────────────────────── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 24, padding: '12px 16px', background: 'var(--bg-surface, #161b22)', border: '1px solid var(--border-card, #21262d)', borderRadius: 8 }}>
         <div>
-          <div style={{ fontSize: 10, color: 'var(--txt-dim, #8B949E)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Core Paradigms</div>
-          <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--accent-amber, #FF9F43)', fontFamily: 'var(--font-mono)' }}>6 Patterns</div>
+          <div style={{ fontSize: 10, color: 'var(--txt-dim, #8B949E)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Curated Guides</div>
+          <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--accent-amber, #FF9F43)', fontFamily: 'var(--font-mono)' }}>{GUIDES.length} Patterns</div>
         </div>
         <div>
           <div style={{ fontSize: 10, color: 'var(--txt-dim, #8B949E)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Mapped Roadmap Problems</div>
-          <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--accent-cyan, #38D9C5)', fontFamily: 'var(--font-mono)' }}>290 Problems</div>
+          <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--accent-cyan, #38D9C5)', fontFamily: 'var(--font-mono)' }}>{ALL_PROBLEMS.length} Problems</div>
         </div>
         <div>
           <div style={{ fontSize: 10, color: 'var(--txt-dim, #8B949E)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Loop Invariants</div>
-          <div style={{ fontSize: 17, fontWeight: 700, color: '#3fb950', fontFamily: 'var(--font-mono)' }}>100% Formally Verified</div>
+          <div style={{ fontSize: 17, fontWeight: 700, color: '#3fb950', fontFamily: 'var(--font-mono)' }}>Pattern Invariants Documented</div>
         </div>
         <div>
           <div style={{ fontSize: 10, color: 'var(--txt-dim, #8B949E)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Visual Memory Execution</div>
@@ -600,19 +601,19 @@ export default function LearnPage() {
           </h2>
         </div>
         <p style={{ margin: '0 0 16px 0', fontSize: 13, color: 'var(--txt-dim, #8B949E)', maxWidth: 800 }}>
-          Every technical interview problem can be systematically resolved using this 4-step mental algorithm before writing any code:
+          Core technical interview problems can be systematically approached using this 4-step mental framework before writing code:
         </p>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 14 }}>
           <div style={{ padding: 14, background: 'var(--bg-darkest, #090B0E)', border: '1px solid var(--border-subtle, #21262D)', borderRadius: 6 }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent-amber, #FF9F43)', marginBottom: 4 }}>
-              1. Decode Constraints
+              1. Decode Constraints (Rule-of-Thumb)
             </div>
             <p style={{ margin: 0, fontSize: 11.5, color: 'var(--txt-dim, #8B949E)', lineHeight: 1.5 }}>
-              Input size tells you target Big-O: <br />
-              <code style={{ color: 'var(--accent-cyan)' }}>N ≤ 10⁵</code>: O(N) or O(N log N)<br />
-              <code style={{ color: 'var(--accent-cyan)' }}>N ≤ 1000</code>: O(N²)<br />
-              <code style={{ color: 'var(--accent-cyan)' }}>N ≤ 20</code>: O(2ᴺ) Backtracking
+              Input size offers rule-of-thumb Big-O guidance: <br />
+              • <code style={{ color: 'var(--accent-cyan)' }}>N ≤ 10⁵</code>: typical O(N) or O(N log N)<br />
+              • <code style={{ color: 'var(--accent-cyan)' }}>N ≤ 1000</code>: often permits O(N²)<br />
+              • <code style={{ color: 'var(--accent-cyan)' }}>N ≤ 20</code>: typical backtracking / 2ᴺ
             </p>
           </div>
 

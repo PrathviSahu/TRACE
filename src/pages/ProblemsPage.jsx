@@ -211,7 +211,7 @@ export default function ProblemsPage() {
           <div className="stat-progress">
             <div className="stat-fill" style={{ width: "100%", background: "var(--accent-cyan, #38D9C5)" }} />
           </div>
-          <div style={{ fontSize: 10, color: "var(--txt3)", marginTop: 2 }}>100% verified & runnable in TRACE</div>
+          <div style={{ fontSize: 10, color: "var(--txt3)", marginTop: 2 }}>{stats.total}/{stats.total} templates execute with TRACE</div>
         </div>
       </div>
 
