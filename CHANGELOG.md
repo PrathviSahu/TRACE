@@ -5,6 +5,57 @@ All notable changes to the TRACE platform are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.0-rc1.2] - 2026-09-10
+
+### Added
+- **Formal TRACE Java Subset v1 Specification**:
+  - Published comprehensive language specification in `docs/JAVA_SUBSET_SPEC.md`.
+  - Added 11/11 contract verification suite in `scripts/test_java_subset_spec_contract.js`.
+- **Multi-Dimensional Native Array Allocation**:
+  - Added support in parser and runtime interpreter for 2D array declarations (`new int[r][c]`, `new boolean[r][c]`) with nested row-column indexing.
+- **Draggable Resizable Studio Layout**:
+  - Horizontal splitter between Code Editor and Visualizer Studio (20%–80%).
+  - Vertical splitter between upper workspace and bottom panels (260px–800px).
+  - Column splitters between Input, Variables, Call Stack, and Output/Logs cards.
+  - Sidebar edge resizer (160px–400px) and bottom panels height resizer.
+  - Automatic Monaco editor relayout synchronization on drag release.
+  - Session layout persistence across browser refreshes via `localStorage`.
+- **Dedicated Dry Run & Code Flow Views**:
+  - Dedicated step-by-step Trace Table with spotlighting.
+  - Code Flow Heatmap visualizing execution density across code lines.
+- **Collapsible Sidebar**:
+  - Floating edge expander and `Ctrl+B` / `Cmd+B` shortcut for distraction-free workspace.
+- **Formal Trace Step Contract Guard**:
+  - Added `src/engine/traceSchema.js` validating every emitted trace step at interpreter emission time.
+- **Deep Reference Tests**:
+  - Added multi-frame recursion (`fib(7) == 13`), boolean short-circuiting (`false && (1/0 == 0)`), and collections runtime suites.
+
+### Changed
+- **Strict Error Handling (Zero Silent Failures)**:
+  - Lexer throws `LexerError` with line, column, and visual pointer `^` on invalid characters (eliminated silent skips).
+  - Parser throws `UnsupportedSyntaxError` with line and column for constructs outside TRACE Java Subset v1 (`try/catch`, `throw`, `switch`, `synchronized`, `interface`).
+  - Interpreter throws descriptive `RuntimeError` instead of falling back to `null` for unknown AST statements/expressions.
+- **Security & Proxy Unification**:
+  - Extracted shared proxy middleware to `server/geminiProxy.js` shared by Node server and Vite dev server.
+  - Implemented true sliding-window IP rate limiter (`30 requests / minute / IP`) using timestamp arrays.
+  - Implemented trusted-proxy client IP resolution (`getClientIp`), protecting standalone servers from spoofed `X-Forwarded-For` headers.
+  - Encapsulated safe static path resolver (`server/pathUtils.js`), blocking directory traversal attacks (`../../`, `/..%2F..%2F`).
+  - Sanitized Gemini model allowlist to production models (`gemini-2.5-flash` default).
+- **Deterministic Intelligence**:
+  - Replaced `Math.random()` in `intelligenceService.js` with `mulberry32` seeded PRNG for 100% reproducible mock interview sets.
+- **AI Validation Decoupling**:
+  - Decoupled pure semantic validation (`validateSolutionResponse`) from normalization defaults (`normalizeSolutionDefaults`).
+  - Aligned ARIA system prompt to accurately declare Java AST interpretation and limited Python trace support.
+
+## [0.1.0-rc1.1] - 2026-09-09
+
+### Added
+- Interactive ARIA guidance buttons in Variables, Call Stack, and Output panels.
+- Universal style reset to eliminate white edges and scrollbar corners on high-DPI displays.
+
+### Fixed
+- Fixed API key loading across `configDir` and `cwd` in Vite development proxy.
+
 ## [0.1.0-rc1] - 2026-09-09
 
 ### Added
