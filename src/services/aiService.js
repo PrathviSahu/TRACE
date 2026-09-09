@@ -14,7 +14,7 @@ export const SUPPORTED_LANGUAGES = [
 
 export const SYSTEM_TUTOR_PROMPT = `You are ARIA (Algorithm Reasoning & Insight Assistant) — an elite DSA tutor embedded in TRACE, an interactive visual code execution and algorithm debugger.
 
-TRACE executes algorithms with step-by-step memory, variable, call-stack, and diagrammatic data structure visualization (supporting Java AST interpretation and Python execution).
+TRACE executes algorithms with step-by-step memory, variable, call-stack, and diagrammatic data structure visualization (supporting Java AST interpretation and limited Python trace support).
 
 Your personality:
 - Encouraging, concise, structured like a senior FAANG interviewer.
@@ -40,7 +40,6 @@ export function extractJsonFromText(rawText) {
   try {
     return JSON.parse(cleaned);
   } catch (_) {
-    // If not direct JSON, attempt curly braces substring matching
     const firstBrace = cleaned.indexOf("{");
     const lastBrace = cleaned.lastIndexOf("}");
     if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
@@ -52,11 +51,12 @@ export function extractJsonFromText(rawText) {
 }
 
 /**
- * Validates AI solution output schema
+ * Strict Semantic Validator for AI Solution Response
+ * Enforces correct types and non-empty mandatory fields without mutating data.
  */
-export function validateSolutionResponse(parsed, expectedLanguage = "java") {
-  if (!parsed || typeof parsed !== "object") {
-    throw new Error("AI solution response must be a JSON object.");
+export function validateSolutionResponse(parsed) {
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    throw new Error("AI solution response must be a non-null JSON object.");
   }
   if (!Array.isArray(parsed.approaches) || parsed.approaches.length === 0) {
     throw new Error("AI solution response must contain a non-empty 'approaches' array.");
@@ -64,28 +64,39 @@ export function validateSolutionResponse(parsed, expectedLanguage = "java") {
 
   for (let i = 0; i < parsed.approaches.length; i++) {
     const app = parsed.approaches[i];
-    if (!app || typeof app !== "object") {
-      throw new Error(`Approach #${i + 1} must be an object.`);
+    if (!app || typeof app !== "object" || Array.isArray(app)) {
+      throw new Error(`Approach #${i + 1} must be a JSON object.`);
     }
     if (typeof app.name !== "string" || !app.name.trim()) {
-      throw new Error(`Approach #${i + 1} missing required string 'name'.`);
-    }
-    if (typeof app.idea !== "string") {
-      app.idea = "";
+      throw new Error(`Approach #${i + 1} missing required non-empty string 'name'.`);
     }
     if (typeof app.code !== "string" || !app.code.trim()) {
       throw new Error(`Approach #${i + 1} ("${app.name}") missing valid runnable 'code' string.`);
     }
-    if (!app.complexity || typeof app.complexity !== "object") {
-      app.complexity = { time: "O(N)", space: "O(1)" };
-    } else {
-      if (typeof app.complexity.time !== "string") app.complexity.time = "O(N)";
-      if (typeof app.complexity.space !== "string") app.complexity.space = "O(1)";
-    }
   }
 
-  parsed.language = expectedLanguage;
   return parsed;
+}
+
+/**
+ * Normalizes and sets fallback defaults on a pre-validated AI solution object
+ */
+export function normalizeSolutionDefaults(validated, expectedLanguage = "java") {
+  const normalized = {
+    ...validated,
+    language: expectedLanguage,
+    approaches: validated.approaches.map(app => ({
+      name: String(app.name || "").trim(),
+      label: String(app.label || app.name || "").trim(),
+      idea: String(app.idea || "").trim(),
+      complexity: {
+        time: String(app.complexity?.time || "O(N)").trim(),
+        space: String(app.complexity?.space || "O(1)").trim()
+      },
+      code: String(app.code || "").trim()
+    }))
+  };
+  return normalized;
 }
 
 /**
@@ -192,7 +203,8 @@ Return ONLY a valid JSON object matching this schema with NO markdown code block
 
   const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
   const parsed = extractJsonFromText(rawText);
-  return validateSolutionResponse(parsed, langConfig.id);
+  const validated = validateSolutionResponse(parsed);
+  return normalizeSolutionDefaults(validated, langConfig.id);
 }
 
 /**

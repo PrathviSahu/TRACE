@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { handleGeminiProxy } from "./server/geminiProxy.js";
+import { resolveSafeStaticPath } from "./server/pathUtils.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 5174;
@@ -47,46 +48,40 @@ const MIME_TYPES = {
 };
 
 const server = http.createServer(async (req, res) => {
-  // ── 1. Unified Gemini Proxy Route (/api/gemini) with Rate Limiting ──
+  // ── 1. Unified Gemini Proxy Route (/api/gemini) with Sliding Window Limiter ──
   if (req.url === "/api/gemini") {
     return handleGeminiProxy(req, res, () => process.env.GEMINI_API_KEY);
   }
 
-  // ── 2. Serve Static Assets with Strict Path Traversal Prevention ──
-  let reqPath = "/";
-  try {
-    reqPath = decodeURIComponent(req.url.split("?")[0]);
-  } catch {
+  // ── 2. Serve Static Assets with Encapsulated Path Traversal Resolver ──
+  const { safeFilePath, isInsideDist, isMalformed } = resolveSafeStaticPath(DIST_DIR, req.url);
+
+  if (isMalformed) {
     res.writeHead(400, { "Content-Type": "text/plain" });
     res.end("Bad Request");
     return;
   }
 
-  // Strip leading slashes to safely resolve relative to DIST_DIR
-  const cleanRel = reqPath.replace(/^[\\/\\]+/, "");
-  const safeFilePath = path.resolve(DIST_DIR, cleanRel);
-
-  // Enforce strict containment: path must remain inside DIST_DIR
-  const isInsideDist = safeFilePath.startsWith(DIST_DIR + path.sep) || safeFilePath === DIST_DIR;
-  if (!isInsideDist) {
+  if (!isInsideDist || !safeFilePath) {
     res.writeHead(403, { "Content-Type": "text/plain" });
     res.end("Forbidden: Path traversal is not permitted.");
     return;
   }
 
-  if (fs.existsSync(safeFilePath) && fs.statSync(safeFilePath).isDirectory()) {
-    safeFilePath = path.join(safeFilePath, "index.html");
+  let finalTarget = safeFilePath;
+  if (fs.existsSync(finalTarget) && fs.statSync(finalTarget).isDirectory()) {
+    finalTarget = path.join(finalTarget, "index.html");
   }
 
-  if (!fs.existsSync(safeFilePath)) {
-    safeFilePath = path.join(DIST_DIR, "index.html");
+  if (!fs.existsSync(finalTarget)) {
+    finalTarget = path.join(DIST_DIR, "index.html");
   }
 
-  if (fs.existsSync(safeFilePath)) {
-    const ext = path.extname(safeFilePath).toLowerCase();
+  if (fs.existsSync(finalTarget)) {
+    const ext = path.extname(finalTarget).toLowerCase();
     const contentType = MIME_TYPES[ext] || "application/octet-stream";
     res.writeHead(200, { "Content-Type": contentType });
-    fs.createReadStream(safeFilePath).pipe(res);
+    fs.createReadStream(finalTarget).pipe(res);
   } else {
     res.writeHead(404, { "Content-Type": "text/plain" });
     res.end("Not Found. Please run `npm run build` first.");

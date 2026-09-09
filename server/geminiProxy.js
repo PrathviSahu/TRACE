@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────
-//  TRACE — Shared Gemini API Proxy & Rate Limiter
+//  TRACE — Shared Gemini API Proxy & True Sliding-Window Limiter
 //  Unified proxy handler for Vite dev server and production server
 // ─────────────────────────────────────────────────────────────
 
@@ -14,45 +14,73 @@ export const ALLOWED_MODELS = new Set([
 export const DEFAULT_MODEL = "gemini-2.5-flash";
 export const MAX_REQUEST_BYTES = 1024 * 1024; // 1MB limit
 export const REQUEST_TIMEOUT_MS = 30000;      // 30 seconds
-export const RATE_LIMIT_MAX = 30;             // 30 requests / min / IP
-export const RATE_LIMIT_WINDOW_MS = 60 * 1000;// 1 minute window
+export const RATE_LIMIT_MAX = 30;             // 30 requests per window
+export const RATE_LIMIT_WINDOW_MS = 60 * 1000;// 60 seconds sliding window
 
-// In-memory sliding window rate limiter
-const ipRateMap = new Map();
+// True Sliding Window: Map of IP address -> Array of epoch millisecond timestamps
+const ipRequestTimestamps = new Map();
 
-// Periodic prune to prevent memory leaks
+// Periodic prune of idle IPs to prevent memory growth
 setInterval(() => {
-  const now = Date.now();
-  for (const [ip, entry] of ipRateMap.entries()) {
-    if (now > entry.resetTime) {
-      ipRateMap.delete(ip);
+  const cutoff = Date.now() - RATE_LIMIT_WINDOW_MS;
+  for (const [ip, times] of ipRequestTimestamps.entries()) {
+    const recent = times.filter(t => t > cutoff);
+    if (recent.length === 0) {
+      ipRequestTimestamps.delete(ip);
+    } else {
+      ipRequestTimestamps.set(ip, recent);
     }
   }
 }, 60000).unref?.();
 
-function checkRateLimit(ip) {
+/**
+ * True sliding-window rate limiter:
+ * Retains timestamps within the last 60 seconds and computes exact reset time.
+ */
+export function checkRateLimit(ip, maxRequests = RATE_LIMIT_MAX, windowMs = RATE_LIMIT_WINDOW_MS) {
   const now = Date.now();
-  let entry = ipRateMap.get(ip);
-  if (!entry || now > entry.resetTime) {
-    entry = { count: 1, resetTime: now + RATE_LIMIT_WINDOW_MS };
-    ipRateMap.set(ip, entry);
-    return { allowed: true, remaining: RATE_LIMIT_MAX - 1, resetInSec: 60 };
-  }
+  const windowStart = now - windowMs;
 
-  if (entry.count >= RATE_LIMIT_MAX) {
+  let timestamps = ipRequestTimestamps.get(ip) || [];
+  timestamps = timestamps.filter(t => t > windowStart);
+
+  if (timestamps.length >= maxRequests) {
+    const oldest = timestamps[0];
+    const resetInSec = Math.max(1, Math.ceil((oldest + windowMs - now) / 1000));
+    ipRequestTimestamps.set(ip, timestamps);
     return {
       allowed: false,
       remaining: 0,
-      resetInSec: Math.max(1, Math.ceil((entry.resetTime - now) / 1000))
+      resetInSec
     };
   }
 
-  entry.count++;
+  timestamps.push(now);
+  ipRequestTimestamps.set(ip, timestamps);
+
   return {
     allowed: true,
-    remaining: RATE_LIMIT_MAX - entry.count,
-    resetInSec: Math.max(1, Math.ceil((entry.resetTime - now) / 1000))
+    remaining: maxRequests - timestamps.length,
+    resetInSec: Math.ceil(windowMs / 1000)
   };
+}
+
+/**
+ * Resolves client IP securely:
+ * Only trusts X-Forwarded-For when TRUST_PROXY is explicitly enabled
+ * or when deployed on known cloud edge proxies (Vercel).
+ */
+export function getClientIp(req, trustProxy = process.env.TRUST_PROXY === "true" || Boolean(process.env.VERCEL)) {
+  if (trustProxy) {
+    const forwarded = req.headers["x-forwarded-for"];
+    if (forwarded) {
+      const client = forwarded.split(",")[0]?.trim();
+      if (client) return client;
+    }
+    const realIp = req.headers["x-real-ip"];
+    if (realIp) return String(realIp).trim();
+  }
+  return req.socket?.remoteAddress || "127.0.0.1";
 }
 
 function sendResponse(res, statusCode, data, headers = {}) {
@@ -82,13 +110,10 @@ export async function handleGeminiProxy(req, res, getApiKey) {
     return;
   }
 
-  // 2. IP Rate Limiting
-  const clientIp =
-    req.headers["x-forwarded-for"]?.split(",")[0]?.trim() ||
-    req.socket?.remoteAddress ||
-    "127.0.0.1";
-
+  // 2. IP Rate Limiting via True Sliding Window & Trusted-Proxy IP
+  const clientIp = getClientIp(req);
   const rateCheck = checkRateLimit(clientIp);
+
   if (!rateCheck.allowed) {
     sendResponse(
       res,
