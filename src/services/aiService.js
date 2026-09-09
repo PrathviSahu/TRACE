@@ -25,7 +25,7 @@ Your personality:
  * Server-only API Caller
  * Routes all traffic strictly through /api/gemini backend proxy
  */
-export async function callGeminiApi({ systemInstruction, contents, generationConfig, model = 'gemini-2.0-flash' }) {
+export async function callGeminiApi({ systemInstruction, contents, generationConfig, model = 'gemini-3.6-flash' }) {
   const payload = {
     contents,
     generationConfig: generationConfig || { temperature: 0.7, maxOutputTokens: 1500 }

@@ -3,7 +3,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: { message: 'Method Not Allowed. POST is required.' } });
   }
 
-  const ALLOWED_MODELS = new Set(['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-2.5-flash']);
+  const ALLOWED_MODELS = new Set(['gemini-3.6-flash', 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro']);
   const body = req.body || {};
   const payload = body.payload || body;
 
@@ -11,8 +11,8 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: { message: 'Invalid payload: "contents" array is required.' } });
   }
 
-  const requestedModel = body.model || 'gemini-2.0-flash';
-  const model = ALLOWED_MODELS.has(requestedModel) ? requestedModel : 'gemini-2.0-flash';
+  const requestedModel = body.model || 'gemini-3.6-flash';
+  const model = ALLOWED_MODELS.has(requestedModel) ? requestedModel : 'gemini-3.6-flash';
   delete payload.model;
 
   const apiKey = process.env.GEMINI_API_KEY;

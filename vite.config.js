@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 import react from '@vitejs/plugin-react'
 import { defineConfig, loadEnv } from 'vite'
 
-const ALLOWED_MODELS = new Set(['gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-2.5-flash']);
+const ALLOWED_MODELS = new Set(['gemini-3.6-flash', 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-1.5-flash', 'gemini-1.5-pro']);
 const MAX_REQUEST_BYTES = 1024 * 1024; // 1MB limit
 const REQUEST_TIMEOUT_MS = 30000;      // 30 seconds
 
@@ -58,8 +58,8 @@ function geminiProxyMiddleware(server) {
         return;
       }
 
-      const requestedModel = parsedBody.model || 'gemini-2.0-flash';
-      const model = ALLOWED_MODELS.has(requestedModel) ? requestedModel : 'gemini-2.0-flash';
+      const requestedModel = parsedBody.model || 'gemini-3.6-flash';
+      const model = ALLOWED_MODELS.has(requestedModel) ? requestedModel : 'gemini-3.6-flash';
       delete payload.model;
 
       // 4. Server environment key check

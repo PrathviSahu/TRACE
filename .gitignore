@@ -31,3 +31,4 @@ dist-ssr
 # Analysis & local artifacts
 graphify-out/
 .vercel
+*.mp4

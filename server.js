@@ -7,7 +7,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 5174;
 const DIST_DIR = path.join(__dirname, 'dist');
 
-const ALLOWED_MODELS = new Set(['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-2.5-flash']);
+const ALLOWED_MODELS = new Set(['gemini-3.6-flash', 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro']);
 const MAX_REQUEST_BYTES = 1024 * 1024; // 1MB max request size
 const REQUEST_TIMEOUT_MS = 30000;      // 30 seconds timeout
 
@@ -97,8 +97,8 @@ const server = http.createServer(async (req, res) => {
         return;
       }
 
-      const requestedModel = parsedBody.model || 'gemini-2.0-flash';
-      const model = ALLOWED_MODELS.has(requestedModel) ? requestedModel : 'gemini-2.0-flash';
+      const requestedModel = parsedBody.model || 'gemini-3.6-flash';
+      const model = ALLOWED_MODELS.has(requestedModel) ? requestedModel : 'gemini-3.6-flash';
       delete payload.model;
 
       // 4. Server environment key check
