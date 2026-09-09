@@ -5,7 +5,8 @@ import {
   DiagrammaticStack,
   DiagrammaticQueue,
   DiagrammaticLinkedList,
-  DiagrammaticBinaryTree
+  DiagrammaticBinaryTree,
+  DiagrammaticPriorityQueue
 } from "./DiagrammaticVisualizers.jsx";
 
 export default function VisualizerStudio() {
@@ -263,59 +264,13 @@ export default function VisualizerStudio() {
                 }
 
                 if (col.type === "PriorityQueue") {
-                  const isMax = col.raw?.comparator?.order === "reverse";
-                  const heapLabel = isMax ? "Max-Heap" : "Min-Heap";
-                  const headLabel = isMax ? "max (head) →" : "min (head) →";
-
-                  const formatPqVal = (v) => {
-                    if (v === null || v === undefined) return "null";
-                    if (Array.isArray(v)) return `[${v.join(", ")}]`;
-                    if (typeof v === "object") {
-                      if (v.val !== undefined) return `Node(val=${v.val})`;
-                      if (v.fields?.val !== undefined) return `Node(val=${v.fields.val})`;
-                      return v.name || v.__type || "{...}";
-                    }
-                    return String(v);
-                  };
-
                   return (
-                    <div key={col.name} className="ds-block" style={{ marginBottom: 20 }}>
-                      <div className="ds-title" style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <span>PriorityQueue ({heapLabel}): {col.name}</span>
-                        <span style={{ fontSize: 10, padding: "2px 6px", background: "rgba(255, 159, 67, 0.15)", color: "var(--accent-amber, #FF9F43)", borderRadius: 4, fontWeight: 500 }}>
-                          Binary Heap
-                        </span>
-                      </div>
-                      <div className="queue-wrap" style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 6, marginTop: 6 }}>
-                        <span style={{ fontSize: 11, color: "var(--accent-amber, #FF9F43)", fontWeight: 600 }}>{headLabel}</span>
-                        {col.items && col.items.length > 0 ? (
-                          col.items.map((v, idx) => (
-                            <div
-                              key={idx}
-                              className="queue-cell"
-                              style={{
-                                display: "flex",
-                                flexDirection: "column",
-                                alignItems: "center",
-                                padding: "4px 8px",
-                                background: idx === 0 ? "rgba(255, 159, 67, 0.18)" : "var(--bg2)",
-                                border: idx === 0 ? "1px solid var(--accent, #6366f1)" : "1px solid transparent",
-                                borderRadius: 4,
-                                minWidth: 28,
-                                textAlign: "center"
-                              }}
-                            >
-                              <span style={{ fontSize: 9, color: idx === 0 ? "var(--accent-amber, #FF9F43)" : "var(--txt3)", marginBottom: 2 }}>
-                                [{idx}]
-                              </span>
-                              <span style={{ fontWeight: idx === 0 ? 600 : 400 }}>{formatPqVal(v)}</span>
-                            </div>
-                          ))
-                        ) : (
-                          <span style={{ fontSize: 11, color: "var(--txt3)" }}>empty priority queue</span>
-                        )}
-                      </div>
-                    </div>
+                    <DiagrammaticPriorityQueue
+                      key={col.name}
+                      name={col.name}
+                      items={col.items || []}
+                      raw={col.raw}
+                    />
                   );
                 }
 

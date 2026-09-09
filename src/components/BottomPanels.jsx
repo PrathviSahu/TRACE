@@ -10,8 +10,21 @@ export default function BottomPanels() {
     outputTab,
     setOutputTab,
     outputs,
-    returnValue
+    returnValue,
+    error,
+    code,
+    language
   } = useTraceStore();
+
+  function handleAskAiHint(customPrompt) {
+    const prompt = customPrompt || (error
+      ? `I encountered an execution issue in TRACE running this ${language ? language.toUpperCase() : "Java"} code:\n\nError:\n${error}\n\nCode:\n\`\`\`${language || "java"}\n${code}\n\`\`\`\n\nPlease give me a clear, helpful hint on why this happened and how to fix it.`
+      : `I am currently analyzing this ${language ? language.toUpperCase() : "Java"} algorithm in TRACE:\n\nCode:\n\`\`\`${language || "java"}\n${code}\n\`\`\`\n\nCurrent Step: ${currentStep + 1} of ${trace?.length || 1}.\nCan you provide a progressive hint or conceptual guidance on how to optimize or troubleshoot this algorithm?`);
+
+    window.dispatchEvent(new CustomEvent("open-trace-brain", {
+      detail: { prompt }
+    }));
+  }
 
   const stepData = trace && trace[currentStep] ? trace[currentStep] : null;
 
@@ -141,25 +154,75 @@ export default function BottomPanels() {
 
       {/* ── 4. Output & Logs Panel ────────────────────────────── */}
       <div className="studio-card output-card">
-        <div className="card-header-bar output-tabs-header">
+        <div className="card-header-bar output-tabs-header" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ display: "flex", alignItems: "center" }}>
+            <button
+              className={'out-tab-btn ' + (outputTab === 'output' ? 'active' : '')}
+              onClick={() => setOutputTab('output')}
+            >
+              Output
+            </button>
+            <button
+              className={'out-tab-btn ' + (outputTab === 'logs' ? 'active' : '')}
+              onClick={() => setOutputTab('logs')}
+            >
+              Logs
+            </button>
+          </div>
           <button
-            className={'out-tab-btn ' + (outputTab === 'output' ? 'active' : '')}
-            onClick={() => setOutputTab('output')}
+            onClick={() => handleAskAiHint()}
+            title="Ask AI Tutor for guidance or hints"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4,
+              padding: "2px 8px",
+              background: "rgba(255, 159, 67, 0.1)",
+              border: "1px solid rgba(255, 159, 67, 0.3)",
+              color: "var(--accent-amber, #FF9F43)",
+              borderRadius: 4,
+              fontSize: 10,
+              fontFamily: "var(--font-mono)",
+              cursor: "pointer",
+              fontWeight: 600
+            }}
           >
-            Output
-          </button
-          >
-          <button
-            className={'out-tab-btn ' + (outputTab === 'logs' ? 'active' : '')}
-            onClick={() => setOutputTab('logs')}
-          >
-            Logs
-          </button
-          >
+            💡 AI Hint
+          </button>
         </div>
         <div className="card-scroll-body terminal-body">
           {outputTab === 'output' ? (
             <div className="terminal-output-text">
+              {error && (
+                <div className="terminal-error-wrap" style={{ padding: "10px 14px", background: "rgba(239, 71, 67, 0.12)", border: "1px solid rgba(239, 71, 67, 0.35)", borderRadius: "var(--radius-sm, 6px)", marginBottom: 12 }}>
+                  <div style={{ color: "#ef4743", fontWeight: 700, fontSize: 12, marginBottom: 4, display: "flex", alignItems: "center", gap: 6 }}>
+                    <span>⚠️ Execution Error</span>
+                  </div>
+                  <div style={{ color: "var(--txt-bright, #F0F6FC)", fontFamily: "var(--font-mono)", fontSize: 11.5, marginBottom: 10, whiteSpace: "pre-wrap" }}>
+                    {error}
+                  </div>
+                  <button
+                    className="btn-ai-hint-fix"
+                    onClick={() => handleAskAiHint()}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                      padding: "5px 12px",
+                      background: "rgba(255, 159, 67, 0.18)",
+                      border: "1px solid var(--accent-amber, #FF9F43)",
+                      color: "var(--accent-amber, #FF9F43)",
+                      borderRadius: 4,
+                      fontSize: 11,
+                      fontFamily: "var(--font-mono)",
+                      cursor: "pointer",
+                      fontWeight: 700
+                    }}
+                  >
+                    💡 Ask AI for a Hint & Fix
+                  </button>
+                </div>
+              )}
               {outputs && outputs.length > 0 ? (
                 outputs.map((out, idx) => (
                   <div key={idx} className="terminal-line">{out}</div>

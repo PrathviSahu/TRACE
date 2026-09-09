@@ -15,6 +15,17 @@ export default function StudioHeader() {
     showToast('Link copied to clipboard');
   }
 
+  function handleGetHint() {
+    const { code, language, currentStep, trace, error } = useTraceStore.getState();
+    const prompt = error
+      ? `I ran into an issue running this ${language.toUpperCase()} code in TRACE:\n\nError: ${error}\n\nCode:\n\`\`\`${language}\n${code}\n\`\`\`\n\nCan you give me a structured hint on what went wrong and how to fix it?`
+      : `I am working on this algorithm in TRACE using ${language.toUpperCase()}.\n\nCode:\n\`\`\`${language}\n${code}\n\`\`\`\n\nI need a progressive hint to help me think about how to optimize or solve this without giving away the full code immediately. Can you guide me step by step?`;
+
+    window.dispatchEvent(new CustomEvent("open-trace-brain", {
+      detail: { prompt }
+    }));
+  }
+
   function handleSave() {
     showToast('Workspace snapshot saved');
   }
@@ -60,6 +71,24 @@ export default function StudioHeader() {
             <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
           </svg>
           Share
+        </button>
+
+        <button
+          className="studio-action-btn btn-ai-hint-studio"
+          onClick={handleGetHint}
+          title="Get progressive AI hint for current code"
+          style={{
+            color: "var(--accent-amber)",
+            borderColor: "rgba(255, 159, 67, 0.4)",
+            background: "rgba(255, 159, 67, 0.08)"
+          }}
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M9 18h6" />
+            <path d="M10 22h4" />
+            <path d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7z" />
+          </svg>
+          AI Hint
         </button>
 
         <button className="studio-action-btn" onClick={handleSave}>

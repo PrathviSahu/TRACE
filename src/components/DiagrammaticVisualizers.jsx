@@ -23,9 +23,17 @@ export function DiagrammaticStack({ name, items = [] }) {
             LIFO Beaker
           </span>
         </div>
-        <span style={{ fontSize: 11, fontFamily: "var(--font-mono)", color: "var(--txt-dim, #6E7681)" }}>
-          Size: {count} {count === 1 ? "element" : "elements"}
-        </span>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={{ fontSize: 10, fontFamily: "var(--font-mono)", padding: "2px 6px", background: "var(--bg-raised, #1C2128)", borderRadius: 4, border: "1px solid var(--border-subtle, #21262D)", color: "var(--txt-dim, #6E7681)" }}>
+            Size: <strong style={{ color: "var(--txt-bright, #F0F6FC)" }}>{count}</strong>
+          </span>
+          <span style={{ fontSize: 10, fontFamily: "var(--font-mono)", padding: "2px 6px", background: "var(--bg-raised, #1C2128)", borderRadius: 4, border: "1px solid var(--border-subtle, #21262D)", color: "var(--txt-dim, #6E7681)" }}>
+            SP: <strong style={{ color: "var(--accent-amber, #FF9F43)" }}>{isNotEmpty ? `[${count - 1}]` : "None"}</strong>
+          </span>
+          <span style={{ fontSize: 10, fontFamily: "var(--font-mono)", padding: "2px 6px", background: "var(--bg-raised, #1C2128)", borderRadius: 4, border: "1px solid var(--border-subtle, #21262D)", color: "var(--txt-dim, #6E7681)" }}>
+            Peek: <strong style={{ color: "var(--accent-amber, #FF9F43)" }}>{isNotEmpty ? String(items[count - 1]) : "null"}</strong>
+          </span>
+        </div>
       </div>
 
       <div style={{ display: "flex", alignItems: "flex-start", gap: 16, marginTop: 10, flexWrap: "wrap" }}>
@@ -33,7 +41,7 @@ export function DiagrammaticStack({ name, items = [] }) {
         <div
           style={{
             position: "relative",
-            width: 240,
+            width: 250,
             minHeight: 140,
             background: "linear-gradient(180deg, rgba(255,159,67,0.02) 0%, rgba(19,23,29,0.95) 100%)",
             borderLeft: "3px solid var(--accent-amber, #FF9F43)",
@@ -41,7 +49,7 @@ export function DiagrammaticStack({ name, items = [] }) {
             borderBottom: "4px solid var(--accent-amber, #FF9F43)",
             borderTop: "1px dashed rgba(255, 159, 67, 0.3)",
             borderRadius: "0 0 8px 8px",
-            padding: "12px 10px 8px 10px",
+            padding: "14px 10px 8px 10px",
             display: "flex",
             flexDirection: "column",
             justifyContent: "flex-end",
@@ -71,81 +79,89 @@ export function DiagrammaticStack({ name, items = [] }) {
             PUSH ↓ / POP ↑
           </div>
 
-          {isNotEmpty ? (
-            [...items].reverse().map((v, idx) => {
-              const isTop = idx === 0;
-              const origIdx = count - 1 - idx;
-              return (
-                <div
-                  key={idx}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: "7px 10px",
-                    background: isTop ? "rgba(255, 159, 67, 0.18)" : "var(--bg-raised, #1C2128)",
-                    border: isTop ? "1.5px solid var(--accent-amber, #FF9F43)" : "1px solid var(--border-subtle, #21262D)",
-                    borderRadius: 4,
-                    fontFamily: "var(--font-mono)",
-                    boxShadow: isTop ? "0 0 10px rgba(255, 159, 67, 0.3)" : "none",
-                    transition: "all 0.2s ease"
-                  }}
-                >
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontSize: 10, color: isTop ? "var(--accent-amber, #FF9F43)" : "var(--txt-dim, #6E7681)", fontWeight: 600 }}>
-                      [{origIdx}]
-                    </span>
-                    <span style={{ fontWeight: isTop ? 700 : 500, fontSize: 13, color: isTop ? "var(--txt-bright, #F0F6FC)" : "var(--txt-main, #C9D1D9)" }}>
-                      {String(v)}
-                    </span>
-                  </div>
-                  {isTop && (
-                    <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                      <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 6px", background: "var(--accent-amber, #FF9F43)", color: "#090B0E", borderRadius: 3 }}>
-                        TOP
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 6,
+              maxHeight: 340,
+              overflowY: "auto",
+              paddingRight: 2
+            }}
+          >
+            {isNotEmpty ? (
+              [...items].reverse().map((v, idx) => {
+                const isTop = idx === 0;
+                const origIdx = count - 1 - idx;
+                return (
+                  <div
+                    key={idx}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "7px 10px",
+                      background: isTop ? "rgba(255, 159, 67, 0.18)" : "var(--bg-raised, #1C2128)",
+                      border: isTop ? "1.5px solid var(--accent-amber, #FF9F43)" : "1px solid var(--border-subtle, #21262D)",
+                      borderRadius: 4,
+                      fontFamily: "var(--font-mono)",
+                      boxShadow: isTop ? "0 0 10px rgba(255, 159, 67, 0.3)" : "none",
+                      transition: "all 0.2s ease"
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontSize: 10, color: isTop ? "var(--accent-amber, #FF9F43)" : "var(--txt-dim, #6E7681)", fontWeight: 600 }}>
+                        [{origIdx}]
+                      </span>
+                      <span style={{ fontWeight: isTop ? 700 : 500, fontSize: 13, color: isTop ? "var(--txt-bright, #F0F6FC)" : "var(--txt-main, #C9D1D9)" }}>
+                        {String(v)}
                       </span>
                     </div>
-                  )}
-                </div>
-              );
-            })
-          ) : (
-            <div style={{ padding: "30px 10px", textAlign: "center", color: "var(--txt-dim, #6E7681)", fontFamily: "var(--font-mono)", fontSize: 11 }}>
-              [ Empty Stack — No Elements ]
-            </div>
-          )}
+                    {isTop && (
+                      <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                        <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 6px", background: "var(--accent-amber, #FF9F43)", color: "#090B0E", borderRadius: 3 }}>
+                          TOP
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            ) : (
+              <div style={{ padding: "30px 10px", textAlign: "center", color: "var(--txt-dim, #6E7681)", fontFamily: "var(--font-mono)", fontSize: 11 }}>
+                [ Empty Stack — push() elements to begin ]
+              </div>
+            )}
+          </div>
 
           {/* Base Plate */}
           <div
             style={{
+              marginTop: 4,
+              padding: "4px 0",
               textAlign: "center",
               fontSize: 9,
               fontFamily: "var(--font-mono)",
               color: "var(--txt-dim, #6E7681)",
-              borderTop: "1px solid var(--border-subtle, #21262D)",
-              paddingTop: 4,
-              marginTop: 2,
-              letterSpacing: "1px"
+              borderTop: "1px solid rgba(255, 159, 67, 0.3)",
+              letterSpacing: 1
             }}
           >
             ════ BASE ════
           </div>
         </div>
 
-        {/* Diagnostic Legend / State */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 11, fontFamily: "var(--font-mono)" }}>
-          <div style={{ padding: "6px 10px", background: "var(--bg-raised, #1C2128)", border: "1px solid var(--border-subtle, #21262D)", borderRadius: 4 }}>
-            <span style={{ color: "var(--txt-dim, #6E7681)" }}>Stack Pointer (SP): </span>
-            <strong style={{ color: isNotEmpty ? "var(--accent-amber, #FF9F43)" : "var(--txt-dim, #6E7681)" }}>
-              {isNotEmpty ? count - 1 : "NULL (-1)"}
-            </strong>
+        {/* Stack Explanation Diagnostics */}
+        <div style={{ flex: 1, minWidth: 200, padding: 12, background: "var(--bg-surface, #13171D)", border: "1px solid var(--border-subtle, #21262D)", borderRadius: 8 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: "var(--txt-bright, #F0F6FC)", marginBottom: 8 }}>
+            LIFO Execution Semantics
           </div>
-          <div style={{ padding: "6px 10px", background: "var(--bg-raised, #1C2128)", border: "1px solid var(--border-subtle, #21262D)", borderRadius: 4 }}>
-            <span style={{ color: "var(--txt-dim, #6E7681)" }}>Top Value (Peek): </span>
-            <strong style={{ color: isNotEmpty ? "var(--txt-bright, #F0F6FC)" : "var(--txt-dim, #6E7681)" }}>
-              {isNotEmpty ? String(items[count - 1]) : "Empty"}
-            </strong>
-          </div>
+          <ul style={{ margin: 0, paddingLeft: 18, fontSize: 11, color: "var(--txt-dim, #6E7681)", lineHeight: 1.6 }}>
+            <li><strong>push(x)</strong> places element onto the top of the stack.</li>
+            <li><strong>pop()</strong> removes and returns the topmost element.</li>
+            <li><strong>peek()</strong> inspects the top element without removal.</li>
+            <li>Current stack depth: <strong style={{ color: "var(--accent-amber, #FF9F43)" }}>{count}</strong>.</li>
+          </ul>
         </div>
       </div>
     </div>
@@ -169,9 +185,17 @@ export function DiagrammaticQueue({ name, items = [] }) {
             FIFO Pipeline
           </span>
         </div>
-        <span style={{ fontSize: 11, fontFamily: "var(--font-mono)", color: "var(--txt-dim, #6E7681)" }}>
-          Size: {count} elements
-        </span>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={{ fontSize: 10, fontFamily: "var(--font-mono)", padding: "2px 6px", background: "var(--bg-raised, #1C2128)", borderRadius: 4, border: "1px solid var(--border-subtle, #21262D)", color: "var(--txt-dim, #6E7681)" }}>
+            Size: <strong style={{ color: "var(--txt-bright, #F0F6FC)" }}>{count}</strong>
+          </span>
+          <span style={{ fontSize: 10, fontFamily: "var(--font-mono)", padding: "2px 6px", background: "var(--bg-raised, #1C2128)", borderRadius: 4, border: "1px solid var(--border-subtle, #21262D)", color: "var(--txt-dim, #6E7681)" }}>
+            Head: <strong style={{ color: "var(--accent-amber, #FF9F43)" }}>{isNotEmpty ? String(items[0]) : "null"}</strong>
+          </span>
+          <span style={{ fontSize: 10, fontFamily: "var(--font-mono)", padding: "2px 6px", background: "var(--bg-raised, #1C2128)", borderRadius: 4, border: "1px solid var(--border-subtle, #21262D)", color: "var(--txt-dim, #6E7681)" }}>
+            Tail: <strong style={{ color: "var(--accent-cyan, #38D9C5)" }}>{isNotEmpty ? String(items[count - 1]) : "null"}</strong>
+          </span>
+        </div>
       </div>
 
       <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
@@ -210,7 +234,7 @@ export function DiagrammaticQueue({ name, items = [] }) {
                     background: isFront ? "rgba(255, 159, 67, 0.16)" : "var(--bg-raised, #1C2128)",
                     border: isFront ? "1.5px solid var(--accent-amber, #FF9F43)" : "1px solid var(--border-subtle, #21262D)",
                     borderRadius: 4,
-                    minWidth: 40,
+                    minWidth: 42,
                     textAlign: "center",
                     fontFamily: "var(--font-mono)",
                     boxShadow: isFront ? "0 0 8px rgba(255, 159, 67, 0.25)" : "none"
@@ -228,7 +252,7 @@ export function DiagrammaticQueue({ name, items = [] }) {
                     </span>
                   )}
                   {!isFront && isRear && (
-                    <span style={{ fontSize: 8, fontWeight: 600, marginTop: 2, color: "var(--txt-dim, #6E7681)" }}>
+                    <span style={{ fontSize: 8, fontWeight: 600, marginTop: 2, color: "var(--accent-cyan, #38D9C5)" }}>
                       TAIL
                     </span>
                   )}
@@ -237,7 +261,7 @@ export function DiagrammaticQueue({ name, items = [] }) {
             })
           ) : (
             <div style={{ padding: "8px 16px", color: "var(--txt-dim, #6E7681)", fontFamily: "var(--font-mono)", fontSize: 11 }}>
-              empty queue
+              [ Empty Queue ]
             </div>
           )}
 
@@ -263,7 +287,7 @@ export function DiagrammaticLinkedList({ name, headObj, allVars = {} }) {
   let count = 0;
   const visitedRefs = new Set();
 
-  while (curr && typeof curr === "object" && count < 20) {
+  while (curr && typeof curr === "object" && count < 25) {
     if (visitedRefs.has(curr)) {
       // Cycle detected
       nodes.push({ isCycle: true, val: "CYCLE ↺", ref: curr });
@@ -308,23 +332,31 @@ export function DiagrammaticLinkedList({ name, headObj, allVars = {} }) {
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
                   {/* Pointers above node */}
                   <div style={{ minHeight: 20, display: "flex", gap: 4, alignItems: "center" }}>
-                    {ptrs.map(p => (
-                      <span
-                        key={p}
-                        style={{
-                          fontSize: 9,
-                          fontFamily: "var(--font-mono)",
-                          fontWeight: 700,
-                          padding: "1px 6px",
-                          background: p === "head" ? "var(--accent-amber, #FF9F43)" : "rgba(56, 217, 197, 0.2)",
-                          color: p === "head" ? "#090B0E" : "var(--accent-cyan, #38D9C5)",
-                          borderRadius: 3,
-                          boxShadow: "0 1px 4px rgba(0,0,0,0.3)"
-                        }}
-                      >
-                        {p} ↓
-                      </span>
-                    ))}
+                    {ptrs.map(p => {
+                      const isHead = p === "head";
+                      const isCurr = p === "curr" || p === "current";
+                      const isPrev = p === "prev";
+                      const bg = isHead ? "var(--accent-amber, #FF9F43)" : isCurr ? "rgba(56, 217, 197, 0.2)" : isPrev ? "rgba(160, 90, 255, 0.2)" : "rgba(255, 255, 255, 0.1)";
+                      const color = isHead ? "#090B0E" : isCurr ? "var(--accent-cyan, #38D9C5)" : isPrev ? "#c792ea" : "var(--txt-bright, #F0F6FC)";
+
+                      return (
+                        <span
+                          key={p}
+                          style={{
+                            fontSize: 9,
+                            fontFamily: "var(--font-mono)",
+                            fontWeight: 700,
+                            padding: "1px 6px",
+                            background: bg,
+                            color: color,
+                            borderRadius: 3,
+                            boxShadow: "0 1px 4px rgba(0,0,0,0.3)"
+                          }}
+                        >
+                          {p} ↓
+                        </span>
+                      );
+                    })}
                   </div>
 
                   {/* Node Box [ DATA | NEXT ] */}
@@ -343,69 +375,64 @@ export function DiagrammaticLinkedList({ name, headObj, allVars = {} }) {
                     <div
                       style={{
                         padding: "8px 14px",
-                        fontFamily: "var(--font-mono)",
                         fontWeight: 700,
                         fontSize: 13,
                         color: "var(--txt-bright, #F0F6FC)",
+                        fontFamily: "var(--font-mono)",
                         borderRight: "1px solid var(--border-subtle, #21262D)",
-                        background: "rgba(255, 255, 255, 0.02)",
-                        minWidth: 32,
-                        textAlign: "center"
+                        background: node.isCycle ? "rgba(239, 71, 67, 0.2)" : "transparent"
                       }}
                     >
                       {String(node.val)}
                     </div>
-                    {/* Next pointer dot */}
+
+                    {/* Next pointer cell */}
                     <div
                       style={{
                         padding: "8px 10px",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        background: "rgba(56, 217, 197, 0.08)"
+                        color: "var(--accent-cyan, #38D9C5)",
+                        fontSize: 12,
+                        background: "rgba(56, 217, 197, 0.04)"
                       }}
                     >
-                      <div
-                        style={{
-                          width: 8,
-                          height: 8,
-                          borderRadius: "50%",
-                          background: "var(--accent-cyan, #38D9C5)",
-                          boxShadow: "0 0 6px rgba(56, 217, 197, 0.6)"
-                        }}
-                      />
+                      •
                     </div>
                   </div>
+
+                  <span style={{ fontSize: 9, color: "var(--txt-dim, #6E7681)", fontFamily: "var(--font-mono)" }}>
+                    [{idx}]
+                  </span>
                 </div>
 
-                {/* Arrow to next node */}
-                <div style={{ display: "flex", alignItems: "center", padding: "0 2px", marginTop: 24 }}>
-                  <svg width="24" height="14" viewBox="0 0 24 14" fill="none">
-                    <line x1="0" y1="7" x2="18" y2="7" stroke="var(--accent-amber, #FF9F43)" strokeWidth="2" />
-                    <polygon points="17,3 24,7 17,11" fill="var(--accent-amber, #FF9F43)" />
-                  </svg>
-                </div>
+                {/* Arrow to next */}
+                {idx < nodes.length - 1 ? (
+                  <div style={{ display: "flex", alignItems: "center", color: "var(--accent-cyan, #38D9C5)", fontWeight: 700, fontSize: 16, marginTop: 12 }}>
+                    ──►
+                  </div>
+                ) : (
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 12 }}>
+                    <span style={{ color: "var(--accent-cyan, #38D9C5)", fontWeight: 700, fontSize: 16 }}>──►</span>
+                    <div
+                      style={{
+                        padding: "6px 10px",
+                        border: "1px dashed var(--border-strong, #30363D)",
+                        borderRadius: 4,
+                        fontSize: 11,
+                        fontFamily: "var(--font-mono)",
+                        color: "var(--txt-dim, #6E7681)",
+                        background: "rgba(255,255,255,0.02)"
+                      }}
+                    >
+                      NULL ⏚
+                    </div>
+                  </div>
+                )}
               </React.Fragment>
             );
           })}
-
-          {/* Terminal NULL */}
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: 24 }}>
-            <div
-              style={{
-                padding: "7px 12px",
-                border: "1px dashed var(--border-subtle, #21262D)",
-                borderRadius: 6,
-                fontFamily: "var(--font-mono)",
-                fontSize: 11,
-                fontWeight: 600,
-                color: "var(--txt-dim, #6E7681)",
-                background: "rgba(0,0,0,0.2)"
-              }}
-            >
-              NULL
-            </div>
-          </div>
         </div>
       </div>
     </div>
@@ -414,8 +441,7 @@ export function DiagrammaticLinkedList({ name, headObj, allVars = {} }) {
 
 /**
  * Diagrammatic Binary Tree
- * Renders an interactive SVG tree diagram with circular nodes,
- * connecting edges, and parent-child tree hierarchy.
+ * Renders hierarchical SVG tree graph with circular nodes and connector lines.
  */
 export function DiagrammaticBinaryTree({ name, rootObj }) {
   function computeLayout(root, x = 160, y = 32, offset = 64, depth = 0) {
@@ -432,7 +458,7 @@ export function DiagrammaticBinaryTree({ name, rootObj }) {
     if (left && typeof left === "object" && (left.val !== undefined || left.fields?.val !== undefined)) {
       const leftX = x - offset;
       const leftY = y + 54;
-      edges.push({ x1: x, y1: y, x2: leftX, y2: leftY });
+      edges.push({ x1: x, y1: y, x2: leftX, y2: leftY, dir: "L" });
       const leftSub = computeLayout(left, leftX, leftY, offset / 1.85, depth + 1);
       nodes.push(...leftSub.nodes);
       edges.push(...leftSub.edges);
@@ -441,7 +467,7 @@ export function DiagrammaticBinaryTree({ name, rootObj }) {
     if (right && typeof right === "object" && (right.val !== undefined || right.fields?.val !== undefined)) {
       const rightX = x + offset;
       const rightY = y + 54;
-      edges.push({ x1: x, y1: y, x2: rightX, y2: rightY });
+      edges.push({ x1: x, y1: y, x2: rightX, y2: rightY, dir: "R" });
       const rightSub = computeLayout(right, rightX, rightY, offset / 1.85, depth + 1);
       nodes.push(...rightSub.nodes);
       edges.push(...rightSub.edges);
@@ -454,9 +480,9 @@ export function DiagrammaticBinaryTree({ name, rootObj }) {
   if (nodes.length === 0) return null;
 
   // Compute SVG dimensions
-  const minX = Math.min(...nodes.map(n => n.x)) - 30;
-  const maxX = Math.max(...nodes.map(n => n.x)) + 30;
-  const maxY = Math.max(...nodes.map(n => n.y)) + 30;
+  const minX = Math.min(...nodes.map(n => n.x)) - 32;
+  const maxX = Math.max(...nodes.map(n => n.x)) + 32;
+  const maxY = Math.max(...nodes.map(n => n.y)) + 32;
   const width = Math.max(340, maxX - minX);
   const height = Math.max(160, maxY);
 
@@ -471,18 +497,29 @@ export function DiagrammaticBinaryTree({ name, rootObj }) {
 
       <div style={{ marginTop: 10, background: "var(--bg-surface, #13171D)", border: "1px solid var(--border-subtle, #21262D)", borderRadius: 8, padding: 12, overflowX: "auto" }}>
         <svg width={width} height={height} viewBox={`${minX} 0 ${width} ${height}`} style={{ display: "block", margin: "0 auto" }}>
-          {/* Edges */}
+          {/* Edges with L/R branch labels */}
           {edges.map((e, idx) => (
-            <line
-              key={idx}
-              x1={e.x1}
-              y1={e.y1}
-              x2={e.x2}
-              y2={e.y2}
-              stroke="var(--border-strong, #30363D)"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-            />
+            <g key={idx}>
+              <line
+                x1={e.x1}
+                y1={e.y1}
+                x2={e.x2}
+                y2={e.y2}
+                stroke="var(--border-strong, #30363D)"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+              />
+              <text
+                x={(e.x1 + e.x2) / 2 + (e.dir === "L" ? -6 : 6)}
+                y={(e.y1 + e.y2) / 2 - 2}
+                fill="var(--txt-dim, #6E7681)"
+                fontSize="9"
+                fontWeight="700"
+                fontFamily="var(--font-mono, monospace)"
+              >
+                {e.dir}
+              </text>
+            </g>
           ))}
 
           {/* Nodes */}
@@ -511,6 +548,113 @@ export function DiagrammaticBinaryTree({ name, rootObj }) {
             </g>
           ))}
         </svg>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Diagrammatic Priority Queue (Binary Heap Visualizer)
+ * Shows Min-Heap or Max-Heap with root priority element, parent/child indices,
+ * and binary heap memory blocks.
+ */
+export function DiagrammaticPriorityQueue({ name, items = [], raw }) {
+  const isMax = raw?.comparator?.order === "reverse";
+  const heapLabel = isMax ? "Max-Heap" : "Min-Heap";
+  const count = items.length;
+  const isNotEmpty = count > 0;
+
+  const formatPqVal = (v) => {
+    if (v === null || v === undefined) return "null";
+    if (Array.isArray(v)) return `[${v.join(", ")}]`;
+    if (typeof v === "object") {
+      if (v.val !== undefined) return `Node(${v.val})`;
+      if (v.fields?.val !== undefined) return `Node(${v.fields.val})`;
+      return v.name || v.__type || "{...}";
+    }
+    return String(v);
+  };
+
+  return (
+    <div className="ds-block" style={{ marginBottom: 24 }}>
+      <div className="ds-title" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span>PriorityQueue: <strong style={{ color: "var(--txt-bright, #F0F6FC)" }}>{name}</strong></span>
+          <span style={{ fontSize: 10, padding: "2px 8px", background: isMax ? "rgba(255, 159, 67, 0.15)" : "rgba(56, 217, 197, 0.15)", color: isMax ? "var(--accent-amber, #FF9F43)" : "var(--accent-cyan, #38D9C5)", borderRadius: 4, fontWeight: 600 }}>
+            {heapLabel} ({count} items)
+          </span>
+        </div>
+        <span style={{ fontSize: 11, fontFamily: "var(--font-mono)", color: "var(--txt-dim, #6E7681)" }}>
+          Peek / Root: <strong style={{ color: "var(--accent-amber, #FF9F43)" }}>{isNotEmpty ? formatPqVal(items[0]) : "null"}</strong>
+        </span>
+      </div>
+
+      <div style={{ marginTop: 10, background: "var(--bg-surface, #13171D)", border: "1px solid var(--border-subtle, #21262D)", borderRadius: 8, padding: 12 }}>
+        {/* Binary Heap Visual Guide */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8, fontSize: 10, color: "var(--txt-dim, #6E7681)", fontFamily: "var(--font-mono)" }}>
+          <span>Heap Array: parent ⌊(i-1)/2⌋ ──► left (2i+1), right (2i+2)</span>
+          <span style={{ color: "var(--accent-amber, #FF9F43)" }}>{isMax ? "Max Element at Root [0]" : "Min Element at Root [0]"}</span>
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+          {isNotEmpty ? (
+            items.map((v, idx) => {
+              const isRoot = idx === 0;
+              const parentIdx = isRoot ? null : Math.floor((idx - 1) / 2);
+              const leftChild = 2 * idx + 1 < count ? 2 * idx + 1 : null;
+              const rightChild = 2 * idx + 2 < count ? 2 * idx + 2 : null;
+
+              return (
+                <div
+                  key={idx}
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    padding: "6px 12px",
+                    background: isRoot ? "rgba(255, 159, 67, 0.16)" : "var(--bg-raised, #1C2128)",
+                    border: isRoot ? "1.5px solid var(--accent-amber, #FF9F43)" : "1px solid var(--border-subtle, #21262D)",
+                    borderRadius: 6,
+                    minWidth: 54,
+                    textAlign: "center",
+                    fontFamily: "var(--font-mono)",
+                    boxShadow: isRoot ? "0 0 10px rgba(255, 159, 67, 0.25)" : "none",
+                    position: "relative"
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 2 }}>
+                    <span style={{ fontSize: 9, color: isRoot ? "var(--accent-amber, #FF9F43)" : "var(--txt-dim, #6E7681)", fontWeight: 700 }}>
+                      [{idx}]
+                    </span>
+                    {!isRoot && (
+                      <span style={{ fontSize: 8, color: "var(--txt-dim, #6E7681)" }}>
+                        p:{parentIdx}
+                      </span>
+                    )}
+                  </div>
+                  <span style={{ fontWeight: isRoot ? 700 : 500, fontSize: 13, color: isRoot ? "var(--txt-bright, #F0F6FC)" : "var(--txt-main, #C9D1D9)" }}>
+                    {formatPqVal(v)}
+                  </span>
+                  {isRoot ? (
+                    <span style={{ fontSize: 8, fontWeight: 700, marginTop: 2, padding: "1px 4px", background: "var(--accent-amber, #FF9F43)", color: "#090B0E", borderRadius: 2 }}>
+                      ROOT
+                    </span>
+                  ) : (
+                    (leftChild !== null || rightChild !== null) && (
+                      <span style={{ fontSize: 8, color: "var(--accent-cyan, #38D9C5)", marginTop: 2 }}>
+                        c:{[leftChild, rightChild].filter(x => x !== null).join(",")}
+                      </span>
+                    )
+                  )}
+                </div>
+              );
+            })
+          ) : (
+            <div style={{ padding: "8px 12px", color: "var(--txt-dim, #6E7681)", fontFamily: "var(--font-mono)", fontSize: 11 }}>
+              [ Empty Priority Queue ]
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
