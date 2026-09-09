@@ -423,7 +423,7 @@ export default function InterviewSetupPage() {
                       style={{
                         ...tagBtnStyle,
                         border: role === r ? "1px solid var(--accent-indigo, #6366f1)" : "1px solid #1c2842",
-                        background: role === r ? "rgba(99, 102, 241, 0.2)" : "rgba(15, 23, 40, 0.6)"
+                        background: role === r ? "rgba(99, 102, 241, 0.2)" : "var(--bg-surface, #161a20)"
                       }}
                     >
                       {r}
@@ -506,7 +506,7 @@ export default function InterviewSetupPage() {
                       fontWeight: 600,
                       cursor: "pointer",
                       border: dailyStudyMinutes === d.value ? "1px solid var(--accent-indigo, #6366f1)" : "1px solid #1c2842",
-                      background: dailyStudyMinutes === d.value ? "rgba(99, 102, 241, 0.25)" : "#0f1728",
+                      background: dailyStudyMinutes === d.value ? "rgba(99, 102, 241, 0.25)" : "var(--bg-card, #161a20)",
                       color: dailyStudyMinutes === d.value ? "var(--txt-bright, #f8fafc)" : "var(--txt-muted, #94a3b8)"
                     }}
                   >
@@ -567,7 +567,7 @@ export default function InterviewSetupPage() {
                         fontWeight: 700,
                         cursor: "pointer",
                         border: isActive ? "1px solid var(--accent-indigo, #6366f1)" : "1px solid #1c2842",
-                        background: isActive ? "rgba(99, 102, 241, 0.25)" : "#0f1728",
+                        background: isActive ? "rgba(99, 102, 241, 0.25)" : "var(--bg-card, #161a20)",
                         color: isActive ? "var(--accent-cyan, #38bdf8)" : "var(--txt-dim, #64748b)"
                       }}
                     >
@@ -654,7 +654,7 @@ export default function InterviewSetupPage() {
                         justifyContent: "center",
                         gap: "0.4rem",
                         border: isActive ? "1px solid var(--accent-indigo, #6366f1)" : "1px solid #1c2842",
-                        background: isActive ? "rgba(99, 102, 241, 0.25)" : "#0f1728",
+                        background: isActive ? "rgba(99, 102, 241, 0.25)" : "var(--bg-card, #161a20)",
                         color: isActive ? "var(--txt-bright, #f8fafc)" : "var(--txt-muted, #94a3b8)"
                       }}
                     >
@@ -693,7 +693,7 @@ export default function InterviewSetupPage() {
                         fontWeight: 500,
                         cursor: "pointer",
                         border: isSelected ? "1px solid var(--accent-cyan, #38bdf8)" : "1px solid #1c2842",
-                        background: isSelected ? "rgba(56, 189, 248, 0.15)" : "#0f1728",
+                        background: isSelected ? "rgba(56, 189, 248, 0.15)" : "var(--bg-card, #161a20)",
                         color: isSelected ? "var(--accent-cyan, #38bdf8)" : "var(--txt-muted, #94a3b8)"
                       }}
                     >
@@ -708,7 +708,7 @@ export default function InterviewSetupPage() {
           <div style={{
             ...cardStyle,
             border: "1px solid rgba(99, 102, 241, 0.3)",
-            background: "linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(13, 19, 34, 0.9))",
+            background: "var(--bg-card, #161a20)",
           }}>
             <div style={sectionHeaderStyle}>
               <span style={iconBadgeStyle}>🎯</span>
@@ -744,7 +744,7 @@ export default function InterviewSetupPage() {
                       fontWeight: 600,
                       cursor: "pointer",
                       border: simMode === m.id ? "1px solid var(--accent-indigo, #6366f1)" : "1px solid #1c2842",
-                      background: simMode === m.id ? "rgba(99, 102, 241, 0.25)" : "#0f1728",
+                      background: simMode === m.id ? "rgba(99, 102, 241, 0.25)" : "var(--bg-card, #161a20)",
                       color: simMode === m.id ? "var(--txt-bright, #f8fafc)" : "var(--txt-muted, #94a3b8)",
                       display: "flex",
                       flexDirection: "column",
@@ -794,7 +794,7 @@ export default function InterviewSetupPage() {
                       fontWeight: 600,
                       cursor: "pointer",
                       border: simDuration === mins ? "1px solid #38bdf8" : "1px solid #1c2842",
-                      background: simDuration === mins ? "rgba(56, 189, 248, 0.15)" : "#0f1728",
+                      background: simDuration === mins ? "rgba(56, 189, 248, 0.15)" : "var(--bg-card, #161a20)",
                       color: simDuration === mins ? "#38bdf8" : "#94a3b8",
                     }}
                   >
@@ -837,7 +837,7 @@ export default function InterviewSetupPage() {
                   fontWeight: 600,
                   cursor: "pointer",
                   border: "1px solid #233152",
-                  background: "#080c16",
+                  background: "var(--bg-darkest, #090b0e)",
                   color: "#cbd5e1",
                 }}
               >
@@ -928,7 +928,7 @@ export default function InterviewSetupPage() {
             <div style={{
               margin: "1.25rem 0",
               padding: "1rem",
-              background: "rgba(10, 15, 29, 0.8)",
+              background: "var(--bg-surface, #161a20)",
               borderRadius: "8px",
               border: "1px solid #1c2842",
               textAlign: "center"
@@ -982,7 +982,7 @@ export default function InterviewSetupPage() {
             </div>
 
             {/* Strategy Badges */}
-            <div style={{ marginBottom: "1.25rem", padding: "0.75rem", background: "#0d1322", borderRadius: "6px", border: "1px solid #1c2842" }}>
+            <div style={{ marginBottom: "1.25rem", padding: "0.75rem", background: "var(--bg-surface, #161a20)", borderRadius: "6px", border: "1px solid #1c2842" }}>
               <span style={{ fontSize: "0.72rem", color: "var(--txt-muted, #94a3b8)", display: "block", marginBottom: "0.4rem", fontWeight: 600 }}>
                 ACTIVE STRATEGIES
               </span>
@@ -1124,7 +1124,7 @@ const sectionHeaderStyle = {
 
 const iconBadgeStyle = {
   fontSize: "1.3rem",
-  background: "#141e33",
+  background: "var(--bg-raised, #1c2128)",
   padding: "0.4rem",
   borderRadius: "8px",
   lineHeight: 1
@@ -1192,7 +1192,7 @@ const checkboxLabelStyle = {
 };
 
 const metricBoxStyle = {
-  background: "#0d1322",
+  background: "var(--bg-surface, #161a20)",
   border: "1px solid #1c2842",
   borderRadius: "6px",
   padding: "0.6rem 0.75rem",

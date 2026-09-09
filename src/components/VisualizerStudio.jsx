@@ -313,12 +313,12 @@ export default function VisualizerStudio() {
                     <div key={col.name} className="ds-block" style={{ marginBottom: 20 }}>
                       <div className="ds-title" style={{ display: "flex", alignItems: "center", gap: 8 }}>
                         <span>PriorityQueue ({heapLabel}): {col.name}</span>
-                        <span style={{ fontSize: 10, padding: "2px 6px", background: "rgba(99, 102, 241, 0.15)", color: "var(--accent, #6366f1)", borderRadius: 4, fontWeight: 500 }}>
+                        <span style={{ fontSize: 10, padding: "2px 6px", background: "rgba(255, 159, 67, 0.15)", color: "var(--accent-amber, #FF9F43)", borderRadius: 4, fontWeight: 500 }}>
                           Binary Heap
                         </span>
                       </div>
                       <div className="queue-wrap" style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 6, marginTop: 6 }}>
-                        <span style={{ fontSize: 11, color: "var(--accent, #6366f1)", fontWeight: 600 }}>{headLabel}</span>
+                        <span style={{ fontSize: 11, color: "var(--accent-amber, #FF9F43)", fontWeight: 600 }}>{headLabel}</span>
                         {col.items && col.items.length > 0 ? (
                           col.items.map((v, idx) => (
                             <div
@@ -329,14 +329,14 @@ export default function VisualizerStudio() {
                                 flexDirection: "column",
                                 alignItems: "center",
                                 padding: "4px 8px",
-                                background: idx === 0 ? "rgba(99, 102, 241, 0.18)" : "var(--bg2)",
+                                background: idx === 0 ? "rgba(255, 159, 67, 0.18)" : "var(--bg2)",
                                 border: idx === 0 ? "1px solid var(--accent, #6366f1)" : "1px solid transparent",
                                 borderRadius: 4,
                                 minWidth: 28,
                                 textAlign: "center"
                               }}
                             >
-                              <span style={{ fontSize: 9, color: idx === 0 ? "var(--accent, #6366f1)" : "var(--txt3)", marginBottom: 2 }}>
+                              <span style={{ fontSize: 9, color: idx === 0 ? "var(--accent-amber, #FF9F43)" : "var(--txt3)", marginBottom: 2 }}>
                                 [{idx}]
                               </span>
                               <span style={{ fontWeight: idx === 0 ? 600 : 400 }}>{formatPqVal(v)}</span>

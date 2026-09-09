@@ -1,15 +1,22 @@
+import { useState } from 'react';
 import { useTraceStore } from '../store/traceStore.js';
 
 export default function StudioHeader() {
   const { activeTab, run, status } = useTraceStore();
+  const [toast, setToast] = useState(null);
+
+  function showToast(msg) {
+    setToast(msg);
+    setTimeout(() => setToast(null), 2000);
+  }
 
   function handleShare() {
-    navigator.clipboard.writeText(window.location.href);
-    alert('Link copied to clipboard!');
+    navigator.clipboard?.writeText(window.location.href);
+    showToast('Link copied to clipboard');
   }
 
   function handleSave() {
-    alert('Solution saved to your workspace!');
+    showToast('Workspace snapshot saved');
   }
 
   return (
@@ -24,7 +31,26 @@ export default function StudioHeader() {
       </div>
 
       {/* ── Action Buttons on the right ──────────────────────── */}
-      <div className="studio-actions-row">
+      <div className="studio-actions-row" style={{ position: 'relative' }}>
+        {toast && (
+          <div style={{
+            position: 'absolute',
+            right: '100%',
+            marginRight: '12px',
+            padding: '4px 10px',
+            background: 'var(--bg-raised)',
+            border: '1px solid var(--accent-amber)',
+            color: 'var(--accent-amber)',
+            borderRadius: 'var(--radius-sm)',
+            fontSize: '11px',
+            fontFamily: 'var(--font-mono)',
+            whiteSpace: 'nowrap',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+            animation: 'fadeIn 0.15s ease'
+          }}>
+            ✓ {toast}
+          </div>
+        )}
         <button className="studio-action-btn" onClick={handleShare}>
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="18" cy="5" r="3" />

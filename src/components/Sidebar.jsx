@@ -116,7 +116,7 @@ export default function Sidebar() {
                 onClick={(e) => { e.stopPropagation(); setLanguage('python'); setLangDropdownOpen(false); }}
               >
                 <span>🐍 Python</span>
-                <span className="lang-exec-badge lang-exec-badge--exec">Executable</span>
+                <span className="lang-exec-badge">Limited Trace</span>
               </div>
               <div
                 className={`lang-option ${language === 'java' ? 'active' : ''}`}
@@ -142,7 +142,7 @@ export default function Sidebar() {
       {/* ── Examples Tree ─────────────────────────────────────── */}
       <div className="sidebar-tree">
         <div className="tree-header">Examples</div>
-        {SIDEBAR_CATEGORIES.map(cat => {
+        {SIDEBAR_CATEGORIES.filter(cat => cat.problems && cat.problems.length > 0).map(cat => {
           const isOpen = !!openCategories[cat.id];
           return (
             <div key={cat.id} className="tree-node">

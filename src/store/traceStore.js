@@ -42,7 +42,7 @@ export const useTraceStore = create((set, get) => ({
   },
 
   // ── Language & Active Selection
-  language: 'python', // 'python' | 'java' | 'cpp'
+  language: 'java', // 'python' | 'java' | 'cpp'
   activeExampleId: 'two-sum',
   activeTab: 'Two Sum',
   viewMode: 'visualization', // 'visualization' | 'dry-run' | 'code-flow'
@@ -50,7 +50,7 @@ export const useTraceStore = create((set, get) => ({
   inputText: "nums = [2, 7, 11, 15]\ntarget = 9",
 
   // ── Code & inputs
-  code: MULTI_LANG_EXAMPLES['two-sum'].python,
+  code: MULTI_LANG_EXAMPLES['two-sum'].java,
   inputs: { nums: '[2, 7, 11, 15]', target: '9' },
 
   setLanguage: (lang) => {

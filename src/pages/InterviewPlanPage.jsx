@@ -354,7 +354,7 @@ export default function InterviewPlanPage() {
           <div style={statCardStyle}>
             <span style={statLabelStyle}>Overall Completion</span>
             <span style={statValueStyle}>{planCompletion.pct}%</span>
-            <div style={{ width: "100%", background: "#1c2842", height: "6px", borderRadius: "3px", marginTop: "0.4rem", overflow: "hidden" }}>
+            <div style={{ width: "100%", background: "var(--border-card, #292f37)", height: "6px", borderRadius: "3px", marginTop: "0.4rem", overflow: "hidden" }}>
               <div style={{ width: `${planCompletion.pct}%`, background: "var(--accent-green, #10b981)", height: "100%", transition: "width 0.3s ease" }} />
             </div>
             <span style={statSubStyle}>{planCompletion.solved} of {planCompletion.total} problems completed</span>
@@ -397,7 +397,7 @@ export default function InterviewPlanPage() {
                     gap: "0.35rem",
                     padding: "0.25rem 0.6rem",
                     borderRadius: "4px",
-                    background: "#141e33",
+                    background: "var(--bg-raised, #1c2128)",
                     border: "1px solid #1c2842",
                     fontSize: "0.75rem"
                   }}
@@ -428,7 +428,7 @@ export default function InterviewPlanPage() {
                 fontWeight: 600,
                 cursor: "pointer",
                 border: selectedDayFilter === "all" ? "1px solid var(--accent-indigo, #6366f1)" : "1px solid #1c2842",
-                background: selectedDayFilter === "all" ? "rgba(99, 102, 241, 0.2)" : "#0f1728",
+                background: selectedDayFilter === "all" ? "rgba(99, 102, 241, 0.2)" : "var(--bg-card, #161a20)",
                 color: selectedDayFilter === "all" ? "var(--txt-bright, #f8fafc)" : "var(--txt-muted, #94a3b8)"
               }}
             >
@@ -446,7 +446,7 @@ export default function InterviewPlanPage() {
                   fontWeight: 600,
                   cursor: "pointer",
                   border: selectedDayFilter === String(d.dayIndex) ? "1px solid var(--accent-cyan, #38bdf8)" : "1px solid #1c2842",
-                  background: selectedDayFilter === String(d.dayIndex) ? "rgba(56, 189, 248, 0.15)" : "#0f1728",
+                  background: selectedDayFilter === String(d.dayIndex) ? "rgba(56, 189, 248, 0.15)" : "var(--bg-card, #161a20)",
                   color: selectedDayFilter === String(d.dayIndex) ? "var(--accent-cyan, #38bdf8)" : "var(--txt-dim, #64748b)"
                 }}
               >
@@ -479,7 +479,7 @@ export default function InterviewPlanPage() {
                 {/* Day Card Header */}
                 <div style={{
                   padding: "1rem 1.5rem",
-                  background: day.isMockDay ? "linear-gradient(90deg, rgba(245, 158, 11, 0.1), rgba(15, 23, 40, 0.8))" : "#0f1728",
+                  background: day.isMockDay ? "rgba(255, 159, 67, 0.08)" : "var(--bg-card, #161a20)",
                   borderBottom: "1px solid #1c2842",
                   display: "flex",
                   justifyContent: "space-between",
@@ -492,7 +492,7 @@ export default function InterviewPlanPage() {
                       fontSize: "1.1rem",
                       fontWeight: 800,
                       color: "var(--txt-bright, #f8fafc)",
-                      background: "#141e33",
+                      background: "var(--bg-raised, #1c2128)",
                       padding: "0.35rem 0.75rem",
                       borderRadius: "6px",
                       border: "1px solid #1c2842"
@@ -514,7 +514,7 @@ export default function InterviewPlanPage() {
                               padding: "0.2rem 0.6rem",
                               borderRadius: "4px",
                               background: "linear-gradient(135deg, #f59e0b, #d97706)",
-                              color: "#0f1728",
+                              color: "var(--bg-card, #161a20)",
                               border: "none",
                               cursor: "pointer",
                               display: "inline-flex",
@@ -551,7 +551,7 @@ export default function InterviewPlanPage() {
                       fontSize: "0.78rem",
                       fontWeight: 600,
                       color: "var(--txt-muted, #94a3b8)",
-                      background: "#141e33",
+                      background: "var(--bg-raised, #1c2128)",
                       padding: "0.25rem 0.55rem",
                       borderRadius: "4px",
                       border: "1px solid #1c2842"
@@ -801,7 +801,7 @@ const actionBtnStyle = {
   fontWeight: 600,
   cursor: "pointer",
   border: "1px solid #1c2842",
-  background: "#141e33",
+  background: "var(--bg-raised, #1c2128)",
   color: "var(--txt-main, #e2e8f0)",
   display: "flex",
   alignItems: "center",

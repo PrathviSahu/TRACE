@@ -1,8 +1,17 @@
-import { Link, useLocation } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTraceStore } from '../store/traceStore.js';
 
 export default function Navbar() {
   const loc = useLocation();
+  const navigate = useNavigate();
+  const [navSearch, setNavSearch] = useState('');
+
+  function handleSearchSubmit(e) {
+    if (e.key === 'Enter' && navSearch.trim()) {
+      navigate(`/problems?search=${encodeURIComponent(navSearch.trim())}`);
+    }
+  }
   const { language, theme, setTheme } = useTraceStore();
 
   return (
@@ -57,6 +66,9 @@ export default function Navbar() {
             type="text"
             className="nav-search-input"
             placeholder="Search problems, topics..."
+            value={navSearch}
+            onChange={(e) => setNavSearch(e.target.value)}
+            onKeyDown={handleSearchSubmit}
           />
         </div>
 
