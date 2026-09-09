@@ -235,25 +235,36 @@ export function runPython(code, rawInputsText = '') {
     };
   }
 
-  // Fallback generic python execution simulation for other algorithms
+  // ── Honest degradation for all non-Two-Sum algorithms ──────────────────────
+  // TRACE does not contain a general-purpose Python interpreter.
+  // Silently pretending to execute is misleading — surface an explicit notice.
   return {
     trace: [
       {
         step: 1,
         line: 1,
-        type: 'info',
-        variables: { status: { value: 'Ready', type: 'str' } },
+        type: 'editor_only',
+        variables: {},
         dataStructures: {},
         callStack: ['<module>'],
         explanation: {
-          lineText: 'Code initialized',
-          summary: 'Program loaded successfully in Python runtime.',
-          bullets: ['Ready for execution'],
-          why: 'Ready to step through algorithm.'
+          lineText: '# Python Editor Mode',
+          summary: 'Python step-through is available for Two Sum. Switch to Java to visualize this algorithm step-by-step.',
+          bullets: [
+            'TRACE executes and traces Java algorithms locally.',
+            'Python step-through is currently supported for Two Sum only.',
+            'Select ☕ Java from the language dropdown to run a full execution trace.',
+            'Your Python code is preserved — switch back any time.'
+          ],
+          why: 'TRACE does not yet include a general-purpose Python interpreter. Python execution is coming in a future release.'
         }
       }
     ],
-    output: ['Execution finished.'],
+    output: [
+      '[Python Editor Mode]',
+      'TRACE step-through supports Two Sum in Python.',
+      'Switch to Java to visualize this algorithm with full execution tracing.'
+    ],
     returnValue: null
   };
 }

@@ -116,12 +116,14 @@ export default function Sidebar() {
                 onClick={(e) => { e.stopPropagation(); setLanguage('python'); setLangDropdownOpen(false); }}
               >
                 <span>🐍 Python</span>
+                <span className="lang-exec-badge lang-exec-badge--exec">Executable</span>
               </div>
               <div
                 className={`lang-option ${language === 'java' ? 'active' : ''}`}
                 onClick={(e) => { e.stopPropagation(); setLanguage('java'); setLangDropdownOpen(false); }}
               >
                 <span>☕ Java</span>
+                <span className="lang-exec-badge lang-exec-badge--exec">Executable</span>
               </div>
             </div>
           )}

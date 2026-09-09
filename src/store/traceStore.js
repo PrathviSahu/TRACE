@@ -116,11 +116,39 @@ export const useTraceStore = create((set, get) => ({
     setTimeout(() => {
       try {
         let result;
-        const isPython = language === 'python' || (!code.includes('class ') && !code.includes(';') && (code.includes('def ') || code.startsWith('nums =')));
-        if (isPython) {
+        // Strict language dispatch — no heuristic sniffing.
+        // C++ and JavaScript are editor-only; routing them to runJava would produce
+        // confusing errors. Surface a clear notice instead.
+        if (language === 'python') {
           result = runPython(code, inputText);
-        } else {
+        } else if (language === 'java') {
           result = runJava(code, inputs);
+        } else {
+          // Editor-only languages (cpp, javascript, etc.)
+          result = {
+            trace: [
+              {
+                step: 1,
+                line: 1,
+                type: 'editor_only',
+                variables: {},
+                dataStructures: {},
+                callStack: [],
+                explanation: {
+                  lineText: `// ${language.toUpperCase()} Editor Mode`,
+                  summary: `${language.toUpperCase()} is available as an editor in TRACE. Execution and step-through are supported for Java and Python (Two Sum).`,
+                  bullets: [
+                    'Syntax highlighting and code editing are active.',
+                    'Switch to ☕ Java for full execution tracing.',
+                    'Switch to 🐍 Python for Two Sum step-through.'
+                  ],
+                  why: `TRACE does not yet include a ${language.toUpperCase()} execution engine.`
+                }
+              }
+            ],
+            output: [`[${language.toUpperCase()} Editor Mode] Execution not available. Switch to Java or Python.`],
+            returnValue: null
+          };
         }
 
         set({

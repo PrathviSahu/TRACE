@@ -345,6 +345,32 @@ html, body, #root {
   cursor: pointer;
   font-size: 12px;
   transition: background 0.12s;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+/* Execution capability badge in language dropdown */
+.lang-exec-badge {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 2px 5px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+.lang-exec-badge--exec {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+.lang-exec-badge--editor {
+  background: rgba(148, 163, 184, 0.12);
+  color: var(--txt-muted);
+  border: 1px solid rgba(148, 163, 184, 0.2);
 }
 .lang-option:hover {
   background: var(--bg-hover);

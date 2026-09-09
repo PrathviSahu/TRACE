@@ -17,14 +17,14 @@ export default function ShowcaseSection() {
         <div className="feature-card">
           <div className="feature-title">Multi-Language Support</div>
           <div className="lang-icons-row">
-            <span className="badge-icon" title="Python">🐍</span>
-            <span className="badge-icon" title="Java">☕</span>
-            <span className="badge-icon" title="C">🔷</span>
-            <span className="badge-icon" title="C++">💠</span>
-            <span className="badge-icon" title="JavaScript">🟨</span>
+            <span className="badge-icon" title="Java — Executable">☕</span>
+            <span className="badge-icon" title="Python — Executable">🐍</span>
+            <span className="badge-icon" title="C++ — Editor">💠</span>
+            <span className="badge-icon" title="JavaScript — Editor">🟨</span>
           </div>
           <p className="feature-desc">
-            Write and visualize code in Python, Java, C, C++, JavaScript and more.
+            Execute and visualize step-by-step in Java and Python.
+            Write and syntax-highlight in C++ and JavaScript.
           </p>
         </div>
 
