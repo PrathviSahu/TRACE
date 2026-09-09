@@ -1,6 +1,12 @@
 import { useEffect } from "react";
 import { useTraceStore } from "../store/traceStore.js";
 import { normalizeStepData, formatObjectTree } from "../utils/visualizerAdapter.js";
+import {
+  DiagrammaticStack,
+  DiagrammaticQueue,
+  DiagrammaticLinkedList,
+  DiagrammaticBinaryTree
+} from "./DiagrammaticVisualizers.jsx";
 
 export default function VisualizerStudio() {
   const {
@@ -249,95 +255,11 @@ export default function VisualizerStudio() {
                 }
 
                 if (col.type === "Stack") {
-                  return (
-                    <div key={col.name} className="ds-block" style={{ marginBottom: 20 }}>
-                      <div className="ds-title" style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <span>Stack (LIFO): {col.name}</span>
-                        <span style={{ fontSize: 10, padding: "2px 6px", background: "rgba(255, 159, 67, 0.15)", color: "var(--accent-amber, #FF9F43)", borderRadius: 4, fontWeight: 500 }}>
-                          LIFO Container ({col.items?.length || 0} items)
-                        </span>
-                      </div>
-                      <div className="stack-beaker-wrap" style={{ marginTop: 8 }}>
-                        {col.items && col.items.length > 0 ? (
-                          [...col.items].reverse().map((v, idx) => {
-                            const isTop = idx === 0;
-                            const origIdx = col.items.length - 1 - idx;
-                            return (
-                              <div
-                                key={idx}
-                                className={`stack-cell ${isTop ? "stack-top-cell" : ""}`}
-                              >
-                                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                                  <span style={{ fontSize: 10, color: "var(--txt-dim, #6E7681)", fontFamily: "var(--font-mono)" }}>[{origIdx}]</span>
-                                  <span style={{ fontWeight: isTop ? 700 : 500, color: isTop ? "var(--txt-bright, #F0F6FC)" : "var(--txt-main, #C9D1D9)", fontFamily: "var(--font-mono)" }}>
-                                    {String(v)}
-                                  </span>
-                                </div>
-                                {isTop && (
-                                  <span style={{ fontSize: 9, fontWeight: 700, padding: "1px 6px", background: "var(--accent-amber, #FF9F43)", color: "#090B0E", borderRadius: 3 }}>
-                                    TOP
-                                  </span>
-                                )}
-                              </div>
-                            );
-                          })
-                        ) : (
-                          <div style={{ fontSize: 11, color: "var(--txt-dim, #6E7681)", textAlign: "center", padding: "20px 8px", fontFamily: "var(--font-mono)" }}>
-                            [ Empty Stack — Push elements to visualize ]
-                          </div>
-                        )}
-                        <div style={{ fontSize: 9, color: "var(--txt-dim, #6E7681)", textAlign: "center", borderTop: "1px solid var(--border-subtle, #21262D)", paddingTop: 4, letterSpacing: "0.5px", fontFamily: "var(--font-mono)" }}>
-                          BOTTOM (BASE)
-                        </div>
-                      </div>
-                    </div>
-                  );
+                  return <DiagrammaticStack key={col.name} name={col.name} items={col.items || []} />;
                 }
 
                 if (col.type === "Queue" || col.type === "ArrayDeque") {
-                  return (
-                    <div key={col.name} className="ds-block" style={{ marginBottom: 20 }}>
-                      <div className="ds-title" style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <span>Queue (FIFO): {col.name}</span>
-                        <span style={{ fontSize: 10, padding: "2px 6px", background: "rgba(56, 217, 197, 0.15)", color: "var(--accent-cyan, #38D9C5)", borderRadius: 4, fontWeight: 500 }}>
-                          FIFO Pipeline ({col.items?.length || 0} items)
-                        </span>
-                      </div>
-                      <div className="queue-wrap" style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
-                        <span style={{ fontSize: 11, color: "var(--accent-amber, #FF9F43)", fontWeight: 600 }}>front (dequeue) →</span>
-                        {col.items && col.items.length > 0 ? (
-                          col.items.map((v, idx) => (
-                            <div
-                              key={idx}
-                              className="queue-cell"
-                              style={{
-                                display: "flex",
-                                flexDirection: "column",
-                                alignItems: "center",
-                                padding: "4px 10px",
-                                background: idx === 0 ? "rgba(255, 159, 67, 0.15)" : "var(--bg-raised, #1C2128)",
-                                border: idx === 0 ? "1px solid var(--accent-amber, #FF9F43)" : "1px solid var(--border-subtle, #21262D)",
-                                borderRadius: 4,
-                                minWidth: 32,
-                                textAlign: "center",
-                                fontFamily: "var(--font-mono)"
-                              }}
-                            >
-                              <span style={{ fontSize: 9, color: idx === 0 ? "var(--accent-amber, #FF9F43)" : "var(--txt-dim, #6E7681)", marginBottom: 2 }}>
-                                [{idx}]
-                              </span>
-                              <span style={{ fontWeight: idx === 0 ? 700 : 500, color: idx === 0 ? "var(--txt-bright, #F0F6FC)" : "var(--txt-main, #C9D1D9)" }}>
-                                {String(v)}
-                              </span>
-                            </div>
-                          ))
-                        ) : (
-                          <span style={{ fontSize: 11, color: "var(--txt-dim, #6E7681)" }}>empty queue</span>
-                        )}
-                        <span style={{ fontSize: 11, color: "var(--txt-dim, #6E7681)" }}>← rear (enqueue)</span>
-                      </div>
-                    </div>
-                  );
+                  return <DiagrammaticQueue key={col.name} name={col.name} items={col.items || []} />;
                 }
 
                 if (col.type === "PriorityQueue") {
@@ -447,29 +369,67 @@ export default function VisualizerStudio() {
               })}
 
               {/* 3. Objects (ListNode, TreeNode, Node, custom Java classes) */}
-              {objects.map((obj) => (
-                <div key={obj.name} className="ds-block" style={{ marginBottom: 20 }}>
-                  <div className="ds-title">
-                    Object: {obj.name} <span style={{ fontSize: 11, opacity: 0.6 }}>({obj.type})</span>
-                  </div>
-                  <div
-                    className="object-tree-box"
-                    style={{ padding: "8px 12px", background: "var(--bg-raised, #1C2128)", border: "1px solid var(--border-subtle, #21262D)", borderRadius: 6, fontFamily: "monospace", fontSize: 12, lineHeight: 1.6 }}
-                  >
-                    {formatObjectTree(obj.value, obj.name).map((node, nIdx) => (
-                      <div key={nIdx} style={{ paddingLeft: node.depth * 18, display: "flex", alignItems: "center", gap: 6 }}>
-                        <span style={{ color: "var(--txt-dim, #6E7681)", userSelect: "none" }}>
-                          {node.depth === 0 ? "●" : "├──"}
-                        </span>
-                        <span style={{ color: "var(--accent-amber, #FF9F43)", fontWeight: 500 }}>{node.key}: </span>
-                        <span style={{ color: node.value === "null" ? "var(--txt-dim, #6E7681)" : "var(--txt-bright, #F0F6FC)" }}>
-                          {node.value}
-                        </span>
+              {(() => {
+                // Deduplicate and choose primary for ListNode and TreeNode
+                const renderedLists = new Set();
+                const renderedTrees = new Set();
+
+                return objects.map((obj) => {
+                  const isListNode = obj.className === "ListNode" || obj.type === "ListNode" || (obj.value && (obj.value.__type === "ListNode" || obj.value.next !== undefined));
+                  const isTreeNode = obj.className === "TreeNode" || obj.type === "TreeNode" || (obj.value && (obj.value.__type === "TreeNode" || obj.value.left !== undefined || obj.value.right !== undefined));
+
+                  if (isListNode) {
+                    // Prefer head or render first occurrence
+                    if (renderedLists.size > 0 && obj.name !== "head") return null;
+                    renderedLists.add(obj.name);
+                    return (
+                      <DiagrammaticLinkedList
+                        key={obj.name}
+                        name={obj.name}
+                        headObj={obj.value}
+                        allVars={normalized.variables}
+                      />
+                    );
+                  }
+
+                  if (isTreeNode) {
+                    // Prefer root or render first occurrence
+                    if (renderedTrees.size > 0 && obj.name !== "root") return null;
+                    renderedTrees.add(obj.name);
+                    return (
+                      <DiagrammaticBinaryTree
+                        key={obj.name}
+                        name={obj.name}
+                        rootObj={obj.value}
+                      />
+                    );
+                  }
+
+                  return (
+                    <div key={obj.name} className="ds-block" style={{ marginBottom: 20 }}>
+                      <div className="ds-title">
+                        Object: {obj.name} <span style={{ fontSize: 11, opacity: 0.6 }}>({obj.type})</span>
                       </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
+                      <div
+                        className="object-tree-box"
+                        style={{ padding: "8px 12px", background: "var(--bg-raised, #1C2128)", border: "1px solid var(--border-subtle, #21262D)", borderRadius: 6, fontFamily: "monospace", fontSize: 12, lineHeight: 1.6 }}
+                      >
+                        {formatObjectTree(obj.value, obj.name).map((node, nIdx) => (
+                          <div key={nIdx} style={{ paddingLeft: node.depth * 18, display: "flex", alignItems: "center", gap: 6 }}>
+                            <span style={{ color: "var(--txt-dim, #6E7681)", userSelect: "none" }}>
+                              {node.depth === 0 ? "●" : "├──"}
+                            </span>
+                            <span style={{ color: "var(--accent-amber, #FF9F43)", fontWeight: 500 }}>{node.key}: </span>
+                            <span style={{ color: node.value === "null" ? "var(--txt-dim, #6E7681)" : "var(--txt-bright, #F0F6FC)" }}>
+                              {node.value}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                });
+              })()}
 
               {/* 4. Active Call Stack */}
               {callStack && callStack.length > 0 && (
