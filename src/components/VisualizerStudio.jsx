@@ -2,6 +2,8 @@ import { useEffect, useState, useMemo } from "react";
 import KeyboardShortcutsModal from "./KeyboardShortcutsModal.jsx";
 import { useTraceStore } from "../store/traceStore.js";
 import { normalizeStepData, formatObjectTree } from "../utils/visualizerAdapter.js";
+import DryRunView from "./DryRunView.jsx";
+import CodeFlowView from "./CodeFlowView.jsx";
 import {
   DiagrammaticStack,
   DiagrammaticQueue,
@@ -223,8 +225,26 @@ export default function VisualizerStudio() {
         </div>
       </div>
 
-      {/* ── Main Visualization Body (Split Canvas) ────────────── */}
-      <div className="viz-body-split">
+      {/* ── Main Visualization Body ──────────────────────────── */}
+      {viewMode === "dry-run" && (
+        <DryRunView
+          trace={trace}
+          currentStep={currentStep}
+          goToStep={goToStep}
+        />
+      )}
+
+      {viewMode === "code-flow" && (
+        <CodeFlowView
+          trace={trace}
+          currentStep={currentStep}
+          goToStep={goToStep}
+          code={useTraceStore.getState().code}
+        />
+      )}
+
+      {viewMode === "visualization" && (
+        <div className="viz-body-split">
         {/* Left Canvas: Data Structures */}
         <div className="ds-canvas">
           {hasData || (callStack && callStack.length > 0) ? (
@@ -551,6 +571,7 @@ export default function VisualizerStudio() {
           </div>
         </div>
       </div>
+      )}
 
       <KeyboardShortcutsModal
         isOpen={showShortcuts}
