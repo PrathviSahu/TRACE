@@ -22,6 +22,7 @@ What are you working on?`;
 
 export default function DSABrain() {
   const [open, setOpen] = useState(false);
+  const [isFullScreen, setIsFullScreen] = useState(false);
   const activeLanguage = useTraceStore(s => s.language);
   const [messages, setMessages] = useState([
     { role: 'assistant', content: ARIA_WELCOME }
@@ -112,6 +113,20 @@ export default function DSABrain() {
     }
   }
 
+  useEffect(() => {
+    function handleKeyDownGlobal(e) {
+      if (e.key === "Escape" && open) {
+        if (isFullScreen) {
+          setIsFullScreen(false);
+        } else {
+          setOpen(false);
+        }
+      }
+    }
+    window.addEventListener("keydown", handleKeyDownGlobal);
+    return () => window.removeEventListener("keydown", handleKeyDownGlobal);
+  }, [open, isFullScreen]);
+
   function clearChat() {
     setMessages([{ role: 'assistant', content: ARIA_WELCOME }]);
     setError('');
@@ -135,6 +150,12 @@ export default function DSABrain() {
           0%, 100% { box-shadow: 0 6px 28px rgba(82,130,255,0.45), 0 0 0 0 rgba(82,130,255,0.35); }
           50%       { box-shadow: 0 6px 28px rgba(82,130,255,0.45), 0 0 0 10px rgba(82,130,255,0); }
         }
+        .aria-backdrop {
+          position: fixed; inset: 0; background: rgba(0, 0, 0, 0.65);
+          backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+          z-index: 9999; animation: aria-fade-in 0.2s ease-out;
+        }
+        @keyframes aria-fade-in { from { opacity: 0; } to { opacity: 1; } }
         .aria-panel {
           position: fixed; bottom: 90px; right: 24px;
           width: 400px; height: 560px;
@@ -145,6 +166,34 @@ export default function DSABrain() {
           animation: aria-slide-in 0.22s cubic-bezier(.34,1.56,.64,1);
         }
         @keyframes aria-slide-in { from { opacity:0; transform:translateY(20px) scale(0.96); } to { opacity:1; transform:translateY(0) scale(1); } }
+        .aria-panel.fullscreen {
+          top: 18px; bottom: 18px; left: 18px; right: 18px;
+          width: auto; height: auto; max-width: 1200px;
+          margin: 0 auto; border-radius: 18px; z-index: 10000;
+          box-shadow: 0 24px 90px rgba(0,0,0,0.85), 0 0 0 1px rgba(82,130,255,0.3);
+          border-color: rgba(82,130,255,0.35);
+        }
+        .aria-panel.fullscreen .aria-messages {
+          max-width: 960px; width: 100%; margin: 0 auto;
+          padding: 20px 24px;
+        }
+        .aria-panel.fullscreen .aria-bubble {
+          max-width: 82%; font-size: 13px; padding: 12px 18px;
+        }
+        .aria-panel.fullscreen .aria-bubble pre {
+          font-size: 12px; padding: 12px 16px;
+        }
+        .aria-panel.fullscreen .aria-input-row {
+          max-width: 960px; width: 100%; margin: 0 auto;
+          box-sizing: border-box; padding: 14px 20px 16px;
+        }
+        .aria-panel.fullscreen .aria-suggestions {
+          max-width: 960px; width: 100%; margin: 0 auto;
+          box-sizing: border-box; padding: 12px 20px 8px;
+        }
+        .aria-panel.fullscreen .aria-header {
+          padding: 14px 24px;
+        }
         .aria-header {
           padding: 14px 16px;
           background: linear-gradient(135deg, rgba(82,130,255,0.1) 0%, rgba(139,111,240,0.07) 100%);
@@ -195,14 +244,18 @@ export default function DSABrain() {
 
       <button
         className={`aria-fab ${open ? 'open' : ''}`}
-        onClick={() => setOpen(o => !o)}
+        onClick={() => setOpen(o => { if (o) setIsFullScreen(false); return !o; })}
         title="ARIA — Algorithm Reasoning & Insight Assistant"
       >
         {open ? '✕' : '✦'}
       </button>
 
+      {open && isFullScreen && (
+        <div className="aria-backdrop" onClick={() => setIsFullScreen(false)} />
+      )}
+
       {open && (
-        <div className="aria-panel">
+        <div className={`aria-panel ${isFullScreen ? "fullscreen" : ""}`}>
           <div className="aria-header">
             <div className="aria-avatar-ring">
               <div className="aria-avatar-inner">✦</div>
@@ -219,6 +272,28 @@ export default function DSABrain() {
             </div>
             <div className="aria-header-actions">
               <button className="aria-icon-btn" onClick={clearChat} title="Clear chat">🗑</button>
+              <button
+                className="aria-icon-btn"
+                onClick={() => setIsFullScreen(f => !f)}
+                title={isFullScreen ? "Exit Fullscreen (Esc)" : "Expand to Fullscreen"}
+              >
+                {isFullScreen ? (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/>
+                  </svg>
+                ) : (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+                  </svg>
+                )}
+              </button>
+              <button
+                className="aria-icon-btn"
+                onClick={() => { setOpen(false); setIsFullScreen(false); }}
+                title="Close ARIA"
+              >
+                ✕
+              </button>
             </div>
           </div>
 
