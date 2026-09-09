@@ -2,6 +2,9 @@ import { create } from 'zustand';
 import { runJava } from '../engine/interpreter.js';
 import { runPython } from '../engine/pythonRunner.js';
 import { MULTI_LANG_EXAMPLES } from '../engine/multiLangExamples.js';
+import { ALL_PROBLEMS } from '../data/roadmapProblems.js';
+import { getProblemTemplate } from '../data/problemTemplates.js';
+import { PROBLEM_DESCRIPTIONS } from '../data/problemDescriptions.js';
 
 const getInitialTheme = () => {
   if (typeof window !== "undefined" && window.localStorage) {
@@ -38,7 +41,10 @@ export function parseInputText(text) {
   }
 
   const result = {};
-  const lines = trimmed.split("\n").map(l => l.trim()).filter(Boolean);
+  const lines = trimmed
+    .split(/\n|,\s*(?=[a-zA-Z_$][a-zA-Z0-9_$]*\s*[:=])/)
+    .map(l => l.trim())
+    .filter(Boolean);
   let posIdx = 0;
 
   for (const line of lines) {
@@ -117,7 +123,7 @@ export const useTraceStore = create((set, get) => ({
       currentStep: 0,
       isPlaying: false
     });
-    setTimeout(() => get().run(), 50);
+    get().run();
   },
 
   setCode: (code) => set({ code }),
@@ -128,8 +134,88 @@ export const useTraceStore = create((set, get) => ({
       inputs: { ...s.inputs, ...parsed }
     }));
   },
+  activeTestCases: [
+    { id: 1, label: "Case 1", input: "nums = [2, 7, 11, 15]\ntarget = 9", expected: "[0, 1]" }
+  ],
+  activeLeetCodeProblem: null,
+
   setInput: (name, value) => set(s => ({ inputs: { ...s.inputs, [name]: value } })),
-  setInputs: (inputs) => set({ inputs }),
+  setInputs: (inputs) => {
+    let formatted = "";
+    if (inputs && typeof inputs === "object") {
+      formatted = Object.entries(inputs)
+        .map(([k, v]) => `${k} = ${typeof v === "object" ? JSON.stringify(v) : v}`)
+        .join("\n");
+    }
+    set({ inputs, inputText: formatted });
+  },
+
+  selectTestCase: (tc) => {
+    const text = typeof tc === "string" ? tc : tc.input;
+    const parsed = parseInputText(text);
+    set(s => ({
+      inputText: text,
+      inputs: { ...s.inputs, ...parsed },
+      status: "idle",
+      currentStep: 0
+    }));
+    get().run();
+  },
+
+  fetchLeetCodeProblem: (query) => {
+    if (!query) return null;
+    const trimmed = String(query).trim().replace(/^#/, "");
+    const num = parseInt(trimmed, 10);
+    let prob = null;
+    if (!isNaN(num)) {
+      prob = ALL_PROBLEMS.find(p => p.id === num);
+    }
+    if (!prob) {
+      const qLower = trimmed.toLowerCase();
+      prob = ALL_PROBLEMS.find(p => p.name.toLowerCase().includes(qLower));
+    }
+    if (!prob && !isNaN(num)) {
+      const desc = PROBLEM_DESCRIPTIONS[num];
+      if (desc) prob = { id: num, name: desc.title, difficulty: desc.difficulty, topic: desc.category };
+    }
+    if (!prob) return null;
+
+    const template = getProblemTemplate(prob);
+    const desc = PROBLEM_DESCRIPTIONS[prob.id];
+    let testCases = [];
+    if (desc && desc.examples && desc.examples.length > 0) {
+      testCases = desc.examples.map((ex, idx) => ({
+        id: idx + 1,
+        label: `Case ${idx + 1}`,
+        input: ex.input,
+        expected: ex.output,
+        explanation: ex.explanation
+      }));
+    } else if (template.inputs) {
+      const formatted = Object.entries(template.inputs).map(([k, v]) => `${k} = ${v}`).join("\n");
+      testCases = [{ id: 1, label: "Case 1", input: formatted }];
+    }
+
+    const firstCaseInput = testCases.length > 0 ? testCases[0].input : "";
+    const effectiveInputText = firstCaseInput || Object.entries(template.inputs || {}).map(([k, v]) => `${k} = ${v}`).join("\n");
+    const parsedInputs = parseInputText(effectiveInputText);
+
+    set({
+      activeLeetCodeProblem: prob,
+      activeTab: `#${prob.id} ${prob.name}`,
+      code: template.code,
+      inputs: { ...(template.inputs || {}), ...parsedInputs },
+      inputText: effectiveInputText,
+      activeTestCases: testCases,
+      status: "idle",
+      currentStep: 0,
+      error: null
+    });
+
+    get().run();
+    return prob;
+  },
+
   setViewMode: (viewMode) => set({ viewMode }),
   setOutputTab: (outputTab) => set({ outputTab }),
 
@@ -143,7 +229,12 @@ export const useTraceStore = create((set, get) => ({
 
   // ── Playback
   isPlaying: false,
-  speed: 1,
+  speed: (() => {
+    try {
+      const s = parseFloat(localStorage.getItem('trace_speed'));
+      return isNaN(s) || s <= 0 ? 1 : s;
+    } catch (_) { return 1; }
+  })(),
   playTimer: null,
 
   // ── Run
@@ -243,7 +334,24 @@ export const useTraceStore = create((set, get) => ({
     set({ currentStep: 0, isPlaying: false, playTimer: null });
   },
 
-  setSpeed: (speed) => set({ speed }),
+  setSpeed: (speed) => {
+    try { localStorage.setItem('trace_speed', String(speed)); } catch(_) {}
+    set({ speed });
+    const { isPlaying, playTimer } = get();
+    if (isPlaying) {
+      if (playTimer) clearInterval(playTimer);
+      const timer = setInterval(() => {
+        const { currentStep, trace } = get();
+        if (!trace || currentStep >= trace.length - 1) {
+          clearInterval(timer);
+          set({ isPlaying: false, playTimer: null });
+          return;
+        }
+        set({ currentStep: currentStep + 1 });
+      }, 1000 / speed);
+      set({ playTimer: timer });
+    }
+  },
 
   play: () => {
     const { isPlaying, playTimer } = get();

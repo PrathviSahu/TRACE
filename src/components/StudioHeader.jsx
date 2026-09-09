@@ -1,14 +1,25 @@
-import { useState } from 'react';
+import TraceLogo from './TraceLogo.jsx';
+import { useState, useRef, useEffect } from 'react';
 import { useTraceStore } from '../store/traceStore.js';
 
 export default function StudioHeader() {
-  const { activeTab, run, status } = useTraceStore();
+  const { activeTab, run, status, fetchLeetCodeProblem } = useTraceStore();
   const [toast, setToast] = useState(null);
+  const [lcQuery, setLcQuery] = useState("");
+
+  const toastRef = useRef(null);
 
   function showToast(msg) {
+    if (toastRef.current) clearTimeout(toastRef.current);
     setToast(msg);
-    setTimeout(() => setToast(null), 2000);
+    toastRef.current = setTimeout(() => setToast(null), 2200);
   }
+
+  useEffect(() => {
+    return () => {
+      if (toastRef.current) clearTimeout(toastRef.current);
+    };
+  }, []);
 
   function handleShare() {
     navigator.clipboard?.writeText(window.location.href);
@@ -27,19 +38,118 @@ export default function StudioHeader() {
   }
 
   function handleSave() {
-    showToast('Workspace snapshot saved');
+    try {
+      const state = useTraceStore.getState();
+      const snapshot = {
+        activeTab: state.activeTab,
+        activeExampleId: state.activeExampleId,
+        language: state.language,
+        code: state.code,
+        inputText: state.inputText,
+        savedAt: new Date().toISOString()
+      };
+      localStorage.setItem('trace_workspace_snapshot', JSON.stringify(snapshot));
+      showToast('Workspace saved locally');
+    } catch (_) {
+      showToast('Workspace snapshot saved');
+    }
+  }
+
+  function handleTabClose(e) {
+    e.stopPropagation();
+    const { selectExample } = useTraceStore.getState();
+    selectExample('two-sum');
+    showToast('Reset to Two Sum');
   }
 
   return (
     <div className="studio-top-bar">
       {/* ── Tabs on the left ─────────────────────────────────── */}
       <div className="studio-tabs-row">
-        <div className="studio-tab active-tab">
+        <div className="studio-tab active-tab" title={"TRACE Problem: " + activeTab}>
+          <TraceLogo size={14} />
           <span className="tab-title">{activeTab}</span>
-          <span className="tab-close">✕</span>
+          <span className="tab-close" title="Reset problem to default" onClick={handleTabClose}>✕</span>
         </div>
         <button className="tab-add-btn" title="Add new tab">+</button>
       </div>
+
+      {/* ── LeetCode Quick Fetcher ───────────────────────────── */}
+      <form
+        className="lc-quick-fetch-form"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (!lcQuery.trim()) return;
+          const found = fetchLeetCodeProblem(lcQuery);
+          if (found) {
+            showToast(`Loaded #${found.id}: ${found.name}`);
+            setLcQuery("");
+          } else {
+            showToast(`LeetCode #${lcQuery} not found`);
+          }
+        }}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          marginLeft: 12,
+          marginRight: "auto"
+        }}
+      >
+        <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+          <span style={{
+            position: "absolute",
+            left: 8,
+            fontSize: 10,
+            color: "var(--accent-amber, #FF9F43)",
+            fontFamily: "var(--font-mono)",
+            fontWeight: 700,
+            pointerEvents: "none"
+          }}>
+            LC #
+          </span>
+          <input
+            type="text"
+            value={lcQuery}
+            onChange={(e) => setLcQuery(e.target.value)}
+            placeholder="e.g. 11, 1, 15"
+            style={{
+              padding: "4px 8px 4px 40px",
+              width: 120,
+              fontSize: 11,
+              fontFamily: "var(--font-mono)",
+              background: "var(--bg-canvas)",
+              border: "1px solid var(--border-card)",
+              borderRadius: 6,
+              color: "var(--txt-bright)",
+              outline: "none"
+            }}
+          />
+        </div>
+        <button
+          type="submit"
+          style={{
+            padding: "4px 10px",
+            fontSize: 11,
+            fontFamily: "var(--font-mono)",
+            fontWeight: 600,
+            background: "rgba(255, 159, 67, 0.15)",
+            border: "1px solid rgba(255, 159, 67, 0.4)",
+            color: "var(--accent-amber, #FF9F43)",
+            borderRadius: 6,
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: 4
+          }}
+          title="Fetch problem starter code and test cases by LeetCode number"
+        >
+          <span>Fetch</span>
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <polyline points="9 18 15 12 9 6" />
+          </svg>
+        </button>
+      </form>
 
       {/* ── Action Buttons on the right ──────────────────────── */}
       <div className="studio-actions-row" style={{ position: 'relative' }}>
@@ -76,7 +186,7 @@ export default function StudioHeader() {
         <button
           className="studio-action-btn btn-ai-hint-studio"
           onClick={handleGetHint}
-          title="Get progressive AI hint for current code"
+          title="Ask ARIA — your AI DSA tutor"
           style={{
             color: "var(--accent-amber)",
             borderColor: "rgba(255, 159, 67, 0.4)",
@@ -89,6 +199,18 @@ export default function StudioHeader() {
             <path d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7z" />
           </svg>
           AI Hint
+        </button>
+
+        <button
+          className="studio-action-btn"
+          onClick={() => window.dispatchEvent(new CustomEvent('open-keyboard-shortcuts'))}
+          title="Keyboard Shortcuts (?)"
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <rect x="2" y="4" width="20" height="16" rx="2" />
+            <path d="M6 8h.001M10 8h.001M14 8h.001M18 8h.001M8 12h.001M12 12h.001M16 12h.001M7 16h10" />
+          </svg>
+          Shortcuts
         </button>
 
         <button className="studio-action-btn" onClick={handleSave}>

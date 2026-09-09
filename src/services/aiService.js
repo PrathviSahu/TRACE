@@ -12,7 +12,7 @@ export const SUPPORTED_LANGUAGES = [
   { id: 'c',          label: 'C',          icon: '⚙', ext: 'c' },
 ];
 
-export const SYSTEM_TUTOR_PROMPT = `You are TRACE Brain — an elite DSA (Data Structures & Algorithms) tutor embedded in TRACE, an interactive multi-language visual code debugger supporting Java, Python, C++, C, and JavaScript.
+export const SYSTEM_TUTOR_PROMPT = `You are ARIA (Algorithm Reasoning & Insight Assistant) — an elite DSA tutor embedded in TRACE, an interactive multi-language visual code debugger supporting Java, Python, C++, C, and JavaScript.
 
 Your personality:
 - Encouraging, concise, structured like a senior FAANG interviewer.
@@ -25,7 +25,7 @@ Your personality:
  * Server-only API Caller
  * Routes all traffic strictly through /api/gemini backend proxy
  */
-export async function callGeminiApi({ systemInstruction, contents, generationConfig, model = 'gemini-3.6-flash' }) {
+export async function callGeminiApi({ systemInstruction, contents, generationConfig, model = 'gemini-2.0-flash' }) {
   const payload = {
     contents,
     generationConfig: generationConfig || { temperature: 0.7, maxOutputTokens: 1500 }

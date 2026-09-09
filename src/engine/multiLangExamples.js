@@ -124,6 +124,59 @@ print(sol.maxSubArray([-2, 1, -3, 4, -1, 2, 1, -5, 4]))`,
     defaultInputDisplay: "nums = [-2, 1, -3, 4, -1, 2, 1, -5, 4]"
   },
 
+  'container-with-most-water': {
+    id: 'container-with-most-water',
+    name: 'Container With Most Water',
+    category: 'Arrays',
+    difficulty: 'medium',
+    pattern: 'Two Pointers',
+    python: `# Container With Most Water - LeetCode 11
+class Solution:
+    def maxArea(self, height):
+        left, right = 0, len(height) - 1
+        max_water = 0
+        while left < right:
+            width = right - left
+            h = min(height[left], height[right])
+            max_water = max(max_water, width * h)
+            if height[left] < height[right]:
+                left += 1
+            else:
+                right -= 1
+        return max_water
+
+# Test
+sol = Solution()
+print(sol.maxArea([1, 8, 6, 2, 5, 4, 8, 3, 7]))`,
+    java: `// Container With Most Water - LeetCode 11
+class Solution {
+    public int maxArea(int[] height) {
+        int left = 0;
+        int right = height.length - 1;
+        int maxWater = 0;
+        while (left < right) {
+            int width = right - left;
+            int h = Math.min(height[left], height[right]);
+            int area = width * h;
+            if (area > maxWater) {
+                maxWater = area;
+            }
+            if (height[left] < height[right]) {
+                left++;
+            } else {
+                right--;
+            }
+        }
+        return maxWater;
+    }
+}`,
+    inputs: {
+      pythonText: "height = [1, 8, 6, 2, 5, 4, 8, 3, 7]",
+      javaInputs: { height: '[1, 8, 6, 2, 5, 4, 8, 3, 7]' }
+    },
+    defaultInputDisplay: "height = [1, 8, 6, 2, 5, 4, 8, 3, 7]"
+  },
+
   'hashmap-hashset': {
     id: 'hashmap-hashset',
     name: 'Two Sum (Hash Map)',
@@ -480,5 +533,228 @@ class Solution {
       javaInputs: {}
     },
     defaultInputDisplay: "adj: 0->[1,2], 1->[2], 2->[]"
+  }
+,
+  'climbing-stairs': {
+    id: 'climbing-stairs',
+    name: 'Climbing Stairs',
+    category: 'Dynamic Programming',
+    difficulty: 'easy',
+    pattern: '1D Dynamic Programming',
+    python: `# Climbing Stairs - LeetCode 70
+class Solution:
+    def climbStairs(self, n: int) -> int:
+        if n <= 2:
+            return n
+        dp = [0] * (n + 1)
+        dp[1] = 1
+        dp[2] = 2
+        for i in range(3, n + 1):
+            dp[i] = dp[i - 1] + dp[i - 2]
+        return dp[n]
+
+sol = Solution()
+print(sol.climbStairs(5))`,
+    java: `// Climbing Stairs - LeetCode 70 (Dynamic Programming)
+class Solution {
+    public int climbStairs(int n) {
+        if (n <= 2) return n;
+        int[] dp = new int[n + 1];
+        dp[1] = 1;
+        dp[2] = 2;
+        for (int i = 3; i <= n; i++) {
+            dp[i] = dp[i - 1] + dp[i - 2];
+        }
+        return dp[n];
+    }
+}`,
+    inputs: {
+      pythonText: "n = 5",
+      javaInputs: { n: "5" }
+    },
+    defaultInputDisplay: "n = 5"
+  },
+  'house-robber': {
+    id: 'house-robber',
+    name: 'House Robber',
+    category: 'Dynamic Programming',
+    difficulty: 'medium',
+    pattern: '1D Dynamic Programming',
+    python: `# House Robber - LeetCode 198
+class Solution:
+    def rob(self, nums):
+        if not nums: return 0
+        if len(nums) == 1: return nums[0]
+        prev2 = nums[0]
+        prev1 = max(nums[0], nums[1])
+        for i in range(2, len(nums)):
+            curr = max(prev1, prev2 + nums[i])
+            prev2 = prev1
+            prev1 = curr
+        return prev1
+
+sol = Solution()
+print(sol.rob([2, 7, 9, 3, 1]))`,
+    java: `// House Robber - LeetCode 198 (Dynamic Programming)
+class Solution {
+    public int rob(int[] nums) {
+        if (nums.length == 0) return 0;
+        if (nums.length == 1) return nums[0];
+        int prev2 = nums[0];
+        int prev1 = Math.max(nums[0], nums[1]);
+        for (int i = 2; i < nums.length; i++) {
+            int current = Math.max(prev1, prev2 + nums[i]);
+            prev2 = prev1;
+            prev1 = current;
+        }
+        return prev1;
+    }
+}`,
+    inputs: {
+      pythonText: "nums = [2, 7, 9, 3, 1]",
+      javaInputs: { nums: "[2, 7, 9, 3, 1]" }
+    },
+    defaultInputDisplay: "nums = [2, 7, 9, 3, 1]"
+  },
+  'bubble-sort': {
+    id: 'bubble-sort',
+    name: 'Bubble Sort',
+    category: 'Sorting',
+    difficulty: 'easy',
+    pattern: 'Sorting',
+    python: `# Bubble Sort
+class Solution:
+    def bubbleSort(self, nums):
+        n = len(nums)
+        for i in range(n - 1):
+            for j in range(n - i - 1):
+                if nums[j] > nums[j + 1]:
+                    nums[j], nums[j + 1] = nums[j + 1], nums[j]
+        return nums
+
+sol = Solution()
+print(sol.bubbleSort([5, 1, 4, 2, 8]))`,
+    java: `// Bubble Sort - Sorting Algorithm
+class Solution {
+    public int[] bubbleSort(int[] nums) {
+        int n = nums.length;
+        for (int i = 0; i < n - 1; i++) {
+            for (int j = 0; j < n - i - 1; j++) {
+                if (nums[j] > nums[j + 1]) {
+                    int temp = nums[j];
+                    nums[j] = nums[j + 1];
+                    nums[j + 1] = temp;
+                }
+            }
+        }
+        return nums;
+    }
+}`,
+    inputs: {
+      pythonText: "nums = [5, 1, 4, 2, 8]",
+      javaInputs: { nums: "[5, 1, 4, 2, 8]" }
+    },
+    defaultInputDisplay: "nums = [5, 1, 4, 2, 8]"
+  },
+  'insertion-sort': {
+    id: 'insertion-sort',
+    name: 'Insertion Sort',
+    category: 'Sorting',
+    difficulty: 'easy',
+    pattern: 'Sorting',
+    python: `# Insertion Sort
+class Solution:
+    def insertionSort(self, nums):
+        for i in range(1, len(nums)):
+            key = nums[i]
+            j = i - 1
+            while j >= 0 and nums[j] > key:
+                nums[j + 1] = nums[j]
+                j -= 1
+            nums[j + 1] = key
+        return nums
+
+sol = Solution()
+print(sol.insertionSort([6, 3, 8, 2, 9, 1]))`,
+    java: `// Insertion Sort - Sorting Algorithm
+class Solution {
+    public int[] insertionSort(int[] nums) {
+        for (int i = 1; i < nums.length; i++) {
+            int key = nums[i];
+            int j = i - 1;
+            while (j >= 0 && nums[j] > key) {
+                nums[j + 1] = nums[j];
+                j--;
+            }
+            nums[j + 1] = key;
+        }
+        return nums;
+    }
+}`,
+    inputs: {
+      pythonText: "nums = [6, 3, 8, 2, 9, 1]",
+      javaInputs: { nums: "[6, 3, 8, 2, 9, 1]" }
+    },
+    defaultInputDisplay: "nums = [6, 3, 8, 2, 9, 1]"
+  },
+  'fibonacci': {
+    id: 'fibonacci',
+    name: 'Fibonacci (Recursive)',
+    category: 'Recursion',
+    difficulty: 'easy',
+    pattern: 'Recursion / Call Stack',
+    python: `# Fibonacci - Recursive Call Stack
+class Solution:
+    def fib(self, n: int) -> int:
+        if n <= 1:
+            return n
+        return self.fib(n - 1) + self.fib(n - 2)
+
+sol = Solution()
+print(sol.fib(5))`,
+    java: `// Fibonacci - Recursive Call Stack
+class Solution {
+    public int fib(int n) {
+        if (n <= 1) {
+            return n;
+        }
+        return fib(n - 1) + fib(n - 2);
+    }
+}`,
+    inputs: {
+      pythonText: "n = 5",
+      javaInputs: { n: "5" }
+    },
+    defaultInputDisplay: "n = 5"
+  },
+  'factorial': {
+    id: 'factorial',
+    name: 'Factorial (Recursive)',
+    category: 'Recursion',
+    difficulty: 'easy',
+    pattern: 'Recursion / Call Stack',
+    python: `# Factorial - Recursive Call Stack
+class Solution:
+    def factorial(self, n: int) -> int:
+        if n <= 1:
+            return 1
+        return n * self.factorial(n - 1)
+
+sol = Solution()
+print(sol.factorial(5))`,
+    java: `// Factorial - Recursive Call Stack
+class Solution {
+    public int factorial(int n) {
+        if (n <= 1) {
+            return 1;
+        }
+        return n * factorial(n - 1);
+    }
+}`,
+    inputs: {
+      pythonText: "n = 5",
+      javaInputs: { n: "5" }
+    },
+    defaultInputDisplay: "n = 5"
   }
 };

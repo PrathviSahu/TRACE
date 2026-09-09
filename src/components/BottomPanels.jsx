@@ -13,7 +13,9 @@ export default function BottomPanels() {
     returnValue,
     error,
     code,
-    language
+    language,
+    activeTestCases,
+    selectTestCase
   } = useTraceStore();
 
   function handleAskAiHint(customPrompt) {
@@ -38,17 +40,74 @@ export default function BottomPanels() {
     <div className="bottom-cards-grid">
       {/* ── 1. Input Panel ────────────────────────────────────── */}
       <div className="studio-card input-card">
-        <div className="card-header-bar">
+        <div className="card-header-bar" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div className="card-title-group">
             <span className="card-main-title">Input</span>
             <span className="card-sub-title">stdin / function parameters</span>
           </div>
+          {activeTestCases && activeTestCases.length > 0 && (
+            <span style={{ fontSize: 10, fontFamily: "var(--font-mono)", color: "var(--txt-dim)" }}>
+              {activeTestCases.length} case{activeTestCases.length > 1 ? "s" : ""}
+            </span>
+          )}
         </div>
+
+        {/* Test Case Selection Pills */}
+        {activeTestCases && activeTestCases.length > 0 && (
+          <div
+            className="test-case-pills-wrap"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "6px 12px",
+              background: "var(--bg-canvas)",
+              borderBottom: "1px solid var(--border-subtle, #21262D)",
+              overflowX: "auto"
+            }}
+          >
+            <span style={{ fontSize: 10, fontFamily: "var(--font-mono)", color: "var(--txt-dim)", whiteSpace: "nowrap" }}>
+              Test Cases:
+            </span>
+            {activeTestCases.map((tc, idx) => {
+              const isSelected = inputText.trim() === tc.input.trim();
+              return (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => selectTestCase(tc)}
+                  style={{
+                    fontSize: 10,
+                    fontFamily: "var(--font-mono)",
+                    padding: "2px 8px",
+                    borderRadius: 4,
+                    border: isSelected ? "1px solid var(--accent-amber, #FF9F43)" : "1px solid var(--border-subtle, #21262D)",
+                    background: isSelected ? "rgba(255, 159, 67, 0.15)" : "var(--container-card-bg, var(--bg-raised))",
+                    color: isSelected ? "var(--accent-amber, #FF9F43)" : "var(--txt-medium)",
+                    fontWeight: isSelected ? 700 : 500,
+                    cursor: "pointer",
+                    whiteSpace: "nowrap",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 4
+                  }}
+                  title={tc.explanation || tc.input}
+                >
+                  <span>{tc.label || `Case ${idx + 1}`}</span>
+                  {tc.expected && (
+                    <span style={{ opacity: 0.6, fontSize: 9 }}>({tc.expected})</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
         <div className="input-card-body">
           <textarea
             className="input-textarea"
             value={inputText}
-            placeholder={"e.g.\nnums = [2, 7, 11, 15]\ntarget = 9"}
+            placeholder={"e.g.\nheight = [1, 8, 6, 2, 5, 4, 8, 3, 7]\nor\nnums = [2, 7, 11, 15]\ntarget = 9"}
             onChange={(e) => setInputText(e.target.value)}
             spellCheck={false}
           />
@@ -171,7 +230,7 @@ export default function BottomPanels() {
           </div>
           <button
             onClick={() => handleAskAiHint()}
-            title="Ask AI Tutor for guidance or hints"
+            title="Ask ARIA for guidance"
             style={{
               display: "inline-flex",
               alignItems: "center",
@@ -187,7 +246,7 @@ export default function BottomPanels() {
               fontWeight: 600
             }}
           >
-            💡 AI Hint
+            ✦ ARIA
           </button>
         </div>
         <div className="card-scroll-body terminal-body">
@@ -198,7 +257,7 @@ export default function BottomPanels() {
                   <div style={{ color: "#ef4743", fontWeight: 700, fontSize: 12, marginBottom: 4, display: "flex", alignItems: "center", gap: 6 }}>
                     <span>⚠️ Execution Error</span>
                   </div>
-                  <div style={{ color: "var(--txt-bright, #F0F6FC)", fontFamily: "var(--font-mono)", fontSize: 11.5, marginBottom: 10, whiteSpace: "pre-wrap" }}>
+                  <div style={{ color: "var(--txt-bright)", fontFamily: "var(--font-mono)", fontSize: 11.5, marginBottom: 10, whiteSpace: "pre-wrap" }}>
                     {error}
                   </div>
                   <button
@@ -219,7 +278,7 @@ export default function BottomPanels() {
                       fontWeight: 700
                     }}
                   >
-                    💡 Ask AI for a Hint & Fix
+                    ✦ Ask ARIA to Fix
                   </button>
                 </div>
               )}

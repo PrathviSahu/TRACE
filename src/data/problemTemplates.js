@@ -28,6 +28,33 @@ export const PRESET_SOLUTIONS = {
     inputs: { nums: '[2, 7, 11, 15]', target: '9' }
   },
 
+  11: {
+    name: "Container With Most Water",
+    description: "Find two lines forming a container with maximum water storage.",
+    code: `class Solution {
+    public int maxArea(int[] height) {
+        int left = 0;
+        int right = height.length - 1;
+        int maxWater = 0;
+        while (left < right) {
+            int width = right - left;
+            int h = Math.min(height[left], height[right]);
+            int area = width * h;
+            if (area > maxWater) {
+                maxWater = area;
+            }
+            if (height[left] < height[right]) {
+                left++;
+            } else {
+                right--;
+            }
+        }
+        return maxWater;
+    }
+}`,
+    inputs: { height: "[1, 8, 6, 2, 5, 4, 8, 3, 7]" }
+  },
+
   26: {
     name: 'Remove Duplicates from Sorted Array',
     description: 'In-place removal of duplicates returning new length.',
@@ -245,6 +272,35 @@ export const PRESET_SOLUTIONS = {
     }
 }`,
     inputs: { s: 'racecar' }
+  },
+
+  128: {
+    name: "Longest Consecutive Sequence",
+    description: "Find length of longest consecutive elements sequence using HashSet in O(n).",
+    code: `class Solution {
+    public int longestConsecutive(int[] nums) {
+        Set<Integer> set = new HashSet<>();
+        for (int n : nums) {
+            set.add(n);
+        }
+        int max = 0;
+        for (int num : set) {
+            if (!set.contains(num - 1)) {
+                int current = num;
+                int count = 1;
+                while (set.contains(current + 1)) {
+                    current++;
+                    count++;
+                }
+                if (count > max) {
+                    max = count;
+                }
+            }
+        }
+        return max;
+    }
+}`,
+    inputs: { nums: "[100, 4, 200, 1, 3, 2]" }
   },
 
   136: {

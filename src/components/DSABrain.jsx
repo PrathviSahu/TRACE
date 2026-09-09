@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { callGeminiApi, SYSTEM_TUTOR_PROMPT } from '../services/aiService.js';
 import { useTraceStore } from '../store/traceStore.js';
 import { renderSafeMarkdown } from '../utils/sanitize.js';
@@ -14,20 +14,24 @@ const SUGGESTED_PROMPTS = [
   "Tips for FAANG DSA interviews",
 ];
 
+const ARIA_WELCOME = `Hey! 👋 I'm **ARIA** — your Algorithm Reasoning & Insight Assistant.
+
+Ask me anything: algorithm patterns, Big-O complexity, hints for tricky LeetCode problems, or multi-language code (Python, Java, C++, JS).
+
+What are you working on?`;
+
 export default function DSABrain() {
   const [open, setOpen] = useState(false);
   const activeLanguage = useTraceStore(s => s.language);
   const [messages, setMessages] = useState([
-    {
-      role: 'assistant',
-      content: "Hey! 👋 I'm **TRACE Brain** — your personal DSA tutor.\n\nAsk me anything: algorithm patterns, Big-O complexity, hints for tricky LeetCode problems, or multi-language code (Python, Java, C++, JS).\n\nWhat are you working on?",
-    }
+    { role: 'assistant', content: ARIA_WELCOME }
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+  const sendMessageRef = useRef(null);
 
   useEffect(() => {
     if (open) {
@@ -36,34 +40,29 @@ export default function DSABrain() {
     }
   }, [messages, open]);
 
-  // Listen for external open-trace-brain custom events
-  useEffect(() => {
-    function handleExternalPrompt(e) {
-      const promptText = e.detail?.prompt;
-      setOpen(true);
-      if (promptText) {
-        setTimeout(() => {
-          sendMessage(promptText);
-        }, 200);
-      }
-    }
-    window.addEventListener('open-trace-brain', handleExternalPrompt);
-    return () => window.removeEventListener('open-trace-brain', handleExternalPrompt);
-  }, []);
-
-  async function sendMessage(text) {
+  const sendMessage = useCallback(async (text) => {
     const userText = (text || input).trim();
     if (!userText || loading) return;
 
     setInput('');
     setError('');
-    const newMessages = [...messages, { role: 'user', content: userText }];
-    setMessages(newMessages);
+
+    let snapshot;
+    setMessages(prev => {
+      snapshot = [...prev, { role: 'user', content: userText }];
+      return snapshot;
+    });
+
     setLoading(true);
 
     try {
-      const conversationHistory = newMessages.slice(1);
-      const contents = conversationHistory.map(msg => ({
+      await new Promise(r => setTimeout(r, 0));
+
+      const HISTORY_LIMIT = 12;
+      const history = (snapshot || []).slice(1);
+      const recent = history.slice(Math.max(0, history.length - HISTORY_LIMIT));
+
+      const contents = recent.map(msg => ({
         role: msg.role === 'assistant' ? 'model' : 'user',
         parts: [{ text: msg.content }]
       }));
@@ -77,22 +76,34 @@ export default function DSABrain() {
       });
 
       const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (!reply) throw new Error('No response returned from AI.');
+      if (!reply) throw new Error('No response from ARIA. Please check your Gemini API key in .env file.');
 
       setMessages(prev => [...prev, { role: 'assistant', content: reply }]);
     } catch (e) {
-      setError(e.message);
+      const msg = e.message || 'Unknown error';
+      setError(msg);
       setMessages(prev => [
         ...prev,
-        {
-          role: 'assistant',
-          content: `⚠️ **AI Tutor:** ${e.message}`
-        }
+        { role: 'assistant', content: `⚠️ **ARIA:** ${msg}` }
       ]);
     } finally {
       setLoading(false);
     }
-  }
+  }, [input, loading, activeLanguage]);
+
+  useEffect(() => { sendMessageRef.current = sendMessage; }, [sendMessage]);
+
+  useEffect(() => {
+    function handleExternalPrompt(e) {
+      const promptText = e.detail?.prompt;
+      setOpen(true);
+      if (promptText) {
+        setTimeout(() => sendMessageRef.current?.(promptText), 250);
+      }
+    }
+    window.addEventListener('open-trace-brain', handleExternalPrompt);
+    return () => window.removeEventListener('open-trace-brain', handleExternalPrompt);
+  }, []);
 
   function handleKeyDown(e) {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -102,208 +113,134 @@ export default function DSABrain() {
   }
 
   function clearChat() {
-    setMessages([{
-      role: 'assistant',
-      content: "Hey! 👋 I'm **TRACE Brain** — your personal DSA tutor.\n\nAsk me anything: algorithm concepts, complexity analysis, or how to tackle any problem!",
-    }]);
+    setMessages([{ role: 'assistant', content: ARIA_WELCOME }]);
     setError('');
   }
 
   return (
     <>
       <style>{`
-        .brain-fab {
-          position: fixed;
-          bottom: 24px;
-          right: 24px;
-          z-index: 9999;
-          width: 54px; height: 54px;
-          border-radius: 50%;
-          border: none;
-          cursor: pointer;
-          background: var(--bg-surface, #161a20); border: 1px solid var(--accent-amber, #ff9f43); color: var(--accent-amber, #ff9f43);
-          box-shadow: 0 4px 20px rgba(255,159,67,0.35);
-          display: flex; align-items: center; justify-content: center;
-          font-size: 24px;
-          transition: all 0.2s cubic-bezier(0.34,1.56,0.64,1);
-          animation: fabPop 0.4s cubic-bezier(0.34,1.56,0.64,1);
+        .aria-fab {
+          position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+          width: 56px; height: 56px; border-radius: 50%; border: none; cursor: pointer;
+          background: linear-gradient(135deg, #5282ff 0%, #8b6ff0 50%, #ff9f43 100%);
+          box-shadow: 0 6px 28px rgba(82,130,255,0.45), 0 2px 8px rgba(0,0,0,0.4);
+          display: flex; align-items: center; justify-content: center; font-size: 22px;
+          transition: transform 0.2s cubic-bezier(.34,1.56,.64,1), box-shadow 0.2s;
+          animation: aria-pulse 3s infinite; color: white;
         }
-        .brain-fab:hover { transform: scale(1.08); box-shadow: 0 6px 28px rgba(255,159,67,0.5); }
-        .brain-fab.open { background: linear-gradient(135deg, #ef4743, #c0392b); }
-        @keyframes fabPop { from { transform: scale(0); opacity: 0 } to { transform: scale(1); opacity: 1 } }
-        .brain-panel {
-          position: fixed;
-          bottom: 90px; right: 24px;
-          width: 440px; height: 600px;
-          max-height: calc(100vh - 120px);
-          max-width: calc(100vw - 32px);
-          z-index: 9998;
-          background: var(--bg-surface, #161a20);
-          border: 1px solid var(--border-card, #292f37);
-          border-radius: 16px;
-          display: flex; flex-direction: column;
-          box-shadow: 0 24px 64px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.05);
-          animation: brainSlide 0.25s cubic-bezier(0.34,1.56,0.64,1);
-          overflow: hidden;
+        .aria-fab:hover { transform: scale(1.1); box-shadow: 0 8px 32px rgba(82,130,255,0.65), 0 2px 8px rgba(0,0,0,0.4); }
+        .aria-fab.open { animation: none; background: linear-gradient(135deg, #ef4444, #8b1111); box-shadow: 0 4px 18px rgba(239,68,68,0.4); }
+        @keyframes aria-pulse {
+          0%, 100% { box-shadow: 0 6px 28px rgba(82,130,255,0.45), 0 0 0 0 rgba(82,130,255,0.35); }
+          50%       { box-shadow: 0 6px 28px rgba(82,130,255,0.45), 0 0 0 10px rgba(82,130,255,0); }
         }
-        @keyframes brainSlide { from { opacity: 0; transform: translateY(16px) scale(0.96) } to { opacity: 1; transform: none } }
-        .brain-header {
-          padding: 13px 18px;
-          background: var(--bg-raised, #1c2128);
-          border-bottom: 1px solid var(--border-subtle, #222831);
-          display: flex; align-items: center; gap: 10px;
+        .aria-panel {
+          position: fixed; bottom: 90px; right: 24px;
+          width: 400px; height: 560px;
+          background: linear-gradient(180deg, #0d1117 0%, #0a0e14 100%);
+          border: 1px solid rgba(82,130,255,0.25); border-radius: 18px;
+          box-shadow: 0 24px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04);
+          display: flex; flex-direction: column; overflow: hidden; z-index: 9998;
+          animation: aria-slide-in 0.22s cubic-bezier(.34,1.56,.64,1);
         }
-        .brain-avatar {
-          width: 36px; height: 36px; border-radius: 50%;
-          background: var(--bg-card, #161a20); border: 1px solid var(--border-card, #292f37);
-          display: flex; align-items: center; justify-content: center;
-          font-size: 19px; flex-shrink: 0;
-          box-shadow: 0 2px 10px rgba(255,159,67,0.25);
+        @keyframes aria-slide-in { from { opacity:0; transform:translateY(20px) scale(0.96); } to { opacity:1; transform:translateY(0) scale(1); } }
+        .aria-header {
+          padding: 14px 16px;
+          background: linear-gradient(135deg, rgba(82,130,255,0.1) 0%, rgba(139,111,240,0.07) 100%);
+          border-bottom: 1px solid rgba(82,130,255,0.18);
+          display: flex; align-items: center; gap: 12px; flex-shrink: 0;
         }
-        .brain-title { font-size: 14px; font-weight: 700; color: #e6edf3; display: flex; align-items: center; gap: 6px; }
-        .brain-badge { font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px; background: rgba(126,231,135,0.15); color: #7ee787; border: 1px solid rgba(126,231,135,0.3); }
-        .brain-sub { font-size: 11px; color: #8b949e; }
-        .brain-actions { margin-left: auto; display: flex; gap: 6px; }
-        .brain-icon-btn { background: transparent; border: 1px solid rgba(255,255,255,0.1); color: #8b949e; width: 28px; height: 28px; border-radius: 6px; cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
-        .brain-icon-btn:hover { background: rgba(255,255,255,0.08); color: #c9d1d9; }
-        .brain-messages {
-          flex: 1; overflow-y: auto; padding: 14px 16px;
-          display: flex; flex-direction: column; gap: 12px;
-        }
-        .brain-messages::-webkit-scrollbar { width: 5px; }
-        .brain-messages::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 3px; }
-        .brain-msg { display: flex; gap: 8px; align-items: flex-start; }
-        .brain-msg.user { flex-direction: row-reverse; }
-        .brain-bubble {
-          max-width: 86%; padding: 10px 14px;
-          border-radius: 12px; font-size: 12.5px; line-height: 1.6; color: #c9d1d9;
-        }
-        .brain-bubble.assistant {
-          background: rgba(255,255,255,0.05);
-          border: 1px solid rgba(255,255,255,0.09);
-          border-radius: 4px 12px 12px 12px;
-        }
-        .brain-bubble.user {
-          background: rgba(255, 159, 67, 0.15);
-          border: 1px solid rgba(255, 159, 67, 0.35);
-          border-radius: 12px 4px 12px 12px;
-          color: #f0f6fc;
-        }
-        .brain-bubble pre, .brain-bubble code {
-          font-family: var(--mono, 'JetBrains Mono', monospace);
-          font-size: 11.5px;
-          background: rgba(0,0,0,0.35);
-          border-radius: 4px;
-        }
-        .brain-bubble pre { padding: 10px 12px; overflow-x: auto; margin: 8px 0; border: 1px solid rgba(255,255,255,0.1); }
-        .brain-bubble code { padding: 1px 5px; color: var(--accent-teal, #38d9c5); }
-        .brain-bubble strong { color: #ffffff; }
-        .brain-typing { display: flex; gap: 4px; align-items: center; padding: 4px 6px; }
-        .brain-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent-amber, #ff9f43); animation: bdot 1.2s infinite ease-in-out; }
-        .brain-dot:nth-child(2) { animation-delay: 0.2s; background: var(--accent-amber-bright, #ffb454); }
-        .brain-dot:nth-child(3) { animation-delay: 0.4s; background: var(--accent-teal, #38d9c5); }
-        @keyframes bdot { 0%, 80%, 100% { transform: scale(0.6); opacity: 0.4 } 40% { transform: scale(1); opacity: 1 } }
-        .brain-suggestions {
-          padding: 8px 14px;
-          display: flex; flex-wrap: wrap; gap: 6px;
-          background: rgba(0,0,0,0.15);
-          border-top: 1px solid rgba(255,255,255,0.06);
-        }
-        .brain-suggest-chip {
-          background: rgba(82,130,255,0.1);
-          border: 1px solid rgba(82,130,255,0.25);
-          color: #79a8ff;
-          border-radius: 20px;
-          padding: 4px 10px;
-          font-size: 11px;
-          cursor: pointer;
-          transition: all 0.15s;
-          text-align: left;
-        }
-        .brain-suggest-chip:hover { background: rgba(82,130,255,0.22); color: #c9d1d9; border-color: rgba(82,130,255,0.45); }
-        .brain-input-row {
-          padding: 10px 14px;
-          border-top: 1px solid rgba(255,255,255,0.08);
-          display: flex; gap: 8px; align-items: flex-end;
-          background: var(--bg-card, #161a20);
-        }
-        .brain-textarea {
-          flex: 1;
-          background: rgba(255,255,255,0.05);
-          border: 1px solid rgba(255,255,255,0.12);
-          border-radius: 10px;
-          color: #e6edf3;
-          padding: 8px 12px;
-          font-size: 12.5px;
-          font-family: inherit;
-          resize: none;
-          outline: none;
-          min-height: 38px;
-          max-height: 100px;
-          line-height: 1.4;
-          box-sizing: border-box;
-          transition: border-color 0.15s;
-        }
-        .brain-textarea:focus { border-color: rgba(82,130,255,0.5); background: rgba(255,255,255,0.07); }
-        .brain-send {
-          width: 38px; height: 38px; border-radius: 10px;
-          border: none;
-          background: var(--accent-amber, #ff9f43);
-          color: #090b0e;
-          font-weight: 700;
-          cursor: pointer;
-          display: flex; align-items: center; justify-content: center;
-          font-size: 14px;
-          flex-shrink: 0;
-          transition: all 0.15s;
-        }
-        .brain-send:hover:not(:disabled) { transform: scale(1.05); box-shadow: 0 4px 14px rgba(82,130,255,0.4); }
-        .brain-send:disabled { opacity: 0.4; cursor: not-allowed; }
-        .brain-error { padding: 8px 14px; background: rgba(239,71,67,0.12); border-top: 1px solid rgba(239,71,67,0.3); font-size: 11.5px; color: #ff7b72; }
-        @media (max-width: 480px) { .brain-panel { width: calc(100vw - 20px); right: 10px; } }
+        .aria-avatar-ring { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #5282ff, #8b6ff0, #ff9f43); padding: 2px; flex-shrink: 0; }
+        .aria-avatar-inner { width: 100%; height: 100%; border-radius: 50%; background: #0d1117; display: flex; align-items: center; justify-content: center; font-size: 18px; color: #fff; }
+        .aria-name { font-size: 15px; font-weight: 700; color: #f0f6fc; letter-spacing: 0.02em; display: flex; align-items: center; gap: 7px; }
+        .aria-name-tag { font-size: 9px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #79a8ff; padding: 2px 6px; border: 1px solid rgba(82,130,255,0.3); border-radius: 4px; }
+        .aria-sub { font-size: 11px; color: #6e7681; margin-top: 1px; }
+        .aria-status-dot { width: 7px; height: 7px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 6px #22c55e; animation: aria-blink 2s infinite; display: inline-block; margin-right: 4px; vertical-align: middle; }
+        @keyframes aria-blink { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+        .aria-header-actions { margin-left: auto; display: flex; gap: 4px; }
+        .aria-icon-btn { background: transparent; border: none; color: #6e7681; cursor: pointer; width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 13px; transition: all 0.15s; }
+        .aria-icon-btn:hover { background: rgba(255,255,255,0.07); color: #c9d1d9; }
+        .aria-messages { flex: 1; overflow-y: auto; padding: 14px 16px; display: flex; flex-direction: column; gap: 14px; scroll-behavior: smooth; }
+        .aria-messages::-webkit-scrollbar { width: 4px; }
+        .aria-messages::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+        .aria-msg { display: flex; gap: 8px; align-items: flex-start; }
+        .aria-msg.user { flex-direction: row-reverse; }
+        .aria-msg-avatar { width: 26px; height: 26px; border-radius: 50%; background: linear-gradient(135deg,#5282ff,#8b6ff0); display: flex; align-items: center; justify-content: center; font-size: 12px; color: #fff; flex-shrink: 0; margin-top: 2px; }
+        .aria-bubble { max-width: 85%; padding: 10px 14px; border-radius: 14px; font-size: 12.5px; line-height: 1.65; color: #c9d1d9; }
+        .aria-bubble.assistant { background: rgba(82,130,255,0.07); border: 1px solid rgba(82,130,255,0.14); border-radius: 4px 14px 14px 14px; }
+        .aria-bubble.user { background: linear-gradient(135deg,rgba(255,159,67,0.16),rgba(255,159,67,0.08)); border: 1px solid rgba(255,159,67,0.3); border-radius: 14px 4px 14px 14px; color: #f0f6fc; }
+        .aria-bubble pre { font-family: 'JetBrains Mono',monospace; font-size: 11.5px; background: rgba(0,0,0,0.35); border-radius: 6px; padding: 10px 12px; overflow-x: auto; margin: 8px 0; border: 1px solid rgba(255,255,255,0.08); }
+        .aria-bubble code { font-family: 'JetBrains Mono',monospace; font-size: 11px; background: rgba(0,0,0,0.3); padding: 1px 5px; border-radius: 3px; color: #38d9c5; }
+        .aria-bubble strong { color: #ffffff; }
+        .aria-typing { display: flex; gap: 5px; align-items: center; padding: 4px 2px; }
+        .aria-dot { width: 6px; height: 6px; border-radius: 50%; animation: adot 1.2s infinite ease-in-out; }
+        .aria-dot:nth-child(1) { background: #5282ff; }
+        .aria-dot:nth-child(2) { background: #8b6ff0; animation-delay: 0.2s; }
+        .aria-dot:nth-child(3) { background: #ff9f43; animation-delay: 0.4s; }
+        @keyframes adot { 0%,80%,100%{transform:scale(0.6);opacity:0.4;} 40%{transform:scale(1.1);opacity:1;} }
+        .aria-suggestions { padding: 10px 14px 6px; display: flex; flex-wrap: wrap; gap: 6px; border-top: 1px solid rgba(255,255,255,0.05); background: rgba(255,255,255,0.02); }
+        .aria-chip { background: rgba(82,130,255,0.08); border: 1px solid rgba(82,130,255,0.22); color: #79a8ff; border-radius: 20px; padding: 4px 10px; font-size: 11px; cursor: pointer; transition: all 0.15s; text-align: left; }
+        .aria-chip:hover { background: rgba(82,130,255,0.2); color: #c9d1d9; border-color: rgba(82,130,255,0.45); transform: translateY(-1px); }
+        .aria-error { padding: 8px 14px; background: rgba(239,71,67,0.1); border-top: 1px solid rgba(239,71,67,0.25); font-size: 11.5px; color: #ff7b72; }
+        .aria-input-row { padding: 10px 14px 12px; border-top: 1px solid rgba(255,255,255,0.07); display: flex; gap: 8px; align-items: flex-end; background: rgba(255,255,255,0.02); flex-shrink: 0; }
+        .aria-textarea { flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; color: #e6edf3; padding: 9px 13px; font-size: 12.5px; font-family: inherit; resize: none; outline: none; min-height: 40px; max-height: 100px; line-height: 1.45; box-sizing: border-box; transition: border-color 0.15s, background 0.15s; }
+        .aria-textarea:focus { border-color: rgba(82,130,255,0.5); background: rgba(82,130,255,0.04); }
+        .aria-textarea::placeholder { color: #484f58; }
+        .aria-send { width: 40px; height: 40px; border-radius: 12px; border: none; background: linear-gradient(135deg,#5282ff,#8b6ff0); color: #fff; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; transition: all 0.15s; box-shadow: 0 2px 12px rgba(82,130,255,0.35); }
+        .aria-send:hover:not(:disabled) { transform: scale(1.06); box-shadow: 0 4px 18px rgba(82,130,255,0.55); }
+        .aria-send:disabled { opacity: 0.35; cursor: not-allowed; box-shadow: none; }
+        @media (max-width: 480px) { .aria-panel { width: calc(100vw - 20px); right: 10px; } }
       `}</style>
 
-      {/* FAB Button */}
-      <button className={`brain-fab ${open ? 'open' : ''}`} onClick={() => setOpen(o => !o)} title="TRACE Brain — DSA AI Tutor">
-        {open ? '✕' : '🧠'}
+      <button
+        className={`aria-fab ${open ? 'open' : ''}`}
+        onClick={() => setOpen(o => !o)}
+        title="ARIA — Algorithm Reasoning & Insight Assistant"
+      >
+        {open ? '✕' : '✦'}
       </button>
 
-      {/* Chat Panel */}
       {open && (
-        <div className="brain-panel">
-          {/* Header */}
-          <div className="brain-header">
-            <div className="brain-avatar">🧠</div>
-            <div>
-              <div className="brain-title">
-                TRACE Brain
-                <span className="brain-badge">AI Ready</span>
-              </div>
-              <div className="brain-sub">DSA AI Tutor · Multi-Language Debugger</div>
+        <div className="aria-panel">
+          <div className="aria-header">
+            <div className="aria-avatar-ring">
+              <div className="aria-avatar-inner">✦</div>
             </div>
-            <div className="brain-actions">
-              <button className="brain-icon-btn" onClick={clearChat} title="Clear chat">🗑</button>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div className="aria-name">
+                ARIA
+                <span className="aria-name-tag">AI Tutor</span>
+              </div>
+              <div className="aria-sub">
+                <span className="aria-status-dot" />
+                Algorithm Reasoning & Insight Assistant
+              </div>
+            </div>
+            <div className="aria-header-actions">
+              <button className="aria-icon-btn" onClick={clearChat} title="Clear chat">🗑</button>
             </div>
           </div>
 
-          {/* Messages */}
-          <div className="brain-messages">
+          <div className="aria-messages">
             {messages.map((msg, i) => (
-              <div key={i} className={`brain-msg ${msg.role}`}>
+              <div key={i} className={`aria-msg ${msg.role}`}>
                 {msg.role === 'assistant' && (
-                  <div style={{ width:24, height:24, borderRadius:'50%', background:'linear-gradient(135deg,#5282ff,#8b6ff0)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, flexShrink:0, marginTop:2 }}>🧠</div>
+                  <div className="aria-msg-avatar">✦</div>
                 )}
-                <div className={`brain-bubble ${msg.role}`}>
+                <div className={`aria-bubble ${msg.role}`}>
                   <RenderMarkdown text={msg.content} />
                 </div>
               </div>
             ))}
             {loading && (
-              <div className="brain-msg assistant">
-                <div style={{ width:24, height:24, borderRadius:'50%', background:'linear-gradient(135deg,#5282ff,#8b6ff0)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, flexShrink:0 }}>🧠</div>
-                <div className="brain-bubble assistant">
-                  <div className="brain-typing">
-                    <div className="brain-dot" /><div className="brain-dot" /><div className="brain-dot" />
+              <div className="aria-msg assistant">
+                <div className="aria-msg-avatar">✦</div>
+                <div className="aria-bubble assistant">
+                  <div className="aria-typing">
+                    <div className="aria-dot" />
+                    <div className="aria-dot" />
+                    <div className="aria-dot" />
                   </div>
                 </div>
               </div>
@@ -311,30 +248,37 @@ export default function DSABrain() {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Suggested prompts — show only at start */}
           {messages.length <= 1 && (
-            <div className="brain-suggestions">
+            <div className="aria-suggestions">
               {SUGGESTED_PROMPTS.map(p => (
-                <button key={p} className="brain-suggest-chip" onClick={() => sendMessage(p)}>{p}</button>
+                <button key={p} className="aria-chip" onClick={() => sendMessage(p)}>{p}</button>
               ))}
             </div>
           )}
 
-          {error && <div className="brain-error">⚠ {error}</div>}
+          {error && <div className="aria-error">⚠ {error}</div>}
 
-          {/* Input */}
-          <div className="brain-input-row">
+          <div className="aria-input-row">
             <textarea
               ref={inputRef}
-              className="brain-textarea"
-              placeholder="Ask TRACE Brain anything about DSA..."
+              className="aria-textarea"
+              placeholder="Ask ARIA anything about DSA…"
               value={input}
-              onChange={e => { setInput(e.target.value); e.target.style.height='auto'; e.target.style.height=Math.min(e.target.scrollHeight,100)+'px'; }}
+              onChange={e => {
+                setInput(e.target.value);
+                e.target.style.height = 'auto';
+                e.target.style.height = Math.min(e.target.scrollHeight, 100) + 'px';
+              }}
               onKeyDown={handleKeyDown}
               disabled={loading}
               rows={1}
             />
-            <button className="brain-send" onClick={() => sendMessage()} disabled={!input.trim() || loading} title="Send (Enter)">
+            <button
+              className="aria-send"
+              onClick={() => sendMessage()}
+              disabled={!input.trim() || loading}
+              title="Send (Enter)"
+            >
               {loading ? '⏳' : '➤'}
             </button>
           </div>
@@ -344,7 +288,6 @@ export default function DSABrain() {
   );
 }
 
-// Secured Markdown renderer (Hardening #2: XSS protected)
 function RenderMarkdown({ text }) {
   return <div dangerouslySetInnerHTML={{ __html: renderSafeMarkdown(text) }} />;
 }

@@ -18,19 +18,19 @@ export function DiagrammaticStack({ name, items = [] }) {
     <div className="ds-block" style={{ marginBottom: 24 }}>
       <div className="ds-title" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span>Stack: <strong style={{ color: "var(--txt-bright, #F0F6FC)" }}>{name}</strong></span>
+          <span>Stack: <strong style={{ color: "var(--container-text-primary, var(--txt-bright, #F0F6FC))" }}>{name}</strong></span>
           <span style={{ fontSize: 10, padding: "2px 8px", background: "rgba(255, 159, 67, 0.15)", color: "var(--accent-amber, #FF9F43)", borderRadius: 4, fontWeight: 600 }}>
             LIFO Beaker
           </span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <span style={{ fontSize: 10, fontFamily: "var(--font-mono)", padding: "2px 6px", background: "var(--bg-raised, #1C2128)", borderRadius: 4, border: "1px solid var(--border-subtle, #21262D)", color: "var(--txt-dim, #6E7681)" }}>
-            Size: <strong style={{ color: "var(--txt-bright, #F0F6FC)" }}>{count}</strong>
+          <span style={{ fontSize: 10, fontFamily: "var(--font-mono)", padding: "2px 6px", background: "var(--container-card-bg, var(--bg-raised, #1C2128))", borderRadius: 4, border: "1px solid var(--border-subtle, #21262D)", color: "var(--container-text-dim, var(--txt-dim, #6E7681))" }}>
+            Size: <strong style={{ color: "var(--container-text-primary, var(--txt-bright, #F0F6FC))" }}>{count}</strong>
           </span>
-          <span style={{ fontSize: 10, fontFamily: "var(--font-mono)", padding: "2px 6px", background: "var(--bg-raised, #1C2128)", borderRadius: 4, border: "1px solid var(--border-subtle, #21262D)", color: "var(--txt-dim, #6E7681)" }}>
+          <span style={{ fontSize: 10, fontFamily: "var(--font-mono)", padding: "2px 6px", background: "var(--container-card-bg, var(--bg-raised, #1C2128))", borderRadius: 4, border: "1px solid var(--border-subtle, #21262D)", color: "var(--container-text-dim, var(--txt-dim, #6E7681))" }}>
             SP: <strong style={{ color: "var(--accent-amber, #FF9F43)" }}>{isNotEmpty ? `[${count - 1}]` : "None"}</strong>
           </span>
-          <span style={{ fontSize: 10, fontFamily: "var(--font-mono)", padding: "2px 6px", background: "var(--bg-raised, #1C2128)", borderRadius: 4, border: "1px solid var(--border-subtle, #21262D)", color: "var(--txt-dim, #6E7681)" }}>
+          <span style={{ fontSize: 10, fontFamily: "var(--font-mono)", padding: "2px 6px", background: "var(--container-card-bg, var(--bg-raised, #1C2128))", borderRadius: 4, border: "1px solid var(--border-subtle, #21262D)", color: "var(--container-text-dim, var(--txt-dim, #6E7681))" }}>
             Peek: <strong style={{ color: "var(--accent-amber, #FF9F43)" }}>{isNotEmpty ? String(items[count - 1]) : "null"}</strong>
           </span>
         </div>
@@ -43,7 +43,8 @@ export function DiagrammaticStack({ name, items = [] }) {
             position: "relative",
             width: 250,
             minHeight: 140,
-            background: "linear-gradient(180deg, rgba(255,159,67,0.02) 0%, rgba(19,23,29,0.95) 100%)",
+            background: "var(--container-beaker-bg)",
+            border: "2px solid var(--accent-amber, #FF9F43)",
             borderLeft: "3px solid var(--accent-amber, #FF9F43)",
             borderRight: "3px solid var(--accent-amber, #FF9F43)",
             borderBottom: "4px solid var(--accent-amber, #FF9F43)",
@@ -68,7 +69,7 @@ export function DiagrammaticStack({ name, items = [] }) {
               fontFamily: "var(--font-mono)",
               fontWeight: 700,
               padding: "2px 8px",
-              background: "var(--bg-raised, #1C2128)",
+              background: "var(--container-card-bg, var(--bg-raised, #1C2128))",
               border: "1px solid var(--accent-amber, #FF9F43)",
               color: "var(--accent-amber, #FF9F43)",
               borderRadius: 10,
@@ -101,7 +102,7 @@ export function DiagrammaticStack({ name, items = [] }) {
                       alignItems: "center",
                       justifyContent: "space-between",
                       padding: "7px 10px",
-                      background: isTop ? "rgba(255, 159, 67, 0.18)" : "var(--bg-raised, #1C2128)",
+                      background: isTop ? "rgba(255, 159, 67, 0.18)" : "var(--container-card-bg, var(--bg-raised, #1C2128))",
                       border: isTop ? "1.5px solid var(--accent-amber, #FF9F43)" : "1px solid var(--border-subtle, #21262D)",
                       borderRadius: 4,
                       fontFamily: "var(--font-mono)",
@@ -110,10 +111,10 @@ export function DiagrammaticStack({ name, items = [] }) {
                     }}
                   >
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <span style={{ fontSize: 10, color: isTop ? "var(--accent-amber, #FF9F43)" : "var(--txt-dim, #6E7681)", fontWeight: 600 }}>
+                      <span style={{ fontSize: 10, color: isTop ? "var(--accent-amber, #FF9F43)" : "var(--container-text-dim, var(--txt-dim, #6E7681))", fontWeight: 600 }}>
                         [{origIdx}]
                       </span>
-                      <span style={{ fontWeight: isTop ? 700 : 500, fontSize: 13, color: isTop ? "var(--txt-bright, #F0F6FC)" : "var(--txt-main, #C9D1D9)" }}>
+                      <span style={{ fontWeight: isTop ? 700 : 500, fontSize: 13, color: isTop ? "var(--container-text-primary, var(--txt-bright, #F0F6FC))" : "var(--txt-main, #C9D1D9)" }}>
                         {String(v)}
                       </span>
                     </div>
@@ -128,7 +129,7 @@ export function DiagrammaticStack({ name, items = [] }) {
                 );
               })
             ) : (
-              <div style={{ padding: "30px 10px", textAlign: "center", color: "var(--txt-dim, #6E7681)", fontFamily: "var(--font-mono)", fontSize: 11 }}>
+              <div style={{ padding: "30px 10px", textAlign: "center", color: "var(--container-text-dim, var(--txt-dim, #6E7681))", fontFamily: "var(--font-mono)", fontSize: 11 }}>
                 [ Empty Stack — push() elements to begin ]
               </div>
             )}
@@ -142,7 +143,7 @@ export function DiagrammaticStack({ name, items = [] }) {
               textAlign: "center",
               fontSize: 9,
               fontFamily: "var(--font-mono)",
-              color: "var(--txt-dim, #6E7681)",
+              color: "var(--container-text-dim, var(--txt-dim, #6E7681))",
               borderTop: "1px solid rgba(255, 159, 67, 0.3)",
               letterSpacing: 1
             }}
@@ -153,10 +154,10 @@ export function DiagrammaticStack({ name, items = [] }) {
 
         {/* Stack Explanation Diagnostics */}
         <div style={{ flex: 1, minWidth: 200, padding: 12, background: "var(--bg-surface, #13171D)", border: "1px solid var(--border-subtle, #21262D)", borderRadius: 8 }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: "var(--txt-bright, #F0F6FC)", marginBottom: 8 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: "var(--container-text-primary, var(--txt-bright, #F0F6FC))", marginBottom: 8 }}>
             LIFO Execution Semantics
           </div>
-          <ul style={{ margin: 0, paddingLeft: 18, fontSize: 11, color: "var(--txt-dim, #6E7681)", lineHeight: 1.6 }}>
+          <ul style={{ margin: 0, paddingLeft: 18, fontSize: 11, color: "var(--container-text-dim, var(--txt-dim, #6E7681))", lineHeight: 1.6 }}>
             <li><strong>push(x)</strong> places element onto the top of the stack.</li>
             <li><strong>pop()</strong> removes and returns the topmost element.</li>
             <li><strong>peek()</strong> inspects the top element without removal.</li>
@@ -180,19 +181,19 @@ export function DiagrammaticQueue({ name, items = [] }) {
     <div className="ds-block" style={{ marginBottom: 24 }}>
       <div className="ds-title" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span>Queue: <strong style={{ color: "var(--txt-bright, #F0F6FC)" }}>{name}</strong></span>
+          <span>Queue: <strong style={{ color: "var(--container-text-primary, var(--txt-bright, #F0F6FC))" }}>{name}</strong></span>
           <span style={{ fontSize: 10, padding: "2px 8px", background: "rgba(56, 217, 197, 0.15)", color: "var(--accent-cyan, #38D9C5)", borderRadius: 4, fontWeight: 600 }}>
             FIFO Pipeline
           </span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <span style={{ fontSize: 10, fontFamily: "var(--font-mono)", padding: "2px 6px", background: "var(--bg-raised, #1C2128)", borderRadius: 4, border: "1px solid var(--border-subtle, #21262D)", color: "var(--txt-dim, #6E7681)" }}>
-            Size: <strong style={{ color: "var(--txt-bright, #F0F6FC)" }}>{count}</strong>
+          <span style={{ fontSize: 10, fontFamily: "var(--font-mono)", padding: "2px 6px", background: "var(--container-card-bg, var(--bg-raised, #1C2128))", borderRadius: 4, border: "1px solid var(--border-subtle, #21262D)", color: "var(--container-text-dim, var(--txt-dim, #6E7681))" }}>
+            Size: <strong style={{ color: "var(--container-text-primary, var(--txt-bright, #F0F6FC))" }}>{count}</strong>
           </span>
-          <span style={{ fontSize: 10, fontFamily: "var(--font-mono)", padding: "2px 6px", background: "var(--bg-raised, #1C2128)", borderRadius: 4, border: "1px solid var(--border-subtle, #21262D)", color: "var(--txt-dim, #6E7681)" }}>
+          <span style={{ fontSize: 10, fontFamily: "var(--font-mono)", padding: "2px 6px", background: "var(--container-card-bg, var(--bg-raised, #1C2128))", borderRadius: 4, border: "1px solid var(--border-subtle, #21262D)", color: "var(--container-text-dim, var(--txt-dim, #6E7681))" }}>
             Head: <strong style={{ color: "var(--accent-amber, #FF9F43)" }}>{isNotEmpty ? String(items[0]) : "null"}</strong>
           </span>
-          <span style={{ fontSize: 10, fontFamily: "var(--font-mono)", padding: "2px 6px", background: "var(--bg-raised, #1C2128)", borderRadius: 4, border: "1px solid var(--border-subtle, #21262D)", color: "var(--txt-dim, #6E7681)" }}>
+          <span style={{ fontSize: 10, fontFamily: "var(--font-mono)", padding: "2px 6px", background: "var(--container-card-bg, var(--bg-raised, #1C2128))", borderRadius: 4, border: "1px solid var(--border-subtle, #21262D)", color: "var(--container-text-dim, var(--txt-dim, #6E7681))" }}>
             Tail: <strong style={{ color: "var(--accent-cyan, #38D9C5)" }}>{isNotEmpty ? String(items[count - 1]) : "null"}</strong>
           </span>
         </div>
@@ -204,7 +205,7 @@ export function DiagrammaticQueue({ name, items = [] }) {
             display: "inline-flex",
             alignItems: "center",
             padding: "8px 12px",
-            background: "linear-gradient(90deg, rgba(56,217,197,0.05) 0%, rgba(19,23,29,0.9) 100%)",
+            background: "var(--container-queue-bg)",
             borderTop: "2px solid var(--accent-cyan, #38D9C5)",
             borderBottom: "2px solid var(--accent-cyan, #38D9C5)",
             borderLeft: "none",
@@ -231,7 +232,7 @@ export function DiagrammaticQueue({ name, items = [] }) {
                     flexDirection: "column",
                     alignItems: "center",
                     padding: "6px 12px",
-                    background: isFront ? "rgba(255, 159, 67, 0.16)" : "var(--bg-raised, #1C2128)",
+                    background: isFront ? "rgba(255, 159, 67, 0.16)" : "var(--container-card-bg, var(--bg-raised, #1C2128))",
                     border: isFront ? "1.5px solid var(--accent-amber, #FF9F43)" : "1px solid var(--border-subtle, #21262D)",
                     borderRadius: 4,
                     minWidth: 42,
@@ -240,10 +241,10 @@ export function DiagrammaticQueue({ name, items = [] }) {
                     boxShadow: isFront ? "0 0 8px rgba(255, 159, 67, 0.25)" : "none"
                   }}
                 >
-                  <span style={{ fontSize: 9, color: isFront ? "var(--accent-amber, #FF9F43)" : "var(--txt-dim, #6E7681)", marginBottom: 2 }}>
+                  <span style={{ fontSize: 9, color: isFront ? "var(--accent-amber, #FF9F43)" : "var(--container-text-dim, var(--txt-dim, #6E7681))", marginBottom: 2 }}>
                     [{idx}]
                   </span>
-                  <span style={{ fontWeight: isFront ? 700 : 500, fontSize: 13, color: isFront ? "var(--txt-bright, #F0F6FC)" : "var(--txt-main, #C9D1D9)" }}>
+                  <span style={{ fontWeight: isFront ? 700 : 500, fontSize: 13, color: isFront ? "var(--container-text-primary, var(--txt-bright, #F0F6FC))" : "var(--txt-main, #C9D1D9)" }}>
                     {String(v)}
                   </span>
                   {isFront && (
@@ -260,7 +261,7 @@ export function DiagrammaticQueue({ name, items = [] }) {
               );
             })
           ) : (
-            <div style={{ padding: "8px 16px", color: "var(--txt-dim, #6E7681)", fontFamily: "var(--font-mono)", fontSize: 11 }}>
+            <div style={{ padding: "8px 16px", color: "var(--container-text-dim, var(--txt-dim, #6E7681))", fontFamily: "var(--font-mono)", fontSize: 11 }}>
               [ Empty Queue ]
             </div>
           )}
@@ -317,7 +318,7 @@ export function DiagrammaticLinkedList({ name, headObj, allVars = {} }) {
   return (
     <div className="ds-block" style={{ marginBottom: 24 }}>
       <div className="ds-title" style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <span>Linked List: <strong style={{ color: "var(--txt-bright, #F0F6FC)" }}>{name}</strong></span>
+        <span>Linked List: <strong style={{ color: "var(--container-text-primary, var(--txt-bright, #F0F6FC))" }}>{name}</strong></span>
         <span style={{ fontSize: 10, padding: "2px 8px", background: "rgba(56, 217, 197, 0.15)", color: "var(--accent-cyan, #38D9C5)", borderRadius: 4, fontWeight: 600 }}>
           Singly Linked List ({nodes.length} nodes)
         </span>
@@ -337,7 +338,7 @@ export function DiagrammaticLinkedList({ name, headObj, allVars = {} }) {
                       const isCurr = p === "curr" || p === "current";
                       const isPrev = p === "prev";
                       const bg = isHead ? "var(--accent-amber, #FF9F43)" : isCurr ? "rgba(56, 217, 197, 0.2)" : isPrev ? "rgba(160, 90, 255, 0.2)" : "rgba(255, 255, 255, 0.1)";
-                      const color = isHead ? "#090B0E" : isCurr ? "var(--accent-cyan, #38D9C5)" : isPrev ? "#c792ea" : "var(--txt-bright, #F0F6FC)";
+                      const color = isHead ? "#090B0E" : isCurr ? "var(--accent-cyan, #38D9C5)" : isPrev ? "#c792ea" : "var(--container-text-primary, var(--txt-bright, #F0F6FC))";
 
                       return (
                         <span
@@ -364,7 +365,7 @@ export function DiagrammaticLinkedList({ name, headObj, allVars = {} }) {
                     style={{
                       display: "flex",
                       alignItems: "stretch",
-                      background: "var(--bg-raised, #1C2128)",
+                      background: "var(--container-card-bg, var(--bg-raised, #1C2128))",
                       border: ptrs.length > 0 ? "1.5px solid var(--accent-amber, #FF9F43)" : "1px solid var(--border-strong, #30363D)",
                       borderRadius: 6,
                       boxShadow: ptrs.length > 0 ? "0 0 10px rgba(255, 159, 67, 0.25)" : "none",
@@ -377,7 +378,7 @@ export function DiagrammaticLinkedList({ name, headObj, allVars = {} }) {
                         padding: "8px 14px",
                         fontWeight: 700,
                         fontSize: 13,
-                        color: "var(--txt-bright, #F0F6FC)",
+                        color: "var(--container-text-primary, var(--txt-bright, #F0F6FC))",
                         fontFamily: "var(--font-mono)",
                         borderRight: "1px solid var(--border-subtle, #21262D)",
                         background: node.isCycle ? "rgba(239, 71, 67, 0.2)" : "transparent"
@@ -402,7 +403,7 @@ export function DiagrammaticLinkedList({ name, headObj, allVars = {} }) {
                     </div>
                   </div>
 
-                  <span style={{ fontSize: 9, color: "var(--txt-dim, #6E7681)", fontFamily: "var(--font-mono)" }}>
+                  <span style={{ fontSize: 9, color: "var(--container-text-dim, var(--txt-dim, #6E7681))", fontFamily: "var(--font-mono)" }}>
                     [{idx}]
                   </span>
                 </div>
@@ -422,7 +423,7 @@ export function DiagrammaticLinkedList({ name, headObj, allVars = {} }) {
                         borderRadius: 4,
                         fontSize: 11,
                         fontFamily: "var(--font-mono)",
-                        color: "var(--txt-dim, #6E7681)",
+                        color: "var(--container-text-dim, var(--txt-dim, #6E7681))",
                         background: "rgba(255,255,255,0.02)"
                       }}
                     >
@@ -489,7 +490,7 @@ export function DiagrammaticBinaryTree({ name, rootObj }) {
   return (
     <div className="ds-block" style={{ marginBottom: 24 }}>
       <div className="ds-title" style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <span>Binary Tree: <strong style={{ color: "var(--txt-bright, #F0F6FC)" }}>{name}</strong></span>
+        <span>Binary Tree: <strong style={{ color: "var(--container-text-primary, var(--txt-bright, #F0F6FC))" }}>{name}</strong></span>
         <span style={{ fontSize: 10, padding: "2px 8px", background: "rgba(255, 159, 67, 0.15)", color: "var(--accent-amber, #FF9F43)", borderRadius: 4, fontWeight: 600 }}>
           SVG Tree Graph ({nodes.length} nodes)
         </span>
@@ -512,7 +513,7 @@ export function DiagrammaticBinaryTree({ name, rootObj }) {
               <text
                 x={(e.x1 + e.x2) / 2 + (e.dir === "L" ? -6 : 6)}
                 y={(e.y1 + e.y2) / 2 - 2}
-                fill="var(--txt-dim, #6E7681)"
+                fill="var(--container-text-dim, var(--txt-dim, #6E7681))"
                 fontSize="9"
                 fontWeight="700"
                 fontFamily="var(--font-mono, monospace)"
@@ -529,7 +530,7 @@ export function DiagrammaticBinaryTree({ name, rootObj }) {
                 cx={n.x}
                 cy={n.y}
                 r="18"
-                fill="var(--bg-raised, #1C2128)"
+                fill="var(--container-card-bg, var(--bg-raised, #1C2128))"
                 stroke={n.isRoot ? "var(--accent-amber, #FF9F43)" : "var(--accent-cyan, #38D9C5)"}
                 strokeWidth={n.isRoot ? "2.5" : "2"}
                 style={{ filter: "drop-shadow(0 2px 5px rgba(0,0,0,0.3))" }}
@@ -538,7 +539,7 @@ export function DiagrammaticBinaryTree({ name, rootObj }) {
                 x={n.x}
                 y={n.y + 4.5}
                 textAnchor="middle"
-                fill="var(--txt-bright, #F0F6FC)"
+                fill="var(--container-text-primary, var(--txt-bright, #F0F6FC))"
                 fontSize="12"
                 fontWeight="700"
                 fontFamily="var(--font-mono, monospace)"
@@ -579,19 +580,19 @@ export function DiagrammaticPriorityQueue({ name, items = [], raw }) {
     <div className="ds-block" style={{ marginBottom: 24 }}>
       <div className="ds-title" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span>PriorityQueue: <strong style={{ color: "var(--txt-bright, #F0F6FC)" }}>{name}</strong></span>
+          <span>PriorityQueue: <strong style={{ color: "var(--container-text-primary, var(--txt-bright, #F0F6FC))" }}>{name}</strong></span>
           <span style={{ fontSize: 10, padding: "2px 8px", background: isMax ? "rgba(255, 159, 67, 0.15)" : "rgba(56, 217, 197, 0.15)", color: isMax ? "var(--accent-amber, #FF9F43)" : "var(--accent-cyan, #38D9C5)", borderRadius: 4, fontWeight: 600 }}>
             {heapLabel} ({count} items)
           </span>
         </div>
-        <span style={{ fontSize: 11, fontFamily: "var(--font-mono)", color: "var(--txt-dim, #6E7681)" }}>
+        <span style={{ fontSize: 11, fontFamily: "var(--font-mono)", color: "var(--container-text-dim, var(--txt-dim, #6E7681))" }}>
           Peek / Root: <strong style={{ color: "var(--accent-amber, #FF9F43)" }}>{isNotEmpty ? formatPqVal(items[0]) : "null"}</strong>
         </span>
       </div>
 
       <div style={{ marginTop: 10, background: "var(--bg-surface, #13171D)", border: "1px solid var(--border-subtle, #21262D)", borderRadius: 8, padding: 12 }}>
         {/* Binary Heap Visual Guide */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8, fontSize: 10, color: "var(--txt-dim, #6E7681)", fontFamily: "var(--font-mono)" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8, fontSize: 10, color: "var(--container-text-dim, var(--txt-dim, #6E7681))", fontFamily: "var(--font-mono)" }}>
           <span>Heap Array: parent ⌊(i-1)/2⌋ ──► left (2i+1), right (2i+2)</span>
           <span style={{ color: "var(--accent-amber, #FF9F43)" }}>{isMax ? "Max Element at Root [0]" : "Min Element at Root [0]"}</span>
         </div>
@@ -612,7 +613,7 @@ export function DiagrammaticPriorityQueue({ name, items = [], raw }) {
                     flexDirection: "column",
                     alignItems: "center",
                     padding: "6px 12px",
-                    background: isRoot ? "rgba(255, 159, 67, 0.16)" : "var(--bg-raised, #1C2128)",
+                    background: isRoot ? "rgba(255, 159, 67, 0.16)" : "var(--container-card-bg, var(--bg-raised, #1C2128))",
                     border: isRoot ? "1.5px solid var(--accent-amber, #FF9F43)" : "1px solid var(--border-subtle, #21262D)",
                     borderRadius: 6,
                     minWidth: 54,
@@ -623,16 +624,16 @@ export function DiagrammaticPriorityQueue({ name, items = [], raw }) {
                   }}
                 >
                   <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 2 }}>
-                    <span style={{ fontSize: 9, color: isRoot ? "var(--accent-amber, #FF9F43)" : "var(--txt-dim, #6E7681)", fontWeight: 700 }}>
+                    <span style={{ fontSize: 9, color: isRoot ? "var(--accent-amber, #FF9F43)" : "var(--container-text-dim, var(--txt-dim, #6E7681))", fontWeight: 700 }}>
                       [{idx}]
                     </span>
                     {!isRoot && (
-                      <span style={{ fontSize: 8, color: "var(--txt-dim, #6E7681)" }}>
+                      <span style={{ fontSize: 8, color: "var(--container-text-dim, var(--txt-dim, #6E7681))" }}>
                         p:{parentIdx}
                       </span>
                     )}
                   </div>
-                  <span style={{ fontWeight: isRoot ? 700 : 500, fontSize: 13, color: isRoot ? "var(--txt-bright, #F0F6FC)" : "var(--txt-main, #C9D1D9)" }}>
+                  <span style={{ fontWeight: isRoot ? 700 : 500, fontSize: 13, color: isRoot ? "var(--container-text-primary, var(--txt-bright, #F0F6FC))" : "var(--txt-main, #C9D1D9)" }}>
                     {formatPqVal(v)}
                   </span>
                   {isRoot ? (
@@ -650,11 +651,615 @@ export function DiagrammaticPriorityQueue({ name, items = [], raw }) {
               );
             })
           ) : (
-            <div style={{ padding: "8px 12px", color: "var(--txt-dim, #6E7681)", fontFamily: "var(--font-mono)", fontSize: 11 }}>
+            <div style={{ padding: "8px 12px", color: "var(--container-text-dim, var(--txt-dim, #6E7681))", fontFamily: "var(--font-mono)", fontSize: 11 }}>
               [ Empty Priority Queue ]
             </div>
           )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+
+/**
+ * Diagrammatic Bar Heights & Water Container
+ * Renders textbook-grade vertical pillars with water shading between two pointers,
+ * live geometry HUD (width, height, area), and step-by-step invariant rationale.
+ */
+export function DiagrammaticBarHeights({ name, values = [], pointers = [], variables = {} }) {
+  const leftPtr = pointers.find(p => p.name === "left" || p.name === "i" || p.name === "start")
+    || (variables.left !== undefined ? { name: "left", index: variables.left } : null);
+  const rightPtr = pointers.find(p => p.name === "right" || p.name === "j" || p.name === "end")
+    || (variables.right !== undefined ? { name: "right", index: variables.right } : null);
+
+  const leftIdx = leftPtr ? Math.max(0, Math.min(leftPtr.index, values.length - 1)) : 0;
+  const rightIdx = rightPtr ? Math.max(0, Math.min(rightPtr.index, values.length - 1)) : Math.max(0, values.length - 1);
+
+  const hasPointers = leftPtr !== null && rightPtr !== null && leftIdx <= rightIdx;
+  const leftH = values[leftIdx] ?? 0;
+  const rightH = values[rightIdx] ?? 0;
+  const waterH = Math.min(leftH, rightH);
+  const width = Math.max(0, rightIdx - leftIdx);
+  const currentArea = width * waterH;
+
+  const maxRecorded = variables.maxWater ?? variables.maxArea ?? variables.max ?? variables.ans ?? variables.res;
+  const maxVal = Math.max(...values.map(v => typeof v === "number" ? v : 1), 1);
+  const MAX_HEIGHT_PX = 160;
+
+  return (
+    <div className="ds-block diagrammatic-bar-heights-block" style={{ marginBottom: 24 }}>
+      {/* ── Title & Live Geometry HUD ─────────────────────── */}
+      <div className="ds-title" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span>Vertical Bars: <strong style={{ color: "var(--container-text-primary, var(--txt-bright, #F0F6FC))" }}>{name}</strong></span>
+          <span style={{ fontSize: 10, padding: "2px 8px", background: "rgba(56, 217, 197, 0.15)", color: "var(--accent-cyan, #38D9C5)", borderRadius: 4, fontWeight: 600 }}>
+            Two-Pointer Water Container
+          </span>
+        </div>
+        {hasPointers && (
+          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+            <span style={{ fontSize: 10, fontFamily: "var(--font-mono)", padding: "2px 6px", background: "var(--container-card-bg, var(--bg-raised, #1C2128))", borderRadius: 4, border: "1px solid var(--border-subtle, #21262D)", color: "var(--container-text-dim, var(--txt-dim, #6E7681))" }}>
+              Width: <strong style={{ color: "var(--container-text-primary, var(--txt-bright, #F0F6FC))" }}>{width}</strong>
+            </span>
+            <span style={{ fontSize: 10, fontFamily: "var(--font-mono)", padding: "2px 6px", background: "var(--container-card-bg, var(--bg-raised, #1C2128))", borderRadius: 4, border: "1px solid var(--border-subtle, #21262D)", color: "var(--container-text-dim, var(--txt-dim, #6E7681))" }}>
+              Eff. Height: <strong style={{ color: "var(--accent-cyan, #38D9C5)" }}>min({leftH}, {rightH}) = {waterH}</strong>
+            </span>
+            <span style={{ fontSize: 10, fontFamily: "var(--font-mono)", padding: "2px 6px", background: "rgba(56, 217, 197, 0.12)", borderRadius: 4, border: "1px solid rgba(56, 217, 197, 0.3)", color: "var(--accent-cyan, #38D9C5)" }}>
+              Current Area: <strong style={{ color: "var(--container-text-primary, var(--txt-bright, #F0F6FC))" }}>{currentArea}</strong>
+            </span>
+            {maxRecorded !== undefined && (
+              <span style={{ fontSize: 10, fontFamily: "var(--font-mono)", padding: "2px 6px", background: "rgba(255, 159, 67, 0.15)", borderRadius: 4, border: "1px solid rgba(255, 159, 67, 0.3)", color: "var(--accent-amber, #FF9F43)" }}>
+                Max Area: <strong>{maxRecorded}</strong>
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* ── Visual Bar Diagram Canvas ──────────────────────── */}
+      <div
+        style={{
+          marginTop: 12,
+          padding: "24px 16px 12px 16px",
+          background: "var(--container-water-bg)",
+          border: "1px solid var(--border-subtle, #21262D)",
+          borderRadius: 8,
+          position: "relative",
+          overflowX: "auto"
+        }}
+      >
+        {/* Background Grid Guide Lines */}
+        <div style={{ position: "absolute", left: 0, right: 0, top: 40, borderTop: "1px dashed var(--grid-line-color, rgba(120,120,120,0.12))", pointerEvents: "none" }} />
+        <div style={{ position: "absolute", left: 0, right: 0, top: 100, borderTop: "1px dashed var(--grid-line-color, rgba(120,120,120,0.12))", pointerEvents: "none" }} />
+        <div style={{ position: "absolute", left: 0, right: 0, top: 160, borderTop: "1px dashed var(--grid-line-color, rgba(120,120,120,0.12))", pointerEvents: "none" }} />
+
+        {/* The Bars Row */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "flex-end",
+            justifyContent: "center",
+            gap: 12,
+            minHeight: MAX_HEIGHT_PX + 50,
+            paddingBottom: 28,
+            borderBottom: "2px solid var(--container-card-border, var(--border-subtle))",
+            position: "relative"
+          }}
+        >
+          {values.map((v, idx) => {
+            const numVal = Number(v) || 0;
+            const barH = Math.max(14, Math.round((numVal / maxVal) * MAX_HEIGHT_PX));
+            const isLeft = idx === leftIdx;
+            const isRight = idx === rightIdx;
+            const isBoundary = isLeft || isRight;
+            const isBetween = idx > leftIdx && idx < rightIdx;
+            const isInsideWater = isBetween && numVal < waterH;
+
+            let barBg = "var(--container-card-bg, rgba(110, 118, 129, 0.25))";
+            let barBorder = "1px solid var(--container-card-border, rgba(110, 118, 129, 0.4))";
+            if (isLeft) {
+              barBg = "linear-gradient(180deg, #38D9C5 0%, rgba(56, 217, 197, 0.5) 100%)";
+              barBorder = "2px solid #38D9C5";
+            } else if (isRight) {
+              barBg = "linear-gradient(180deg, #FF9F43 0%, rgba(255, 159, 67, 0.5) 100%)";
+              barBorder = "2px solid #FF9F43";
+            } else if (isBetween) {
+              barBg = "rgba(56, 217, 197, 0.18)";
+              barBorder = "1px solid rgba(56, 217, 197, 0.35)";
+            }
+
+            return (
+              <div
+                key={idx}
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  position: "relative",
+                  width: 36,
+                  zIndex: isBoundary ? 5 : 2
+                }}
+              >
+                {/* Pointer Badge on top of boundary pillars */}
+                {isLeft && (
+                  <span
+                    style={{
+                      position: "absolute",
+                      bottom: barH + 26,
+                      fontSize: 10,
+                      fontWeight: 700,
+                      fontFamily: "var(--font-mono)",
+                      padding: "2px 6px",
+                      background: "#38D9C5",
+                      color: "#090B0E",
+                      borderRadius: 3,
+                      whiteSpace: "nowrap",
+                      boxShadow: "0 2px 8px rgba(56, 217, 197, 0.4)"
+                    }}
+                  >
+                    left ({idx})
+                  </span>
+                )}
+                {isRight && (
+                  <span
+                    style={{
+                      position: "absolute",
+                      bottom: barH + 26,
+                      fontSize: 10,
+                      fontWeight: 700,
+                      fontFamily: "var(--font-mono)",
+                      padding: "2px 6px",
+                      background: "#FF9F43",
+                      color: "#090B0E",
+                      borderRadius: 3,
+                      whiteSpace: "nowrap",
+                      boxShadow: "0 2px 8px rgba(255, 159, 67, 0.4)"
+                    }}
+                  >
+                    right ({idx})
+                  </span>
+                )}
+
+                {/* Height Value Label */}
+                <span
+                  style={{
+                    fontSize: 11,
+                    fontFamily: "var(--font-mono)",
+                    fontWeight: isBoundary ? 700 : 500,
+                    color: isLeft ? "#38D9C5" : isRight ? "#FF9F43" : "var(--txt-medium, #C9D1D9)",
+                    marginBottom: 4
+                  }}
+                >
+                  {numVal}
+                </span>
+
+                {/* Vertical Bar Pillar */}
+                <div
+                  style={{
+                    width: 22,
+                    height: barH,
+                    background: barBg,
+                    border: barBorder,
+                    borderRadius: "4px 4px 0 0",
+                    transition: "all 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
+                    boxShadow: isBoundary ? "0 0 12px rgba(56, 217, 197, 0.3)" : "none",
+                    position: "relative"
+                  }}
+                >
+                  {/* Subtle water fill line on bars that sit inside the water container */}
+                  {isInsideWater && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: "rgba(56, 217, 197, 0.25)",
+                        borderTop: "1px dashed rgba(56, 217, 197, 0.6)"
+                      }}
+                    />
+                  )}
+                </div>
+
+                {/* Index label beneath base */}
+                <span
+                  style={{
+                    fontSize: 10,
+                    fontFamily: "var(--font-mono)",
+                    color: isBoundary ? "var(--container-text-primary, var(--txt-bright, #F0F6FC))" : "var(--container-text-dim, var(--txt-dim, #6E7681))",
+                    marginTop: 6,
+                    fontWeight: isBoundary ? 700 : 400
+                  }}
+                >
+                  [{idx}]
+                </span>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* ── Water Shading Overlay Banner ───────────────────── */}
+        {hasPointers && (
+          <div
+            style={{
+              marginTop: 12,
+              padding: "8px 12px",
+              background: "rgba(56, 217, 197, 0.08)",
+              border: "1px solid rgba(56, 217, 197, 0.25)",
+              borderRadius: 6,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              flexWrap: "wrap",
+              gap: 8,
+              fontFamily: "var(--font-mono)",
+              fontSize: 11
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: 14 }}>🌊</span>
+              <span style={{ color: "var(--accent-cyan, #38D9C5)", fontWeight: 600 }}>
+                Bounded Water Volume: {width} × {waterH} = {currentArea} units²
+              </span>
+            </div>
+            <div style={{ color: "var(--container-text-dim, var(--txt-dim, #6E7681))", fontSize: 10 }}>
+              {leftH < rightH ? (
+                <span>
+                  left pillar ({leftH}) &lt; right pillar ({rightH}) → <strong style={{ color: "var(--accent-cyan, #38D9C5)" }}>increment left++</strong>
+                </span>
+              ) : leftH > rightH ? (
+                <span>
+                  right pillar ({rightH}) &lt; left pillar ({leftH}) → <strong style={{ color: "var(--accent-amber, #FF9F43)" }}>decrement right--</strong>
+                </span>
+              ) : (
+                <span>
+                  both pillars equal ({leftH} == {rightH}) → move either pointer inward
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+
+/**
+ * Diagrammatic HashSet (Vault Chamber)
+ * Physical container chamber with glassmorphism, hash slots,
+ * entry port, active operation highlights, and automatic contiguous streak detector.
+ */
+export function DiagrammaticHashSet({ name, items = [], lastOp, variables = {} }) {
+  const count = items.length;
+  const isNotEmpty = count > 0;
+
+  // Detect contiguous numerical streaks (for LeetCode 128 and sequence problems)
+  const numItems = items.map(Number).filter(n => !isNaN(n));
+  const numSet = new Set(numItems);
+  const streaks = [];
+  for (const num of numSet) {
+    if (!numSet.has(num - 1)) {
+      const seq = [];
+      let cur = num;
+      while (numSet.has(cur)) {
+        seq.push(cur);
+        cur++;
+      }
+      if (seq.length > 1) streaks.push(seq);
+    }
+  }
+
+  // Active lookup from lastOp or current variable
+  const resolveVar = (v) => (v && typeof v === "object" && "value" in v ? v.value : v);
+  const activeLookupVal = (lastOp?.method === "contains" || lastOp?.method === "add" || lastOp?.method === "remove")
+    ? lastOp.args?.[0]
+    : (variables.current !== undefined
+      ? resolveVar(variables.current)
+      : (variables.num !== undefined ? resolveVar(variables.num) : null));
+
+  return (
+    <div className="ds-block diagrammatic-hashset-block" style={{ marginBottom: 24 }}>
+      {/* ── Header Bar ────────────────────────────────────────── */}
+      <div className="ds-title" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span>HashSet: <strong style={{ color: "var(--container-text-primary, var(--txt-bright, #F0F6FC))" }}>{name}</strong></span>
+          <span style={{ fontSize: 10, padding: "2px 8px", background: "rgba(56, 217, 197, 0.15)", color: "var(--accent-cyan, #38D9C5)", borderRadius: 4, fontWeight: 600 }}>
+            O(1) Hash Vault Chamber
+          </span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+          <span style={{ fontSize: 10, fontFamily: "var(--font-mono)", padding: "2px 6px", background: "var(--container-card-bg, var(--bg-raised, #1C2128))", borderRadius: 4, border: "1px solid var(--border-subtle, #21262D)", color: "var(--container-text-dim, var(--txt-dim, #6E7681))" }}>
+            Size: <strong style={{ color: "var(--container-text-primary, var(--txt-bright, #F0F6FC))" }}>{count}</strong>
+          </span>
+          <span style={{ fontSize: 10, fontFamily: "var(--font-mono)", padding: "2px 6px", background: "var(--container-card-bg, var(--bg-raised, #1C2128))", borderRadius: 4, border: "1px solid var(--border-subtle, #21262D)", color: "var(--container-text-dim, var(--txt-dim, #6E7681))" }}>
+            Capacity: <strong>16</strong>
+          </span>
+          <span style={{ fontSize: 10, fontFamily: "var(--font-mono)", padding: "2px 6px", background: "var(--container-card-bg, var(--bg-raised, #1C2128))", borderRadius: 4, border: "1px solid var(--border-subtle, #21262D)", color: "var(--container-text-dim, var(--txt-dim, #6E7681))" }}>
+            Load: <strong>{(count / 16).toFixed(2)}</strong>
+          </span>
+          {lastOp && (
+            <span style={{ fontSize: 10, fontFamily: "var(--font-mono)", padding: "2px 6px", background: "rgba(56, 217, 197, 0.12)", borderRadius: 4, border: "1px solid rgba(56, 217, 197, 0.3)", color: "var(--accent-cyan, #38D9C5)" }}>
+              {lastOp.method}({lastOp.args?.join(", ")}) {lastOp.result !== null ? `→ ${String(lastOp.result)}` : ""}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* ── The Physical Vault Container ───────────────────────── */}
+      <div
+        style={{
+          position: "relative",
+          marginTop: 10,
+          background: "var(--container-chamber-bg)",
+          border: "2px solid rgba(56, 217, 197, 0.4)",
+          borderRadius: "12px",
+          padding: "16px 14px",
+          boxShadow: "inset 0 0 20px rgba(56, 217, 197, 0.05), 0 4px 16px rgba(0,0,0,0.3)"
+        }}
+      >
+        {/* Top Hash Port Indicator */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, paddingBottom: 8, borderBottom: "1px dashed rgba(56, 217, 197, 0.2)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ fontSize: 11, color: "var(--accent-cyan, #38D9C5)" }}>⚙️</span>
+            <span style={{ fontSize: 10, fontFamily: "var(--font-mono)", color: "var(--container-text-dim, var(--txt-dim, #6E7681))" }}>
+              Hash Formula: <code style={{ color: "var(--accent-cyan, #38D9C5)" }}>h(x) = (x.hashCode() ^ (h &gt;&gt;&gt; 16)) &amp; 15</code>
+            </span>
+          </div>
+          <span style={{ fontSize: 9, fontFamily: "var(--font-mono)", color: "var(--container-text-dim, var(--txt-dim, #6E7681))", padding: "1px 6px", background: "var(--container-card-bg, var(--bg-canvas, #0D1117))", borderRadius: 3 }}>
+            Collision Guard: O(1) Amortized
+          </span>
+        </div>
+
+        {/* Vault Items Grid */}
+        {isNotEmpty ? (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {items.map((v, idx) => {
+              const numVal = Number(v);
+              const bucketIdx = !isNaN(numVal) ? Math.abs(numVal % 16) : Math.abs(String(v).split("").reduce((a,c)=>a+c.charCodeAt(0),0) % 16);
+              const isMatch = activeLookupVal !== null && (String(v) === String(activeLookupVal) || numVal === activeLookupVal);
+              const isInStreak = streaks.some(s => s.includes(numVal));
+
+              return (
+                <div
+                  key={idx}
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    padding: "6px 12px",
+                    background: isMatch
+                      ? "rgba(56, 217, 197, 0.25)"
+                      : isInStreak
+                      ? "rgba(255, 159, 67, 0.12)"
+                      : "var(--container-card-bg, var(--bg-raised, #1C2128))",
+                    border: isMatch
+                      ? "2px solid var(--accent-cyan, #38D9C5)"
+                      : isInStreak
+                      ? "1px solid rgba(255, 159, 67, 0.4)"
+                      : "1px solid var(--border-subtle, #21262D)",
+                    borderRadius: 8,
+                    minWidth: 54,
+                    transition: "all 0.2s ease",
+                    boxShadow: isMatch ? "0 0 12px rgba(56, 217, 197, 0.4)" : "none"
+                  }}
+                >
+                  <span style={{ fontSize: 9, fontFamily: "var(--font-mono)", color: isMatch ? "var(--accent-cyan, #38D9C5)" : "var(--container-text-dim, var(--txt-dim, #6E7681))" }}>
+                    bkt:{bucketIdx}
+                  </span>
+                  <span style={{ fontSize: 13, fontWeight: 700, fontFamily: "var(--font-mono)", color: isMatch ? "var(--container-text-primary, var(--txt-bright, #F0F6FC))" : isInStreak ? "var(--accent-amber, #FF9F43)" : "var(--txt-medium, #C9D1D9)", marginTop: 2 }}>
+                    {String(v)}
+                  </span>
+                  {isMatch && (
+                    <span style={{ fontSize: 8, fontWeight: 700, marginTop: 2, padding: "1px 4px", background: "var(--accent-cyan, #38D9C5)", color: "#090B0E", borderRadius: 2 }}>
+                      MATCH
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div style={{ padding: "14px", textAlign: "center", color: "var(--container-text-dim, var(--txt-dim, #6E7681))", fontFamily: "var(--font-mono)", fontSize: 11 }}>
+            [ Vault Empty — Awaiting insertions with <code>set.add(...)</code> ]
+          </div>
+        )}
+
+        {/* Contiguous Sequence Highlighter (LeetCode 128) */}
+        {streaks.length > 0 && (
+          <div
+            style={{
+              marginTop: 14,
+              padding: "8px 12px",
+              background: "rgba(255, 159, 67, 0.08)",
+              border: "1px solid rgba(255, 159, 67, 0.3)",
+              borderRadius: 6,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              flexWrap: "wrap",
+              gap: 8,
+              fontFamily: "var(--font-mono)",
+              fontSize: 11
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+              <span style={{ fontSize: 13 }}>🔗</span>
+              <span style={{ color: "var(--accent-amber, #FF9F43)", fontWeight: 700 }}>
+                Contiguous Sequence Detected:
+              </span>
+              {streaks[0].map((num, i) => (
+                <span key={i} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                  <span style={{ padding: "1px 6px", background: "var(--container-card-bg, var(--bg-canvas, #0D1117))", border: "1px solid rgba(255,159,67,0.5)", borderRadius: 4, color: "var(--container-text-primary, var(--txt-bright, #F0F6FC))", fontWeight: 700 }}>
+                    {num}
+                  </span>
+                  {i < streaks[0].length - 1 && <span style={{ color: "var(--accent-amber, #FF9F43)", opacity: 0.7 }}>➔</span>}
+                </span>
+              ))}
+            </div>
+            <span style={{ fontSize: 10, color: "var(--accent-amber, #FF9F43)", padding: "2px 6px", background: "rgba(255, 159, 67, 0.15)", borderRadius: 4, fontWeight: 600 }}>
+              Streak Length: {streaks[0].length}
+            </span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Diagrammatic HashMap (Key-Value Bucket Bank)
+ * Physical container bank displaying visual key-to-value bridges,
+ * computed hash bucket slots, active lookup pulses, and live telemetry.
+ */
+export function DiagrammaticHashMap({ name, entries = [], lastOp, variables = {} }) {
+  const count = entries.length;
+  const isNotEmpty = count > 0;
+
+  const resolveVar = (v) => (v && typeof v === "object" && "value" in v ? v.value : v);
+  const activeKey = (lastOp?.method === "get" || lastOp?.method === "put" || lastOp?.method === "containsKey" || lastOp?.method === "remove")
+    ? String(lastOp.args?.[0])
+    : (variables.complement !== undefined
+      ? String(resolveVar(variables.complement))
+      : (variables.target !== undefined ? String(resolveVar(variables.target)) : null));
+
+  return (
+    <div className="ds-block diagrammatic-hashmap-block" style={{ marginBottom: 24 }}>
+      {/* ── Header Bar ────────────────────────────────────────── */}
+      <div className="ds-title" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span>HashMap: <strong style={{ color: "var(--container-text-primary, var(--txt-bright, #F0F6FC))" }}>{name}</strong></span>
+          <span style={{ fontSize: 10, padding: "2px 8px", background: "rgba(255, 159, 67, 0.15)", color: "var(--accent-amber, #FF9F43)", borderRadius: 4, fontWeight: 600 }}>
+            Key-Value Bucket Bank
+          </span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+          <span style={{ fontSize: 10, fontFamily: "var(--font-mono)", padding: "2px 6px", background: "var(--container-card-bg, var(--bg-raised, #1C2128))", borderRadius: 4, border: "1px solid var(--border-subtle, #21262D)", color: "var(--container-text-dim, var(--txt-dim, #6E7681))" }}>
+            Entries: <strong style={{ color: "var(--container-text-primary, var(--txt-bright, #F0F6FC))" }}>{count}</strong>
+          </span>
+          <span style={{ fontSize: 10, fontFamily: "var(--font-mono)", padding: "2px 6px", background: "var(--container-card-bg, var(--bg-raised, #1C2128))", borderRadius: 4, border: "1px solid var(--border-subtle, #21262D)", color: "var(--container-text-dim, var(--txt-dim, #6E7681))" }}>
+            Capacity: <strong>16</strong>
+          </span>
+          <span style={{ fontSize: 10, fontFamily: "var(--font-mono)", padding: "2px 6px", background: "var(--container-card-bg, var(--bg-raised, #1C2128))", borderRadius: 4, border: "1px solid var(--border-subtle, #21262D)", color: "var(--container-text-dim, var(--txt-dim, #6E7681))" }}>
+            Load: <strong>{(count / 16).toFixed(2)}</strong>
+          </span>
+          {lastOp && (
+            <span style={{ fontSize: 10, fontFamily: "var(--font-mono)", padding: "2px 6px", background: "rgba(255, 159, 67, 0.15)", borderRadius: 4, border: "1px solid rgba(255, 159, 67, 0.3)", color: "var(--accent-amber, #FF9F43)" }}>
+              {lastOp.method}({lastOp.args?.join(", ")}) {lastOp.result !== null && lastOp.result !== undefined ? `→ ${String(lastOp.result)}` : ""}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* ── The Physical Bucket Bank Container ─────────────────── */}
+      <div
+        style={{
+          position: "relative",
+          marginTop: 10,
+          background: "var(--container-chamber-bg)",
+          border: "2px solid rgba(255, 159, 67, 0.35)",
+          borderRadius: "12px",
+          padding: "16px 14px",
+          boxShadow: "inset 0 0 20px rgba(255, 159, 67, 0.05), 0 4px 16px rgba(0,0,0,0.3)"
+        }}
+      >
+        {/* Container Header Banner */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, paddingBottom: 8, borderBottom: "1px dashed rgba(255, 159, 67, 0.2)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ fontSize: 11, color: "var(--accent-amber, #FF9F43)" }}>🗂️</span>
+            <span style={{ fontSize: 10, fontFamily: "var(--font-mono)", color: "var(--container-text-dim, var(--txt-dim, #6E7681))" }}>
+              Key-Value Mapping Structure: <code style={{ color: "var(--accent-cyan, #38D9C5)" }}>Entry&lt;K, V&gt;</code> with linked bucket pointers
+            </span>
+          </div>
+          <span style={{ fontSize: 9, fontFamily: "var(--font-mono)", color: "var(--container-text-dim, var(--txt-dim, #6E7681))", padding: "1px 6px", background: "var(--container-card-bg, var(--bg-canvas, #0D1117))", borderRadius: 3 }}>
+            Chaining: Node&lt;K,V&gt;
+          </span>
+        </div>
+
+        {/* Key-Value Bridge Rows */}
+        {isNotEmpty ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {entries.map((ent, idx) => {
+              const strKey = String(ent.key);
+              const numKey = Number(ent.key);
+              const bucketIdx = !isNaN(numKey) ? Math.abs(numKey % 16) : Math.abs(strKey.split("").reduce((a,c)=>a+c.charCodeAt(0),0) % 16);
+              const isMatch = activeKey !== null && strKey === activeKey;
+
+              return (
+                <div
+                  key={idx}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "6px 12px",
+                    background: isMatch ? "rgba(255, 159, 67, 0.2)" : "var(--container-card-bg, var(--bg-raised, #1C2128))",
+                    border: isMatch ? "2px solid var(--accent-amber, #FF9F43)" : "1px solid var(--border-subtle, #21262D)",
+                    borderRadius: 8,
+                    transition: "all 0.2s ease",
+                    boxShadow: isMatch ? "0 0 12px rgba(255, 159, 67, 0.35)" : "none"
+                  }}
+                >
+                  {/* Left: Bucket Slot & Key Capsule */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <span style={{ fontSize: 10, fontFamily: "var(--font-mono)", color: "var(--container-text-dim, var(--txt-dim, #6E7681))", minWidth: 44 }}>
+                      [{bucketIdx}]
+                    </span>
+                    <div
+                      style={{
+                        padding: "3px 10px",
+                        background: "rgba(56, 217, 197, 0.12)",
+                        border: "1px solid rgba(56, 217, 197, 0.4)",
+                        borderRadius: 6,
+                        fontFamily: "var(--font-mono)",
+                        fontSize: 12,
+                        fontWeight: 700,
+                        color: "var(--accent-cyan, #38D9C5)"
+                      }}
+                    >
+                      <span style={{ fontSize: 9, opacity: 0.6, marginRight: 4 }}>KEY:</span>
+                      {strKey}
+                    </div>
+                  </div>
+
+                  {/* Middle: Pointer Connector */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, flex: 1, margin: "0 14px", overflow: "hidden" }}>
+                    <div style={{ height: 1, flex: 1, background: isMatch ? "var(--accent-amber, #FF9F43)" : "var(--container-card-border, var(--border-subtle, #21262D))" }} />
+                    <span style={{ fontSize: 11, color: isMatch ? "var(--accent-amber, #FF9F43)" : "var(--container-text-dim, var(--txt-dim, #6E7681))", fontFamily: "var(--font-mono)" }}>
+                      ➔
+                    </span>
+                    <div style={{ height: 1, flex: 1, background: isMatch ? "var(--accent-amber, #FF9F43)" : "var(--container-card-border, var(--border-subtle, #21262D))" }} />
+                  </div>
+
+                  {/* Right: Value Capsule */}
+                  <div
+                    style={{
+                      padding: "3px 10px",
+                      background: "rgba(255, 159, 67, 0.12)",
+                      border: "1px solid rgba(255, 159, 67, 0.4)",
+                      borderRadius: 6,
+                      fontFamily: "var(--font-mono)",
+                      fontSize: 12,
+                      fontWeight: 700,
+                      color: "var(--accent-amber, #FF9F43)",
+                      minWidth: 60,
+                      textAlign: "center"
+                    }}
+                  >
+                    <span style={{ fontSize: 9, opacity: 0.6, marginRight: 4 }}>VAL:</span>
+                    {typeof ent.value === "object" ? JSON.stringify(ent.value) : String(ent.value)}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div style={{ padding: "14px", textAlign: "center", color: "var(--container-text-dim, var(--txt-dim, #6E7681))", fontFamily: "var(--font-mono)", fontSize: 11 }}>
+            [ Bucket Bank Empty — Insert pairs with <code>map.put(key, value)</code> ]
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,4 +1,5 @@
-import { useEffect } from "react";
+import { useEffect, useState, useMemo } from "react";
+import KeyboardShortcutsModal from "./KeyboardShortcutsModal.jsx";
 import { useTraceStore } from "../store/traceStore.js";
 import { normalizeStepData, formatObjectTree } from "../utils/visualizerAdapter.js";
 import {
@@ -6,15 +7,29 @@ import {
   DiagrammaticQueue,
   DiagrammaticLinkedList,
   DiagrammaticBinaryTree,
-  DiagrammaticPriorityQueue
+  DiagrammaticPriorityQueue,
+  DiagrammaticBarHeights,
+  DiagrammaticHashSet,
+  DiagrammaticHashMap
 } from "./DiagrammaticVisualizers.jsx";
 
 export default function VisualizerStudio() {
+  const [arrayViewModes, setArrayViewModes] = useState({});
+  const [showShortcuts, setShowShortcuts] = useState(false);
+
+  useEffect(() => {
+    function handleOpenShortcuts() {
+      setShowShortcuts(true);
+    }
+    window.addEventListener("open-keyboard-shortcuts", handleOpenShortcuts);
+    return () => window.removeEventListener("open-keyboard-shortcuts", handleOpenShortcuts);
+  }, []);
   const {
     viewMode,
     setViewMode,
     trace,
     currentStep,
+    activeTab,
     next,
     prev,
     first,
@@ -25,25 +40,51 @@ export default function VisualizerStudio() {
     goToStep
   } = useTraceStore();
 
+  // Reset per-array view modes whenever a new problem/example is loaded
+  // so bar-diagram selection from one problem doesn't bleed into the next
+  useEffect(() => {
+    setArrayViewModes({});
+  }, [activeTab, trace?.length]);
+
   const totalSteps = trace ? trace.length : 0;
   const currentStepNum = totalSteps > 0 ? currentStep + 1 : 0;
   const stepData = trace && trace[currentStep] ? trace[currentStep] : null;
   const prevStepData = trace && currentStep > 0 ? trace[currentStep - 1] : null;
 
-  // Normalized visualizer state derived directly from engine trace
-  const normalized = normalizeStepData(stepData, prevStepData);
-  const { hasData, arrays, collections, objects, callStack, explanation } = normalized;
+  // Normalized visualizer state derived directly from engine trace (memoized)
+  const normalized = useMemo(
+    () => normalizeStepData(stepData, prevStepData),
+    [stepData, prevStepData]
+  );
+  const { hasData, arrays, collections, objects, variables, callStack, explanation } = normalized;
 
-  // Global keyboard navigation
+  // Global keyboard navigation (only when NOT focused in any code editor or input field)
   useEffect(() => {
+    function isEditable(el) {
+      if (!el) return false;
+      const tag = el.tagName;
+      return (
+        tag === "INPUT" ||
+        tag === "TEXTAREA" ||
+        el.isContentEditable ||
+        Boolean(el.closest?.(".monaco-editor")) ||
+        Boolean(el.closest?.(".editor-card-container")) ||
+        Boolean(el.closest?.(".editor-wrap")) ||
+        Boolean(el.closest?.("[contenteditable='true']"))
+      );
+    }
+
     function onKeyDown(e) {
-      if (e.target.tagName === "TEXTAREA" || e.target.tagName === "INPUT") return;
+      if (isEditable(e.target) || isEditable(document.activeElement)) {
+        return;
+      }
       if (e.key === "ArrowRight") { e.preventDefault(); next(); }
       if (e.key === "ArrowLeft") { e.preventDefault(); prev(); }
-      if (e.key === "Home") { e.preventDefault(); first && first(); }
-      if (e.key === "End") { e.preventDefault(); last && last(); }
+      if (e.key === "Home") { e.preventDefault(); if (first) first(); }
+      if (e.key === "End") { e.preventDefault(); if (last) last(); }
       if (e.key === " ") { e.preventDefault(); play(); }
-      if (e.key === "r" || e.key === "R") { e.preventDefault(); reset && reset(); }
+      if (e.key === "r" || e.key === "R") { e.preventDefault(); if (reset) reset(); }
+      if (e.key === "?" || (e.shiftKey && e.key === "/")) { e.preventDefault(); setShowShortcuts(prev => !prev); }
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
@@ -75,8 +116,21 @@ export default function VisualizerStudio() {
 
       {/* ── Execution Controls Bar ────────────────────────────── */}
       <div className="viz-controls-row">
-        <div className="step-counter-badge">
-          Step {currentStepNum} of {totalSteps}
+        <div className="step-counter-group" style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 110 }}>
+          <div className="step-counter-badge">
+            Step {currentStepNum} of {totalSteps}
+          </div>
+          <div
+            className="trace-progress-track"
+            title={`Step ${currentStepNum} of ${totalSteps} (${totalSteps > 0 ? Math.round((currentStepNum / totalSteps) * 100) : 0}%)`}
+          >
+            <div
+              className="trace-progress-fill"
+              style={{
+                width: `${totalSteps > 0 ? (currentStepNum / totalSteps) * 100 : 0}%`
+              }}
+            />
+          </div>
         </div>
 
         <div className="playback-btns">
@@ -175,83 +229,132 @@ export default function VisualizerStudio() {
         <div className="ds-canvas">
           {hasData || (callStack && callStack.length > 0) ? (
             <>
-              {/* 1. Arrays */}
-              {arrays.map((arr) => (
-                <div key={arr.name} className="ds-block" style={{ marginBottom: 20 }}>
-                  <div className="ds-title">
-                    Array: {arr.name} <span style={{ fontSize: 11, opacity: 0.6 }}>({arr.type})</span>
-                  </div>
-                  <div className="array-boxes-wrap">
-                    <div className="array-indices-row">
-                      {arr.values.map((_, idx) => (
-                        <div key={idx} className="array-idx-cell">{idx}</div>
-                      ))}
-                    </div>
-                    <div className="array-cells-row">
-                      {arr.values.map((val, idx) => {
-                        const hasPointer = arr.pointers?.some(p => p.index === idx);
-                        const changed = arr.prevValues && arr.prevValues[idx] !== val;
-                        return (
-                          <div
-                            key={idx}
-                            className={`array-val-cell ${hasPointer ? "active-cell" : ""} ${changed ? "modified-cell" : ""}`}
-                            title={changed ? `Changed: ${arr.prevValues[idx]} → ${val}` : undefined}
+              {/* 1. Arrays (with Diagrammatic Bar Heights option) */}
+              {arrays.map((arr) => {
+                const isNumeric = arr.values.length > 0 && arr.values.every(v => typeof v === "number" || (!isNaN(Number(v)) && v !== ""));
+                // Only default to bar diagram for height/bar-chart problems (e.g., Trapping Rain Water, Container With Most Water)
+                // Subarray problems (Maximum Subarray, Two Sum, etc.) always default to Cells view
+                const arrNameLower = arr.name.toLowerCase();
+                const defaultToDiagram = isNumeric && (
+                  arrNameLower === "height" ||
+                  arrNameLower === "heights" ||
+                  arrNameLower.startsWith("height")
+                );
+                const currentMode = arrayViewModes[arr.name] ?? (defaultToDiagram ? "diagram" : "grid");
+
+                return (
+                  <div key={arr.name} style={{ marginBottom: 20 }}>
+                    {/* View Switcher Header */}
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+                      <div className="ds-title" style={{ margin: 0 }}>
+                        Array: <strong>{arr.name}</strong> <span style={{ fontSize: 11, opacity: 0.6 }}>({arr.type})</span>
+                      </div>
+                      {isNumeric && (
+                        <div style={{ display: "flex", gap: 4, background: "var(--bg-raised, #1C2128)", padding: "2px 4px", borderRadius: 6, border: "1px solid var(--border-subtle, #21262D)" }}>
+                          <button
+                            type="button"
+                            style={{
+                              fontSize: 10,
+                              fontFamily: "var(--font-mono)",
+                              padding: "2px 8px",
+                              borderRadius: 4,
+                              border: "none",
+                              cursor: "pointer",
+                              background: currentMode === "grid" ? "var(--accent-amber, #FF9F43)" : "transparent",
+                              color: currentMode === "grid" ? "#090B0E" : "var(--txt-dim, #6E7681)",
+                              fontWeight: currentMode === "grid" ? 700 : 500
+                            }}
+                            onClick={() => setArrayViewModes(s => ({ ...s, [arr.name]: "grid" }))}
                           >
-                            {String(val ?? "")}
-                          </div>
-                        );
-                      })}
+                            ⊞ Cells
+                          </button>
+                          <button
+                            type="button"
+                            style={{
+                              fontSize: 10,
+                              fontFamily: "var(--font-mono)",
+                              padding: "2px 8px",
+                              borderRadius: 4,
+                              border: "none",
+                              cursor: "pointer",
+                              background: currentMode === "diagram" ? "var(--accent-cyan, #38D9C5)" : "transparent",
+                              color: currentMode === "diagram" ? "#090B0E" : "var(--txt-dim, #6E7681)",
+                              fontWeight: currentMode === "diagram" ? 700 : 500
+                            }}
+                            onClick={() => setArrayViewModes(s => ({ ...s, [arr.name]: "diagram" }))}
+                          >
+                            📊 Bar Diagram
+                          </button>
+                        </div>
+                      )}
                     </div>
-                    {/* Pointer Arrows */}
-                    {arr.pointers && arr.pointers.length > 0 && (
-                      <div className="array-pointers-row">
-                        {arr.values.map((_, idx) => {
-                          const pt = arr.pointers.find(p => p.index === idx);
-                          return (
-                            <div key={idx} className="pointer-slot">
-                              {pt && (
-                                <div className="pointer-arrow-wrap">
-                                  <span className="pointer-arrow">↑</span>
-                                  <span className="pointer-label">{pt.name} = {pt.index}</span>
+
+                    {currentMode === "diagram" ? (
+                      <DiagrammaticBarHeights
+                        name={arr.name}
+                        values={arr.values}
+                        pointers={arr.pointers || []}
+                        variables={stepData?.variables || {}}
+                      />
+                    ) : (
+                      <div className="ds-block">
+                        <div className="array-boxes-wrap">
+                          <div className="array-indices-row">
+                            {arr.values.map((_, idx) => (
+                              <div key={idx} className="array-idx-cell">{idx}</div>
+                            ))}
+                          </div>
+                          <div className="array-cells-row">
+                            {arr.values.map((val, idx) => {
+                              const hasPointer = arr.pointers?.some(p => p.index === idx);
+                              const changed = arr.prevValues && arr.prevValues[idx] !== val;
+                              return (
+                                <div
+                                  key={idx}
+                                  className={`array-val-cell ${hasPointer ? "active-cell" : ""} ${changed ? "modified-cell" : ""}`}
+                                  title={changed ? `Changed: ${arr.prevValues[idx]} → ${val}` : undefined}
+                                >
+                                  {String(val ?? "")}
                                 </div>
-                              )}
+                              );
+                            })}
+                          </div>
+                          {/* Pointer Arrows */}
+                          {arr.pointers && arr.pointers.length > 0 && (
+                            <div className="array-pointers-row">
+                              {arr.values.map((_, idx) => {
+                                const pt = arr.pointers.find(p => p.index === idx);
+                                return (
+                                  <div key={idx} className="pointer-slot">
+                                    {pt && (
+                                      <div className="pointer-arrow-wrap">
+                                        <span className="pointer-arrow">↑</span>
+                                        <span className="pointer-label">{pt.name} = {pt.index}</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
                             </div>
-                          );
-                        })}
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
 
               {/* 2. Collections (HashMap, Stack, Queue, HashSet, StringBuilder, ArrayList) */}
               {collections.map((col) => {
                 if (col.type === "HashMap" || col.type === "TreeMap" || col.type === "LinkedHashMap") {
                   return (
-                    <div key={col.name} className="ds-block" style={{ marginBottom: 20 }}>
-                      <div className="ds-title">HashMap: {col.name}</div>
-                      <div className="hashmap-table-wrap">
-                        <div className="hashmap-hd-row">
-                          <div className="hashmap-th">Key</div>
-                          <div className="hashmap-th">Value</div>
-                        </div>
-                        {col.entries && col.entries.length > 0 ? (
-                          col.entries.map((ent, idx) => (
-                            <div key={idx} className="hashmap-row">
-                              <div className="hashmap-td key-td">{ent.key}</div>
-                              <div className="hashmap-td val-td">
-                                {typeof ent.value === "object" ? JSON.stringify(ent.value) : String(ent.value)}
-                              </div>
-                            </div>
-                          ))
-                        ) : (
-                          <div className="hashmap-row empty-map-row">
-                            <div className="hashmap-td key-td" style={{ opacity: 0.5 }}>—</div>
-                            <div className="hashmap-td val-td" style={{ opacity: 0.5 }}>—</div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                    <DiagrammaticHashMap
+                      key={col.name}
+                      name={col.name}
+                      entries={col.entries || []}
+                      lastOp={col.lastOp}
+                      variables={variables || {}}
+                    />
                   );
                 }
 
@@ -276,36 +379,13 @@ export default function VisualizerStudio() {
 
                 if (col.type === "HashSet" || col.type === "TreeSet" || col.type === "LinkedHashSet") {
                   return (
-                    <div key={col.name} className="ds-block" style={{ marginBottom: 20 }}>
-                      <div className="ds-title" style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <span>HashSet: {col.name}</span>
-                        <span style={{ fontSize: 10, padding: "2px 6px", background: "rgba(56, 217, 197, 0.15)", color: "var(--accent-cyan, #38D9C5)", borderRadius: 4, fontWeight: 500 }}>
-                          Unique Set ({col.items?.length || 0} items)
-                        </span>
-                      </div>
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
-                        {col.items && col.items.length > 0 ? (
-                          col.items.map((v, idx) => (
-                            <span
-                              key={idx}
-                              style={{
-                                padding: "3px 10px",
-                                background: "var(--bg-raised, #1C2128)",
-                                border: "1px solid var(--border-subtle, #21262D)",
-                                borderRadius: 14,
-                                fontSize: 11,
-                                fontFamily: "var(--font-mono)",
-                                color: "var(--txt-bright, #F0F6FC)"
-                              }}
-                            >
-                              {String(v)}
-                            </span>
-                          ))
-                        ) : (
-                          <span style={{ fontSize: 11, color: "var(--txt-dim, #6E7681)" }}>empty set</span>
-                        )}
-                      </div>
-                    </div>
+                    <DiagrammaticHashSet
+                      key={col.name}
+                      name={col.name}
+                      items={col.items || []}
+                      lastOp={col.lastOp}
+                      variables={variables || {}}
+                    />
                   );
                 }
 
@@ -471,6 +551,11 @@ export default function VisualizerStudio() {
           </div>
         </div>
       </div>
+
+      <KeyboardShortcutsModal
+        isOpen={showShortcuts}
+        onClose={() => setShowShortcuts(false)}
+      />
     </div>
   );
 }

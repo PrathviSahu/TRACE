@@ -24,8 +24,11 @@ export const T = {
   // comparisons
   EQ:'EQ', NEQ:'NEQ', LTE:'LTE', GTE:'GTE', LT:'LT', GT:'GT',
   AND:'AND', OR:'OR', NOT:'NOT',
-  // bitwise ops
+  SHIFT_LEFT_ASSIGN:'SHIFT_LEFT_ASSIGN', SHIFT_RIGHT_ASSIGN:'SHIFT_RIGHT_ASSIGN',
+  UNSIGNED_SHIFT_RIGHT_ASSIGN:'UNSIGNED_SHIFT_RIGHT_ASSIGN',
+  // bitwise & shift ops
   CARET:'CARET', AMP:'AMP', PIPE:'PIPE', TILDE:'TILDE',
+  SHIFT_LEFT:'SHIFT_LEFT', SHIFT_RIGHT:'SHIFT_RIGHT', UNSIGNED_SHIFT_RIGHT:'UNSIGNED_SHIFT_RIGHT',
   // single-char ops
   ASSIGN:'ASSIGN', PLUS:'PLUS', MINUS:'MINUS', STAR:'STAR',
   SLASH:'SLASH', PERCENT:'PERCENT', ARROW:'ARROW',
@@ -132,8 +135,26 @@ export function tokenize(src) {
       case '%': src[i]==='='?(tokens.push({type:T.PERCENT_ASSIGN,line:ln}),i++):tokens.push({type:T.PERCENT,line:ln}); break;
       case '=': src[i]==='='?(tokens.push({type:T.EQ,line:ln}),i++):tokens.push({type:T.ASSIGN,line:ln}); break;
       case '!': src[i]==='='?(tokens.push({type:T.NEQ,line:ln}),i++):tokens.push({type:T.NOT,line:ln}); break;
-      case '<': src[i]==='='?(tokens.push({type:T.LTE,line:ln}),i++):tokens.push({type:T.LT,line:ln}); break;
-      case '>': src[i]==='='?(tokens.push({type:T.GTE,line:ln}),i++):tokens.push({type:T.GT,line:ln}); break;
+      case '<':
+        if (src[i] === '<') {
+          i++;
+          if (src[i] === '=') { tokens.push({type: T.SHIFT_LEFT_ASSIGN, line: ln}); i++; }
+          else tokens.push({type: T.SHIFT_LEFT, line: ln});
+        } else if (src[i] === '=') { tokens.push({type: T.LTE, line: ln}); i++; }
+        else tokens.push({type: T.LT, line: ln});
+        break;
+      case '>':
+        if (src[i] === '>' && src[i+1] === '>') {
+          i += 2;
+          if (src[i] === '=') { tokens.push({type: T.UNSIGNED_SHIFT_RIGHT_ASSIGN, line: ln}); i++; }
+          else tokens.push({type: T.UNSIGNED_SHIFT_RIGHT, line: ln});
+        } else if (src[i] === '>') {
+          i++;
+          if (src[i] === '=') { tokens.push({type: T.SHIFT_RIGHT_ASSIGN, line: ln}); i++; }
+          else tokens.push({type: T.SHIFT_RIGHT, line: ln});
+        } else if (src[i] === '=') { tokens.push({type: T.GTE, line: ln}); i++; }
+        else tokens.push({type: T.GT, line: ln});
+        break;
       case '^': tokens.push({type:T.CARET,line:ln}); break;
       case '~': tokens.push({type:T.TILDE,line:ln}); break;
       case '&': src[i]==='&'?(tokens.push({type:T.AND,line:ln}),i++):(src[i]==='='?(tokens.push({type:T.AND_ASSIGN,line:ln}),i++):tokens.push({type:T.AMP,line:ln})); break;

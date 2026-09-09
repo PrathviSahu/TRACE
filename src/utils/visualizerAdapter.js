@@ -119,6 +119,7 @@ export function normalizeStepData(stepData, prevStepData = null) {
         items,
         entries,
         value: colInfo.value || "",
+        lastOp: colInfo.lastOp || null,
         raw: colInfo
       });
     }

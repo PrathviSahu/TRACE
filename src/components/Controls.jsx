@@ -23,8 +23,22 @@ export default function Controls() {
 
   // keyboard shortcuts
   useEffect(() => {
+    function isEditable(el) {
+      if (!el) return false;
+      const tag = el.tagName;
+      return (
+        tag === 'INPUT' ||
+        tag === 'TEXTAREA' ||
+        el.isContentEditable ||
+        Boolean(el.closest?.('.monaco-editor')) ||
+        Boolean(el.closest?.('.editor-card-container')) ||
+        Boolean(el.closest?.('.editor-wrap')) ||
+        Boolean(el.closest?.('[contenteditable="true"]'))
+      );
+    }
+
     function onKey(e) {
-      if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
+      if (isEditable(e.target) || isEditable(document.activeElement)) return;
       if (e.key === 'ArrowRight') { e.preventDefault(); next(); }
       if (e.key === 'ArrowLeft')  { e.preventDefault(); prev(); }
       if (e.key === ' ')          { e.preventDefault(); isPlaying ? pause() : play(); }

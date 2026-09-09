@@ -47,9 +47,8 @@ class Parser {
     const ln = this.ln();
     this.advance(); // class
     const className = this.expect(T.ID, 'class name').value;
-    // skip extends/implements
-    if (this.cur().value === 'extends' || this.cur().value === 'implements') {
-      this.advance();
+    // skip extends/implements clauses until class body
+    while (!this.check(T.LBRACE) && !this.check(T.EOF)) {
       this.advance();
     }
     this.expect(T.LBRACE, '{');
@@ -139,7 +138,9 @@ class Parser {
       while (!this.check(T.EOF)) {
         const t = this.cur().type;
         if (t === T.LT) depth++;
-        else if (t === T.GT) { depth--; if (depth===0){this.advance();break;} }
+        else if (t === T.GT) { depth--; if (depth <= 0) { this.advance(); break; } }
+        else if (t === T.SHIFT_RIGHT) { depth -= 2; if (depth <= 0) { this.advance(); break; } }
+        else if (t === T.UNSIGNED_SHIFT_RIGHT) { depth -= 3; if (depth <= 0) { this.advance(); break; } }
         this.advance();
       }
     }
@@ -264,7 +265,26 @@ class Parser {
   parseFor() {
     const ln = this.ln();
     this.advance(); // for
-    this.expect(T.LPAREN,'(');
+    this.expect(T.LPAREN, '(');
+
+    // Enhanced for-each loop: for (Type varName : iterable)
+    if (this.isVarDecl()) {
+      const savedP = this.p;
+      try {
+        const typeExpr = this.parseTypeExpr();
+        if (this.check(T.ID)) {
+          const varName = this.advance().value;
+          if (this.match(T.COLON)) {
+            const iterable = this.parseExpr();
+            this.expect(T.RPAREN, ')');
+            const body = this.parseBodyStmt();
+            return { kind: 'ForEachStmt', typeExpr, varName, iterable, body, line: ln };
+          }
+        }
+      } catch (_) {}
+      this.p = savedP;
+    }
+
     // init
     let init = null;
     if (!this.check(T.SEMICOLON)) {
@@ -306,7 +326,7 @@ class Parser {
   parseAssign() {
     const ln = this.ln();
     const left = this.parseTernary();
-    const ASSIGN_OPS = [T.ASSIGN,T.PLUS_ASSIGN,T.MINUS_ASSIGN,T.STAR_ASSIGN,T.SLASH_ASSIGN,T.PERCENT_ASSIGN,T.AND_ASSIGN,T.OR_ASSIGN];
+    const ASSIGN_OPS = [T.ASSIGN,T.PLUS_ASSIGN,T.MINUS_ASSIGN,T.STAR_ASSIGN,T.SLASH_ASSIGN,T.PERCENT_ASSIGN,T.AND_ASSIGN,T.OR_ASSIGN,T.SHIFT_LEFT_ASSIGN,T.SHIFT_RIGHT_ASSIGN,T.UNSIGNED_SHIFT_RIGHT_ASSIGN];
     if (ASSIGN_OPS.includes(this.cur().type)) {
       const op = this.advance().type;
       const right = this.parseAssign();
@@ -333,7 +353,8 @@ class Parser {
   parseBitwiseXor() { return this.parseBinary([T.CARET], () => this.parseBitwiseAnd()); }
   parseBitwiseAnd() { return this.parseBinary([T.AMP],   () => this.parseEq()); }
   parseEq()  { return this.parseBinary([T.EQ,T.NEQ], () => this.parseRel()); }
-  parseRel() { return this.parseBinary([T.LT,T.GT,T.LTE,T.GTE], () => this.parseAdd()); }
+  parseRel() { return this.parseBinary([T.LT,T.GT,T.LTE,T.GTE], () => this.parseShift()); }
+  parseShift() { return this.parseBinary([T.SHIFT_LEFT,T.SHIFT_RIGHT,T.UNSIGNED_SHIFT_RIGHT], () => this.parseAdd()); }
   parseAdd() { return this.parseBinary([T.PLUS,T.MINUS], () => this.parseMul()); }
   parseMul() { return this.parseBinary([T.STAR,T.SLASH,T.PERCENT], () => this.parseUnary()); }
 

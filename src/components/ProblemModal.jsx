@@ -45,6 +45,13 @@ export default function ProblemModal({ problem, onClose }) {
   const [selectedLanguage, setSelectedLanguage] = useState(storeLanguage);
   const [activeTab, setActiveTab] = useState('description');
   const [copiedIdx, setCopiedIdx] = useState(null);
+  const copyTimeoutRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
+    };
+  }, []);
   const [expandedApproach, setExpandedApproach] = useState(2);
   const [description, setDescription] = useState(null);
   const [solutions, setSolutions] = useState(null);
@@ -174,9 +181,10 @@ export default function ProblemModal({ problem, onClose }) {
   }
 
   function copyCode(code, idx) {
-    navigator.clipboard.writeText(code);
+    navigator.clipboard?.writeText?.(code);
     setCopiedIdx(idx);
-    setTimeout(() => setCopiedIdx(null), 2000);
+    if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
+    copyTimeoutRef.current = setTimeout(() => setCopiedIdx(null), 2000);
   }
 
   async function handleGenerateSolutions() {

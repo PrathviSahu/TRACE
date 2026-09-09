@@ -41,6 +41,11 @@ export default function CodeEditor() {
       }
     });
     monaco.editor.setTheme(theme === 'light' ? 'vs' : 'trace-dark');
+
+    // Prevent editor keys from leaking to outer window navigation shortcuts
+    editor.onKeyDown((e) => {
+      e.stopPropagation();
+    });
   }
 
   // Switch Monaco theme on global theme toggle

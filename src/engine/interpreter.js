@@ -152,37 +152,94 @@ class Interpreter {
   }
 
   buildArgs(method, inputs) {
-    return method.params.map((p,i) => {
-      const raw = inputs[p.name] ?? inputs[i];
-      if (raw === undefined) return p.ptype?.isArray ? [] : 0;
-      return this.parseInput(raw, p.ptype);
-    });
+    const usedKeys = new Set();
+    const args = [];
+
+    for (let i = 0; i < method.params.length; i++) {
+      const p = method.params[i];
+      let raw = inputs[p.name] ?? inputs[i];
+      if (raw !== undefined) {
+        usedKeys.add(p.name);
+        usedKeys.add(String(i));
+      } else {
+        // Look for an unused input that matches the type (array vs scalar)
+        const isArr = p.ptype?.isArray;
+        for (const [k, v] of Object.entries(inputs)) {
+          if (!usedKeys.has(k)) {
+            const strVal = typeof v === "string" ? v.trim() : "";
+            const valIsArr = Array.isArray(v) || strVal.startsWith("[");
+            if (isArr ? valIsArr : !valIsArr) {
+              raw = v;
+              usedKeys.add(k);
+              break;
+            }
+          }
+        }
+      }
+
+      if (raw === undefined) {
+        args.push(p.ptype?.isArray ? [] : 0);
+      } else {
+        args.push(this.parseInput(raw, p.ptype));
+      }
+    }
+    return args;
   }
 
   parseInput(raw, ptype) {
     if (typeof raw !== 'string') return raw;
     raw = raw.trim();
+
+    // Try parsing as JSON first (works for [1,2,3], [[1,2],[3,4]], numbers, booleans, strings)
+    try {
+      const jsonStr = raw.replace(/'/g, '"');
+      const parsed = JSON.parse(jsonStr);
+      return parsed;
+    } catch (_) {}
+
     if (ptype?.isArray) {
       if (raw.startsWith('[')) {
-        try {
-          const parsed = JSON.parse(raw);
-          if (Array.isArray(parsed)) return parsed;
-        } catch (_) {}
+        // Handle 2D nested array bracket structure
+        if (raw.startsWith('[[')) {
+          const inner = raw.slice(1, -1).trim();
+          const subArrays = [];
+          let depth = 0;
+          let cur = '';
+          for (let i = 0; i < inner.length; i++) {
+            const ch = inner[i];
+            if (ch === '[') depth++;
+            else if (ch === ']') depth--;
+            cur += ch;
+            if (depth === 0 && (ch === ']' || i === inner.length - 1)) {
+              const cleaned = cur.trim().replace(/^,\s*/, '');
+              if (cleaned) {
+                subArrays.push(this.parseInput(cleaned, { isArray: true }));
+              }
+              cur = '';
+            }
+          }
+          if (subArrays.length > 0) return subArrays;
+        }
+
+        const inner = raw.slice(1, -1);
+        return inner.split(',').map(s => {
+          const n = s.trim();
+          if (n === 'true') return true;
+          if (n === 'false') return false;
+          const num = Number(n);
+          return isNaN(num) ? n.replace(/^"|"$/g, '') : num;
+        });
       }
-      // [1,2,3] or 1,2,3
-      const inner = raw.startsWith('[') ? raw.slice(1,-1) : raw;
-      return inner.split(',').map(s => {
+      return raw.split(',').map(s => {
         const n = s.trim();
-        if (n === 'true') return true;
-        if (n === 'false') return false;
         const num = Number(n);
-        return isNaN(num) ? n.replace(/^"|"$/g,'') : num;
+        return isNaN(num) ? n : num;
       });
     }
     if (raw === 'true') return true;
     if (raw === 'false') return false;
     const n = Number(raw);
-    return isNaN(n) ? raw.replace(/^"|"$/g,'') : n;
+    return isNaN(n) ? raw.replace(/^"|"$/g, '') : n;
   }
 
   // ── Snapshot helpers ─────────────────────────────────────────
@@ -220,8 +277,9 @@ class Interpreter {
       } else if (v.value && typeof v.value === 'object' && builtInCollections.has(v.value.__type)) {
         collections[k] = {
           ...v.value,
-          items: Array.isArray(v.value.items) ? [...v.value.items] : v.value.items,
+          items: v.value.items instanceof Set ? Array.from(v.value.items) : (Array.isArray(v.value.items) ? [...v.value.items] : v.value.items),
           entries: v.value.entries instanceof Map ? new Map(v.value.entries) : (Array.isArray(v.value.entries) ? [...v.value.entries] : v.value.entries),
+          lastOp: v.value.lastOp ? { ...v.value.lastOp } : null,
         };
       } else {
         vars[k] = { value: this.safeSnapshotValue(v.value), type: v.type };
@@ -289,6 +347,7 @@ class Interpreter {
       case 'WhileStmt': return this.execWhile(node, env);
       case 'DoWhileStmt': return this.execDoWhile(node, env);
       case 'ForStmt':   return this.execFor(node, env);
+      case 'ForEachStmt': return this.execForEach(node, env);
       case 'ReturnStmt':return this.execReturn(node, env);
       case 'Break':     throw new BreakSignal();
       case 'Continue':  throw new ContinueSignal();
@@ -390,6 +449,46 @@ class Interpreter {
     }
   }
 
+  execForEach(node, env) {
+    const iterableVal = this.evalExpr(node.iterable, env);
+    let items = [];
+    if (Array.isArray(iterableVal)) {
+      items = iterableVal;
+    } else if (iterableVal && typeof iterableVal === "object") {
+      if (iterableVal.__type === "HashSet" || iterableVal.__type === "TreeSet" || iterableVal.__type === "LinkedHashSet") {
+        items = Array.from(iterableVal.items ? iterableVal.items.values() : []);
+      } else if (iterableVal.items && Array.isArray(iterableVal.items)) {
+        items = iterableVal.items;
+      } else if (iterableVal.items instanceof Set) {
+        items = Array.from(iterableVal.items.values());
+      } else if (iterableVal instanceof Set) {
+        items = Array.from(iterableVal.values());
+      }
+    }
+
+    const forEnv = new Env(env);
+    const iterName = this.astToSource(node.iterable);
+    for (const item of items) {
+      forEnv.define(node.varName, item, node.typeExpr?.base ?? "any", false);
+      const expl = this.makeExplanation("for_each", {
+        item,
+        varName: node.varName,
+        iterableName: iterName
+      });
+      this.emit(node.line, "loop_iteration", {
+        statement: `for (${node.varName} : ${iterName})`,
+        explanation: expl
+      }, forEnv);
+
+      try {
+        this.execStmt(node.body, forEnv);
+      } catch (e) {
+        if (e instanceof BreakSignal) break;
+        if (e instanceof ContinueSignal) {} else throw e;
+      }
+    }
+  }
+
   execReturn(node, env) {
     const val = node.value ? this.evalExpr(node.value, env) : undefined;
     const expl = this.makeExplanation('return', { value: val });
@@ -463,6 +562,9 @@ class Interpreter {
       case 'CARET':   return l ^ r;
       case 'AMP':     return l & r;
       case 'PIPE':    return l | r;
+      case 'SHIFT_LEFT':           return l << r;
+      case 'SHIFT_RIGHT':          return l >> r;
+      case 'UNSIGNED_SHIFT_RIGHT': return l >>> r;
       default: return null;
     }
   }
@@ -489,10 +591,16 @@ class Interpreter {
         case 'PLUS_ASSIGN':    rval = (typeof cur==='string'||typeof rval==='string') ? String(cur)+String(rval) : cur+rval; break;
         case 'MINUS_ASSIGN':   rval = cur-rval; break;
         case 'STAR_ASSIGN':    rval = cur*rval; break;
-        case 'SLASH_ASSIGN':   rval = rval===0 ? 0 : Math.trunc(cur/rval); break;
-        case 'PERCENT_ASSIGN': rval = cur%rval; break;
+        case 'SLASH_ASSIGN':
+          if (rval === 0) throw new Error('ArithmeticException: / by zero');
+          rval = Math.trunc(cur / rval);
+          break;
+        case 'PERCENT_ASSIGN': rval = cur % rval; break;
         case 'AND_ASSIGN':     rval = cur & rval; break;
         case 'OR_ASSIGN':      rval = cur | rval; break;
+        case 'SHIFT_LEFT_ASSIGN':           rval = cur << rval; break;
+        case 'SHIFT_RIGHT_ASSIGN':          rval = cur >> rval; break;
+        case 'UNSIGNED_SHIFT_RIGHT_ASSIGN': rval = cur >>> rval; break;
       }
     }
     this.assignTo(node.left, rval, env);
@@ -709,7 +817,7 @@ class Interpreter {
   callUserMethod(name, argVals, callerEnv, line) {
     if (this.depth >= MAX_DEPTH) throw new Error(`StackOverflowError: recursion too deep`);
     const method = this.methods.get(name);
-    const env = new Env();
+    const env = new Env(callerEnv || this.globalEnv || null);
     for (let i=0; i<method.params.length; i++)
       env.define(method.params[i].name, argVals[i] ?? null, method.params[i].ptype?.base ?? 'any', method.params[i].ptype?.isArray);
     this.callStack.push(name+'('+argVals.map(v=>Array.isArray(v)?`[${v.join(',')}]`:v).join(', ')+')');
@@ -1081,39 +1189,54 @@ class Interpreter {
   }
 
   hashMapMethod(obj, method, args, line, env) {
+    let result = null;
     switch(method) {
-      case 'put':         { obj.entries.set(args[0], args[1]); return args[1]; }
-      case 'get':         return obj.entries.get(args[0]) ?? null;
-      case 'getOrDefault': return obj.entries.has(args[0]) ? obj.entries.get(args[0]) : args[1];
-      case 'containsKey': return obj.entries.has(args[0]);
-      case 'containsValue': return [...obj.entries.values()].includes(args[0]);
-      case 'remove':      { const v=obj.entries.get(args[0]); obj.entries.delete(args[0]); return v; }
-      case 'size':        return obj.entries.size;
-      case 'isEmpty':     return obj.entries.size===0;
+      case 'put':         { obj.entries.set(args[0], args[1]); result = args[1]; break; }
+      case 'get':         { result = obj.entries.get(args[0]) ?? null; break; }
+      case 'getOrDefault': { result = obj.entries.has(args[0]) ? obj.entries.get(args[0]) : args[1]; break; }
+      case 'containsKey': { result = obj.entries.has(args[0]); break; }
+      case 'containsValue': { result = [...obj.entries.values()].includes(args[0]); break; }
+      case 'remove':      { const v = obj.entries.get(args[0]); obj.entries.delete(args[0]); result = v; break; }
+      case 'size':        { result = obj.entries.size; break; }
+      case 'isEmpty':     { result = obj.entries.size === 0; break; }
       case 'keySet':      return { __type:'ArrayList', items:[...obj.entries.keys()] };
       case 'values':      return { __type:'ArrayList', items:[...obj.entries.values()] };
       case 'entrySet':    return { __type:'ArrayList', items:[...obj.entries.entries()].map(([k,v])=>({k,v})) };
-      case 'clear':       obj.entries.clear(); return null;
+      case 'clear':       { obj.entries.clear(); result = null; break; }
       case 'merge':       {
         const existing = obj.entries.get(args[0]);
-        const newVal = existing===undefined ? args[1] : args[1]+existing;
-        obj.entries.set(args[0], newVal); return newVal;
+        let newVal;
+        if (existing === undefined) {
+          newVal = args[1];
+        } else if (typeof args[2] === 'function') {
+          newVal = args[2](existing, args[1]);
+        } else {
+          newVal = existing + args[1];
+        }
+        obj.entries.set(args[0], newVal);
+        result = newVal;
+        break;
       }
-      case 'forEach': return null;
+      case 'forEach':     return null;
+      default:            return null;
     }
-    return null;
+    obj.lastOp = { method, args: [...args], result, line };
+    return result;
   }
 
-  hashSetMethod(obj, method, args) {
+  hashSetMethod(obj, method, args, line) {
+    let result = null;
     switch(method) {
-      case 'add':      obj.items.add(args[0]); return !obj.items.has(args[0]);
-      case 'remove':   return obj.items.delete(args[0]);
-      case 'contains': return obj.items.has(args[0]);
-      case 'size':     return obj.items.size;
-      case 'isEmpty':  return obj.items.size===0;
-      case 'clear':    obj.items.clear(); return null;
+      case 'add':      { const had = obj.items.has(args[0]); obj.items.add(args[0]); result = !had; break; }
+      case 'remove':   { result = obj.items.delete(args[0]); break; }
+      case 'contains': { result = obj.items.has(args[0]); break; }
+      case 'size':     { result = obj.items.size; break; }
+      case 'isEmpty':  { result = obj.items.size === 0; break; }
+      case 'clear':    { obj.items.clear(); result = null; break; }
+      default:         return null;
     }
-    return null;
+    obj.lastOp = { method, args: [...args], result, line };
+    return result;
   }
 
   sbMethod(obj, method, args) {
@@ -1195,6 +1318,13 @@ class Interpreter {
           expression:ctx.expression, expanded:ctx.expanded, result:res,
           text:`${ctx.expression}\n= ${ctx.expanded}\n→ ${res}` };
       }
+      case 'for_each': {
+        return {
+          type: 'loop_iteration',
+          title: `For-each: ${ctx.varName} = ${ctx.item}`,
+          text: `Iterating over ${ctx.iterableName}, current item is ${ctx.item}`
+        };
+      }
       case 'condition_while': case 'condition_for': {
         const res = ctx.result;
         return { type:'loop_condition', title: res ? 'Loop continues' : 'Loop ends',
@@ -1241,7 +1371,7 @@ class Interpreter {
   }
 
   opToStr(op) {
-    const m = {PLUS:'+',MINUS:'-',STAR:'*',SLASH:'/',PERCENT:'%',EQ:'==',NEQ:'!=',LT:'<',GT:'>',LTE:'<=',GTE:'>=',AND:'&&',OR:'||'};
+    const m = {PLUS:'+',MINUS:'-',STAR:'*',SLASH:'/',PERCENT:'%',EQ:'==',NEQ:'!=',LT:'<',GT:'>',LTE:'<=',GTE:'>=',AND:'&&',OR:'||',SHIFT_LEFT:'<<',SHIFT_RIGHT:'>>',UNSIGNED_SHIFT_RIGHT:'>>>'};
     return m[op] ?? op;
   }
 }

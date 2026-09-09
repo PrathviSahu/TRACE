@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 import react from '@vitejs/plugin-react'
 import { defineConfig, loadEnv } from 'vite'
 
-const ALLOWED_MODELS = new Set(['gemini-3.6-flash', 'gemini-2.5-flash', 'gemini-1.5-flash']);
+const ALLOWED_MODELS = new Set(['gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-2.5-flash']);
 const MAX_REQUEST_BYTES = 1024 * 1024; // 1MB limit
 const REQUEST_TIMEOUT_MS = 30000;      // 30 seconds
 
@@ -58,8 +58,8 @@ function geminiProxyMiddleware(server) {
         return;
       }
 
-      const requestedModel = parsedBody.model || 'gemini-3.6-flash';
-      const model = ALLOWED_MODELS.has(requestedModel) ? requestedModel : 'gemini-3.6-flash';
+      const requestedModel = parsedBody.model || 'gemini-2.0-flash';
+      const model = ALLOWED_MODELS.has(requestedModel) ? requestedModel : 'gemini-2.0-flash';
       delete payload.model;
 
       // 4. Server environment key check
@@ -76,7 +76,20 @@ function geminiProxyMiddleware(server) {
         res.end(JSON.stringify({
           error: {
             code: 401,
-            message: 'Gemini API key not configured on server. Add GEMINI_API_KEY to your server .env file.'
+            message: 'ARIA is offline: GEMINI_API_KEY not set. Add your key from aistudio.google.com to the .env file and restart the dev server.'
+          }
+        }));
+        return;
+      }
+
+      // Detect common wrong key formats (OAuth tokens start with AQ., ya29.)
+      if (apiKey.startsWith('AQ.') || apiKey.startsWith('ya29.') || !apiKey.startsWith('AIza')) {
+        res.statusCode = 401;
+        res.setHeader('Content-Type', 'application/json');
+        res.end(JSON.stringify({
+          error: {
+            code: 401,
+            message: 'Invalid API key format. A Gemini API key must start with "AIza". Get yours free at aistudio.google.com/app/apikey'
           }
         }));
         return;

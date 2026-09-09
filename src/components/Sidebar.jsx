@@ -69,9 +69,33 @@ export const SIDEBAR_CATEGORIES = [
       { id: 'graphs', name: 'Graph BFS Traversal' }
     ]
   },
-  { id: 'dp', name: 'Dynamic Programming', icon: '⚡', problems: [] },
-  { id: 'sorting', name: 'Sorting', icon: '📶', problems: [] },
-  { id: 'recursion', name: 'Recursion', icon: '🔄', problems: [] },
+  {
+    id: 'dp',
+    name: 'Dynamic Programming',
+    icon: '⚡',
+    problems: [
+      { id: 'climbing-stairs', name: 'Climbing Stairs (DP)' },
+      { id: 'house-robber', name: 'House Robber (1D DP)' }
+    ]
+  },
+  {
+    id: 'sorting',
+    name: 'Sorting',
+    icon: '📶',
+    problems: [
+      { id: 'bubble-sort', name: 'Bubble Sort' },
+      { id: 'insertion-sort', name: 'Insertion Sort' }
+    ]
+  },
+  {
+    id: 'recursion',
+    name: 'Recursion',
+    icon: '🔄',
+    problems: [
+      { id: 'fibonacci', name: 'Fibonacci (Recursion)' },
+      { id: 'factorial', name: 'Factorial (Recursion)' }
+    ]
+  },
 ];
 
 export default function Sidebar() {
