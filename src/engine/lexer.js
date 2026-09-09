@@ -28,7 +28,7 @@ export const T = {
   CARET:'CARET', AMP:'AMP', PIPE:'PIPE', TILDE:'TILDE',
   // single-char ops
   ASSIGN:'ASSIGN', PLUS:'PLUS', MINUS:'MINUS', STAR:'STAR',
-  SLASH:'SLASH', PERCENT:'PERCENT',
+  SLASH:'SLASH', PERCENT:'PERCENT', ARROW:'ARROW',
   // delimiters
   LPAREN:'LPAREN', RPAREN:'RPAREN', LBRACE:'LBRACE', RBRACE:'RBRACE',
   LBRACKET:'LBRACKET', RBRACKET:'RBRACKET',
@@ -124,6 +124,7 @@ export function tokenize(src) {
                else if(src[i]==='='){tokens.push({type:T.PLUS_ASSIGN,line:ln});i++;}
                else tokens.push({type:T.PLUS,line:ln}); break;
       case '-': if (src[i]==='-'){tokens.push({type:T.MINUS_MINUS,line:ln});i++;}
+               else if(src[i]==='>'){tokens.push({type:T.ARROW,line:ln});i++;}
                else if(src[i]==='='){tokens.push({type:T.MINUS_ASSIGN,line:ln});i++;}
                else tokens.push({type:T.MINUS,line:ln}); break;
       case '*': src[i]==='='?(tokens.push({type:T.STAR_ASSIGN,line:ln}),i++):tokens.push({type:T.STAR,line:ln}); break;

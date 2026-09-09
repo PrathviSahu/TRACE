@@ -412,8 +412,46 @@ class Parser {
 
     if (t.type === T.ID)         { this.advance(); return { kind:'Identifier', name:t.value, line:ln }; }
 
-    // ( expr )
+    // ( expr ) or lambda: (a, b) -> expr or () -> expr
     if (t.type === T.LPAREN) {
+      let isLambda = false;
+      let lambdaParams = [];
+      if (this.tok[this.p + 1]?.type === T.RPAREN && this.tok[this.p + 2]?.type === T.ARROW) {
+        isLambda = true;
+      } else {
+        const candidateParams = [];
+        let valid = true;
+        let curr = this.p + 1;
+        while (curr < this.tok.length && this.tok[curr].type !== T.RPAREN) {
+          if (this.tok[curr].type === T.ID) {
+            candidateParams.push(this.tok[curr].value);
+            curr++;
+            if (this.tok[curr]?.type === T.COMMA) {
+              curr++;
+            } else if (this.tok[curr]?.type !== T.RPAREN) {
+              valid = false;
+              break;
+            }
+          } else {
+            valid = false;
+            break;
+          }
+        }
+        if (valid && candidateParams.length > 0 && this.tok[curr]?.type === T.RPAREN && this.tok[curr + 1]?.type === T.ARROW) {
+          isLambda = true;
+          lambdaParams = candidateParams;
+        }
+      }
+
+      if (isLambda) {
+        this.advance(); // consume LPAREN
+        while (!this.check(T.RPAREN)) this.advance();
+        this.expect(T.RPAREN, ')');
+        this.expect(T.ARROW, '->');
+        const body = this.parseExpr();
+        return { kind: 'Lambda', params: lambdaParams, body, line: ln };
+      }
+
       this.advance();
       const e = this.parseExpr();
       this.expect(T.RPAREN,')');

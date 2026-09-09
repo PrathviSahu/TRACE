@@ -212,7 +212,11 @@ class Interpreter {
       if (v.isArray && Array.isArray(v.value)) {
         arrays[k] = { values: [...v.value], type: v.type };
       } else if (v.value && typeof v.value === 'object' && builtInCollections.has(v.value.__type)) {
-        collections[k] = { ...v.value };
+        collections[k] = {
+          ...v.value,
+          items: Array.isArray(v.value.items) ? [...v.value.items] : v.value.items,
+          entries: v.value.entries instanceof Map ? new Map(v.value.entries) : (Array.isArray(v.value.entries) ? [...v.value.entries] : v.value.entries),
+        };
       } else {
         vars[k] = { value: this.safeSnapshotValue(v.value), type: v.type };
       }
@@ -408,6 +412,7 @@ class Interpreter {
       case 'ArrayCreate': return this.evalArrayCreate(node, env);
       case 'ArrayLiteral': return node.items.map(i => this.evalExpr(i, env));
       case 'ObjectCreate': return this.evalObjectCreate(node, env);
+      case 'Lambda': return this.evalLambda(node, env);
       case 'Cast': return this.evalCast(node, env);
       default: return null;
     }
@@ -610,6 +615,7 @@ class Interpreter {
     // Collections.sort, reverseOrder
     if (node.object?.kind==='Identifier' && node.object.name==='Collections') {
       const args = node.args.map(a=>this.evalExpr(a,env));
+      if (node.method==='reverseOrder') return { __type:'Comparator', order:'reverse' };
       if (node.method==='sort' && args[0]?.__type==='ArrayList') { args[0].items.sort((a,b)=>a-b); return null; }
       if (node.method==='reverse' && args[0]?.__type==='ArrayList') { args[0].items.reverse(); return null; }
       if (node.method==='min') return Math.min(...(args[0]?.__type ? args[0].items : []));
@@ -723,6 +729,16 @@ class Interpreter {
     return Array(Math.min(size, 10000)).fill(fill);
   }
 
+  evalLambda(node, env) {
+    return (...args) => {
+      const lambdaEnv = new Env(env);
+      (node.params || []).forEach((p, idx) => {
+        lambdaEnv.define(p, args[idx]);
+      });
+      return this.evalExpr(node.body, lambdaEnv);
+    };
+  }
+
   evalObjectCreate(node, env) {
     const args = node.args.map(a => this.evalExpr(a, env));
     const cls = node.className;
@@ -731,8 +747,16 @@ class Interpreter {
       return { __type:'ArrayList', items:[], name:cls };
     if (cls==='Stack')
       return { __type:'Stack', items:[] };
-    if (cls==='Queue' || cls==='ArrayDeque' || cls==='PriorityQueue')
+    if (cls==='Queue' || cls==='ArrayDeque')
       return { __type:'Queue', items:[], name:cls };
+    if (cls==='PriorityQueue') {
+      let comparator = null;
+      for (const a of args) {
+        if (typeof a === 'function') comparator = a;
+        else if (a && typeof a === 'object' && a.__type === 'Comparator') comparator = a;
+      }
+      return { __type:'PriorityQueue', items:[], name:cls, comparator };
+    }
     if (cls==='HashMap' || cls==='TreeMap' || cls==='LinkedHashMap')
       return { __type:'HashMap', entries:new Map(), name:cls };
     if (cls==='HashSet' || cls==='TreeSet' || cls==='LinkedHashSet')
@@ -850,6 +874,7 @@ class Interpreter {
       case 'ArrayList': return this.arrayListMethod(obj, method, args);
       case 'Stack':     return this.stackMethod(obj, method, args, line, env);
       case 'Queue':     return this.queueMethod(obj, method, args, line, env);
+      case 'PriorityQueue': return this.priorityQueueMethod(obj, method, args, line, env);
       case 'HashMap':   return this.hashMapMethod(obj, method, args, line, env);
       case 'HashSet':   return this.hashSetMethod(obj, method, args, line, env);
       case 'StringBuilder': return this.sbMethod(obj, method, args);
@@ -883,6 +908,159 @@ class Interpreter {
       case 'size':    return obj.items.length;
     }
     return null;
+  }
+
+  priorityQueueMethod(obj, method, args, line, env) {
+    switch (method) {
+      case 'offer':
+      case 'add': {
+        const val = args[0];
+        if (val === null || val === undefined) {
+          throw new Error('NullPointerException: PriorityQueue does not permit null elements');
+        }
+        obj.items.push(val);
+        this.pqSiftUp(obj, obj.items.length - 1);
+        return true;
+      }
+      case 'peek': {
+        if (obj.items.length === 0) return null;
+        return obj.items[0];
+      }
+      case 'element': {
+        if (obj.items.length === 0) throw new Error('NoSuchElementException');
+        return obj.items[0];
+      }
+      case 'poll': {
+        if (obj.items.length === 0) return null;
+        const root = obj.items[0];
+        const last = obj.items.pop();
+        if (obj.items.length > 0) {
+          obj.items[0] = last;
+          this.pqSiftDown(obj, 0);
+        }
+        return root;
+      }
+      case 'remove': {
+        if (args.length === 0) {
+          if (obj.items.length === 0) throw new Error('NoSuchElementException');
+          return this.priorityQueueMethod(obj, 'poll', [], line, env);
+        }
+        const target = args[0];
+        const idx = obj.items.findIndex(item => this.pqElementsEqual(item, target));
+        if (idx === -1) return false;
+        if (idx === obj.items.length - 1) {
+          obj.items.pop();
+          return true;
+        }
+        obj.items[idx] = obj.items.pop();
+        this.pqSiftDown(obj, idx);
+        this.pqSiftUp(obj, idx);
+        return true;
+      }
+      case 'size': {
+        return obj.items.length;
+      }
+      case 'isEmpty': {
+        return obj.items.length === 0;
+      }
+      case 'clear': {
+        obj.items = [];
+        return null;
+      }
+      case 'contains': {
+        const target = args[0];
+        return obj.items.some(item => this.pqElementsEqual(item, target));
+      }
+      case 'toArray': {
+        return [...obj.items];
+      }
+    }
+    return null;
+  }
+
+  pqElementsEqual(a, b) {
+    if (a === b) return true;
+    if (Array.isArray(a) && Array.isArray(b)) {
+      return a.length === b.length && a.every((v, i) => v === b[i]);
+    }
+    if (a && typeof a === 'object' && b && typeof b === 'object') {
+      if (a.val !== undefined && b.val !== undefined) return a.val === b.val;
+      if (a.fields?.val !== undefined && b.fields?.val !== undefined) return a.fields.val === b.fields.val;
+    }
+    return false;
+  }
+
+  comparePriorityQueue(obj, a, b) {
+    if (typeof obj.comparator === 'function') {
+      const res = obj.comparator(a, b);
+      return typeof res === 'number' ? res : 0;
+    }
+    if (obj.comparator && obj.comparator.__type === 'Comparator' && obj.comparator.order === 'reverse') {
+      return this.defaultCompare(b, a);
+    }
+    return this.defaultCompare(a, b);
+  }
+
+  defaultCompare(a, b) {
+    if (typeof a === 'number' && typeof b === 'number') {
+      return a - b;
+    }
+    if (typeof a === 'string' && typeof b === 'string') {
+      return a < b ? -1 : a > b ? 1 : 0;
+    }
+    if (Array.isArray(a) && Array.isArray(b)) {
+      for (let i = 0; i < Math.min(a.length, b.length); i++) {
+        if (a[i] !== b[i]) return a[i] - b[i];
+      }
+      return a.length - b.length;
+    }
+    if (a && typeof a === 'object' && b && typeof b === 'object') {
+      const valA = a.val !== undefined ? a.val : (a.fields?.val !== undefined ? a.fields.val : null);
+      const valB = b.val !== undefined ? b.val : (b.fields?.val !== undefined ? b.fields.val : null);
+      if (valA !== null && valB !== null) {
+        return valA - valB;
+      }
+    }
+    return a < b ? -1 : a > b ? 1 : 0;
+  }
+
+  pqSiftUp(obj, idx) {
+    while (idx > 0) {
+      const parent = Math.floor((idx - 1) / 2);
+      if (this.comparePriorityQueue(obj, obj.items[idx], obj.items[parent]) < 0) {
+        const tmp = obj.items[idx];
+        obj.items[idx] = obj.items[parent];
+        obj.items[parent] = tmp;
+        idx = parent;
+      } else {
+        break;
+      }
+    }
+  }
+
+  pqSiftDown(obj, idx) {
+    const len = obj.items.length;
+    while (true) {
+      let smallest = idx;
+      const left = 2 * idx + 1;
+      const right = 2 * idx + 2;
+
+      if (left < len && this.comparePriorityQueue(obj, obj.items[left], obj.items[smallest]) < 0) {
+        smallest = left;
+      }
+      if (right < len && this.comparePriorityQueue(obj, obj.items[right], obj.items[smallest]) < 0) {
+        smallest = right;
+      }
+
+      if (smallest !== idx) {
+        const tmp = obj.items[idx];
+        obj.items[idx] = obj.items[smallest];
+        obj.items[smallest] = tmp;
+        idx = smallest;
+      } else {
+        break;
+      }
+    }
   }
 
   queueMethod(obj, method, args, line, env) {
