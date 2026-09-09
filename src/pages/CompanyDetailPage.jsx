@@ -25,6 +25,8 @@ const STATUS_CONFIG = {
   forgot_approach: { label: "Forgot Approach", icon: "⚠️", color: "#ef4743", bg: "rgba(239,71,67,0.15)" },
 };
 
+const EMPTY_PROBLEMS = [];
+
 const PRACTICE_MODES = [
   { id: "smart",      icon: "🎯", label: "Smart Practice",     desc: "Ranked by personalized priority formula" },
   { id: "frequent",   icon: "📈", label: "Frequently Asked",   desc: "Top historical interview frequency" },
@@ -61,33 +63,9 @@ export default function CompanyDetailPage() {
   const [showTrustModal, setShowTrustModal] = useState(false);
   const [showCompareModal, setShowCompareModal] = useState(false);
 
-  if (!details) {
-    return (
-      <div className="company-not-found">
-        <style>{`
-          .company-not-found {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: calc(100vh - 60px);
-            background: #0d1117;
-            color: #c9d1d9;
-          }
-          .cnf-title { font-size: 22px; font-weight: 700; margin-bottom: 12px; }
-          .cnf-btn {
-            background: #238636; color: #fff; padding: 8px 16px; border-radius: 6px;
-            text-decoration: none; font-size: 13px; font-weight: 600;
-          }
-        `}</style>
-        <div className="cnf-title">Company Not Found</div>
-        <p style={{ color: "#8b949e", marginBottom: 20 }}>No dataset entries found for \"${companyId}\".</p>
-        <Link to="/companies" className="cnf-btn">← Back to Company Directory</Link>
-      </div>
-    );
-  }
-
-  const { company, metrics, problems } = details;
+  const company = details?.company || null;
+  const metrics = details?.metrics || null;
+  const problems = details?.problems || EMPTY_PROBLEMS;
 
   // Pattern statistics (curated DSA patterns)
   const patternStats = useMemo(() => {
@@ -266,12 +244,12 @@ export default function CompanyDetailPage() {
         if (template.inputs) setInputs(template.inputs);
       } else if (lang === "python") {
         const cleanMethodName = (p.title || "solve").toLowerCase().replace(/[^a-z0-9]+/g, "_");
-        const starterPython = `# LeetCode #${p.id || ""}: ${p.title} (${p.difficulty})\n# Company: ${company.name} | Recency: ${p.recency}\n# Acceptance: ${p.acceptance ? p.acceptance + "%" : "N/A"} | Frequency: ${p.frequency}%\n# LeetCode: ${p.url}\n\ndef ${cleanMethodName}():\n    # Write or paste your solution below to visualize step-by-step\n    print("Tracing ${p.title}...")\n    pass\n\n${cleanMethodName}()\n`;
+        const starterPython = `# LeetCode #${p.id || ""}: ${p.title} (${p.difficulty})\n# Company: ${company?.name || ""} | Recency: ${p.recency}\n# Acceptance: ${p.acceptance ? p.acceptance + "%" : "N/A"} | Frequency: ${p.frequency}%\n# LeetCode: ${p.url}\n\ndef ${cleanMethodName}():\n    # Write or paste your solution below to visualize step-by-step\n    print("Tracing ${p.title}...")\n    pass\n\n${cleanMethodName}()\n`;
         setCode(starterPython);
         setInputs({});
       } else {
         const cleanMethodName = (p.title || "solve").replace(/[^a-zA-Z0-9 ]/g, "").split(/\s+/).map((w, i) => i === 0 ? w.toLowerCase() : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join("");
-        const starterJava = `// LeetCode #${p.id || ""}: ${p.title} (${p.difficulty})\n// Company: ${company.name} | Recency: ${p.recency}\n// Acceptance: ${p.acceptance ? p.acceptance + "%" : "N/A"} | Frequency: ${p.frequency}%\n// LeetCode: ${p.url}\n\nclass Solution {\n    public void ${cleanMethodName}() {\n        // Write or paste your solution below to visualize step-by-step\n    }\n}\n`;
+        const starterJava = `// LeetCode #${p.id || ""}: ${p.title} (${p.difficulty})\n// Company: ${company?.name || ""} | Recency: ${p.recency}\n// Acceptance: ${p.acceptance ? p.acceptance + "%" : "N/A"} | Frequency: ${p.frequency}%\n// LeetCode: ${p.url}\n\nclass Solution {\n    public void ${cleanMethodName}() {\n        // Write or paste your solution below to visualize step-by-step\n    }\n}\n`;
         setCode(starterJava);
         setInputs({});
       }
@@ -279,7 +257,7 @@ export default function CompanyDetailPage() {
 
     useTraceStore.setState({ activeTab: `#${p.id || ""} ${p.title}` });
     navigate("/");
-  }, [company.name, currentStoreLang, navigate, progress, setCode, setInputs, setLanguage]);
+  }, [company?.name, currentStoreLang, navigate, progress, setCode, setInputs, setLanguage]);
 
   // Open Practice modal
   const handleOpenPracticeModal = useCallback((p) => {
@@ -298,6 +276,32 @@ export default function CompanyDetailPage() {
     });
     setModalDesc(pid ? getProblemDescription(pid) : null);
   }, []);
+
+  if (!details) {
+    return (
+      <div className="company-not-found">
+        <style>{`
+          .company-not-found {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: calc(100vh - 60px);
+            background: #0d1117;
+            color: #c9d1d9;
+          }
+          .cnf-title { font-size: 22px; font-weight: 700; margin-bottom: 12px; }
+          .cnf-btn {
+            background: #238636; color: #fff; padding: 8px 16px; border-radius: 6px;
+            text-decoration: none; font-size: 13px; font-weight: 600;
+          }
+        `}</style>
+        <div className="cnf-title">Company Not Found</div>
+        <p style={{ color: "#8b949e", marginBottom: 20 }}>No dataset entries found for \"${companyId}\".</p>
+        <Link to="/companies" className="cnf-btn">← Back to Company Directory</Link>
+      </div>
+    );
+  }
 
   return (
     <div className="company-dashboard">

@@ -39,6 +39,12 @@ function FamilyBadge({ label, icon, color, bg, border }) {
 }
 
 export default function AdaptiveInsightsPanel({ adaptiveState, planDelta, lastAdaptedAt }) {
+  const adaptedToday = useMemo(() => {
+    if (!lastAdaptedAt) return false;
+    const today = new Date().toISOString().split("T")[0];
+    return lastAdaptedAt.split("T")[0] === today;
+  }, [lastAdaptedAt]);
+
   if (!adaptiveState) return null;
 
   const {
@@ -55,12 +61,6 @@ export default function AdaptiveInsightsPanel({ adaptiveState, planDelta, lastAd
   const pressureCfg = PRESSURE_CONFIG[pressureLevel];
 
   const delta = planDelta || adaptiveState.planDelta || {};
-
-  const adaptedToday = useMemo(() => {
-    if (!lastAdaptedAt) return false;
-    const today = new Date().toISOString().split("T")[0];
-    return lastAdaptedAt.split("T")[0] === today;
-  }, [lastAdaptedAt]);
 
   return (
     <div style={{
