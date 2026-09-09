@@ -546,18 +546,22 @@ class Parser {
         while(!this.check(T.EOF)){const x=this.cur().type;if(x===T.LT)d++;else if(x===T.GT){d--;if(d===0){this.advance();break;}}this.advance();}
       }
       if (this.check(T.LBRACKET)) {
-        this.advance();
-        let size = null;
-        if (!this.check(T.RBRACKET)) size = this.parseExpr();
-        this.expect(T.RBRACKET,']');
+        const dims = [];
+        while (this.check(T.LBRACKET)) {
+          this.advance();
+          let dim = null;
+          if (!this.check(T.RBRACKET)) dim = this.parseExpr();
+          this.expect(T.RBRACKET, ']');
+          dims.push(dim);
+        }
         // {initializer}
         if (this.check(T.LBRACE)) {
           this.advance();
           const items = this.parseArgList();
-          this.expect(T.RBRACE,'}');
-          return { kind:'ArrayCreate', elType:typeName, size, items, line:ln };
+          this.expect(T.RBRACE, '}');
+          return { kind: 'ArrayCreate', elType: typeName, dims, size: dims[0], items, line: ln };
         }
-        return { kind:'ArrayCreate', elType:typeName, size, items:[], line:ln };
+        return { kind: 'ArrayCreate', elType: typeName, dims, size: dims[0], items: [], line: ln };
       }
       // object creation: new ArrayList<>() or new TreeNode(val)
       if (this.check(T.LPAREN)) {

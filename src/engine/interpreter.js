@@ -876,9 +876,28 @@ class Interpreter {
   evalArrayCreate(node, env) {
     if (node.items && node.items.length > 0)
       return node.items.map(i => this.evalExpr(i, env));
-    const size = node.size ? this.evalExpr(node.size, env) : 0;
-    const fill = node.elType==='boolean' ? false : (node.elType==='String' ? null : 0);
-    return Array(Math.min(size, 10000)).fill(fill);
+
+    const dims = (node.dims && node.dims.length > 0)
+      ? node.dims.map(d => (d ? this.evalExpr(d, env) : null))
+      : [node.size ? this.evalExpr(node.size, env) : 0];
+
+    const fill = node.elType === "boolean" ? false : (node.elType === "String" ? null : 0);
+
+    const createDim = (dIdx) => {
+      const dimSize = dims[dIdx];
+      if (dimSize === null || dimSize === undefined) return [];
+      const len = Math.max(0, Math.min(dimSize, 10000));
+      if (dIdx === dims.length - 1) {
+        return Array(len).fill(fill);
+      }
+      const arr = [];
+      for (let k = 0; k < len; k++) {
+        arr.push(createDim(dIdx + 1));
+      }
+      return arr;
+    };
+
+    return createDim(0);
   }
 
   evalLambda(node, env) {
