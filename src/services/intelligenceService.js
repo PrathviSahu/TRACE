@@ -1,3 +1,19 @@
+/**
+ * Deterministic PRNG (Mulberry32)
+ * Ensures reproducible problem selection and test sets
+ */
+export function mulberry32(seed) {
+  let s = typeof seed === "string"
+    ? seed.split("").reduce((acc, c) => (acc * 31 + c.charCodeAt(0)) | 0, 0)
+    : (Number(seed) || 42);
+  return function() {
+    s |= 0; s = s + 0x6D2B79F5 | 0;
+    let t = Math.imul(s ^ (s >>> 15), 1 | s);
+    t = t + Math.imul(t ^ (t >>> 7), 61 | t) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
 // ─────────────────────────────────────────────────────────────
 //  TRACE — Interview Intelligence & Readiness Engine
 //  Deterministic scoring, weak area detection, and cross-company analytics.
@@ -304,29 +320,29 @@ export function detectFocusAreas(problems, progressMap) {
 /**
  * Generates a balanced 3-problem mock interview set
  */
-export function generateMockInterviewSet(problems) {
+export function generateMockInterviewSet(problems, seed = 42) {
   if (!problems || problems.length === 0) return [];
+
+  const rng = typeof seed === "function" ? seed : mulberry32(seed);
+  const pick = (arr) => arr[Math.floor(rng() * arr.length)];
 
   const easies = problems.filter(p => (p.difficulty || "").toLowerCase() === "easy");
   const mediums = problems.filter(p => (p.difficulty || "").toLowerCase() === "medium");
   const hards = problems.filter(p => (p.difficulty || "").toLowerCase() === "hard");
 
-  // Pick 1 Easy (or Medium), 1 Medium, 1 Hard (or Medium)
-  const pickRandom = (arr) => arr[Math.floor(Math.random() * arr.length)];
-
   const selected = [];
-  if (easies.length > 0) selected.push(pickRandom(easies));
-  else if (mediums.length > 0) selected.push(pickRandom(mediums));
+  if (easies.length > 0) selected.push(pick(easies));
+  else if (mediums.length > 0) selected.push(pick(mediums));
 
   if (mediums.length > 0) {
     const remainMeds = mediums.filter(p => !selected.includes(p));
-    selected.push(remainMeds.length > 0 ? pickRandom(remainMeds) : pickRandom(mediums));
+    selected.push(remainMeds.length > 0 ? pick(remainMeds) : pick(mediums));
   }
 
-  if (hards.length > 0) selected.push(pickRandom(hards));
+  if (hards.length > 0) selected.push(pick(hards));
   else if (mediums.length > 1) {
     const remain = mediums.filter(p => !selected.includes(p));
-    selected.push(remain.length > 0 ? pickRandom(remain) : pickRandom(mediums));
+    selected.push(remain.length > 0 ? pick(remain) : pick(mediums));
   }
 
   return selected.filter(Boolean);

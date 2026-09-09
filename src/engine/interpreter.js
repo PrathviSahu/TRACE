@@ -1,3 +1,35 @@
+function parseInputString(text) {
+  if (!text || typeof text !== "string") return {};
+  const trimmed = text.trim();
+  if (!trimmed) return {};
+  if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (typeof parsed === "object" && !Array.isArray(parsed)) return parsed;
+    } catch (_) {}
+  }
+  const result = {};
+  const lines = trimmed.split(/\n|,\s*(?=[a-zA-Z_$][a-zA-Z0-9_$]*\s*[:=])/).map(l => l.trim()).filter(Boolean);
+  for (const line of lines) {
+    const match = line.match(/^([a-zA-Z_$][a-zA-Z0-9_$]*)\s*[:=]\s*(.+)$/);
+    if (match) {
+      const key = match[1];
+      const rawVal = match[2].trim();
+      try {
+        result[key] = JSON.parse(rawVal);
+      } catch (_) {
+        if (/^-?\d+$/.test(rawVal)) result[key] = parseInt(rawVal, 10);
+        else if (/^-?\d*\.\d+$/.test(rawVal)) result[key] = parseFloat(rawVal);
+        else if (rawVal === "true") result[key] = true;
+        else if (rawVal === "false") result[key] = false;
+        else result[key] = rawVal.replace(/^["']|["']$/g, "");
+      }
+    }
+  }
+  return result;
+}
+
+import { validateTraceStep } from "./traceSchema.js";
 
 // ─────────────────────────────────────────────────────────────
 //  TRACE — Java Interpreter
@@ -313,7 +345,7 @@ class Interpreter {
     }
     for (const [k,v] of Object.entries(snap.vars)) this.prevVars[k] = v.value;
 
-    this.trace.push({
+    const stepObj = {
       step: this.steps,
       line,
       statement: srcLine,
@@ -326,7 +358,9 @@ class Interpreter {
       changedVars,
       returnValue: undefined,
       ...extra,
-    });
+    };
+    validateTraceStep(stepObj, this.steps);
+    this.trace.push(stepObj);
   }
 
   // ── Statement execution ──────────────────────────────────────
@@ -351,7 +385,9 @@ class Interpreter {
       case 'ReturnStmt':return this.execReturn(node, env);
       case 'Break':     throw new BreakSignal();
       case 'Continue':  throw new ContinueSignal();
-      default: break;
+      case 'EmptyStmt': break;
+      default:
+        throw new RuntimeError(`Unsupported statement construct '${node.kind}' at line ${node.line || "?"}.`, node.line);
     }
   }
 
@@ -519,7 +555,8 @@ class Interpreter {
       case 'ObjectCreate': return this.evalObjectCreate(node, env);
       case 'Lambda': return this.evalLambda(node, env);
       case 'Cast': return this.evalCast(node, env);
-      default: return null;
+      default:
+        throw new RuntimeError(`Unsupported expression construct '${node.kind}' at line ${node.line || "?"}.`, node.line);
     }
   }
 
@@ -565,7 +602,8 @@ class Interpreter {
       case 'SHIFT_LEFT':           return l << r;
       case 'SHIFT_RIGHT':          return l >> r;
       case 'UNSIGNED_SHIFT_RIGHT': return l >>> r;
-      default: return null;
+      default:
+        throw new RuntimeError(`Unsupported binary operator '${node.op}' at line ${node.line || "?"}.`, node.line);
     }
   }
 
@@ -1376,7 +1414,8 @@ class Interpreter {
   }
 }
 
-export function runJava(src, inputs={}) {
+export function runJava(src, rawInputs={}) {
+  const inputs = typeof rawInputs === "string" ? parseInputString(rawInputs) : (rawInputs || {});
   const interp = new Interpreter();
   return interp.run(src, inputs);
 }

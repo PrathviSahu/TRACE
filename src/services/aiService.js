@@ -5,14 +5,16 @@
 // ─────────────────────────────────────────────────────────────
 
 export const SUPPORTED_LANGUAGES = [
-  { id: 'python',     label: 'Python',     icon: '🐍', ext: 'py' },
-  { id: 'java',       label: 'Java',       icon: '☕', ext: 'java' },
-  { id: 'cpp',        label: 'C++',        icon: '⚡', ext: 'cpp' },
-  { id: 'javascript', label: 'JavaScript', icon: '🌐', ext: 'js' },
-  { id: 'c',          label: 'C',          icon: '⚙', ext: 'c' },
+  { id: "python",     label: "Python",     icon: "🐍", ext: "py" },
+  { id: "java",       label: "Java",       icon: "☕", ext: "java" },
+  { id: "cpp",        label: "C++",        icon: "⚡", ext: "cpp" },
+  { id: "javascript", label: "JavaScript", icon: "🌐", ext: "js" },
+  { id: "c",          label: "C",          icon: "⚙", ext: "c" },
 ];
 
-export const SYSTEM_TUTOR_PROMPT = `You are ARIA (Algorithm Reasoning & Insight Assistant) — an elite DSA tutor embedded in TRACE, an interactive multi-language visual code debugger supporting Java, Python, C++, C, and JavaScript.
+export const SYSTEM_TUTOR_PROMPT = `You are ARIA (Algorithm Reasoning & Insight Assistant) — an elite DSA tutor embedded in TRACE, an interactive visual code execution and algorithm debugger.
+
+TRACE executes algorithms with step-by-step memory, variable, call-stack, and diagrammatic data structure visualization (supporting Java AST interpretation and Python execution).
 
 Your personality:
 - Encouraging, concise, structured like a senior FAANG interviewer.
@@ -22,23 +24,113 @@ Your personality:
 - Use Markdown formatting with backticks and bullet points.`;
 
 /**
+ * Extracts and parses JSON from raw LLM text, stripping code fences if present.
+ */
+export function extractJsonFromText(rawText) {
+  if (!rawText || typeof rawText !== "string") {
+    throw new Error("Empty response received from AI service.");
+  }
+
+  let cleaned = rawText.trim();
+  if (cleaned.startsWith("```json")) cleaned = cleaned.slice(7);
+  else if (cleaned.startsWith("```")) cleaned = cleaned.slice(3);
+  if (cleaned.endsWith("```")) cleaned = cleaned.slice(0, -3);
+  cleaned = cleaned.trim();
+
+  try {
+    return JSON.parse(cleaned);
+  } catch (_) {
+    // If not direct JSON, attempt curly braces substring matching
+    const firstBrace = cleaned.indexOf("{");
+    const lastBrace = cleaned.lastIndexOf("}");
+    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+      const candidate = cleaned.slice(firstBrace, lastBrace + 1);
+      return JSON.parse(candidate);
+    }
+    throw new Error("Failed to extract valid JSON from AI response.");
+  }
+}
+
+/**
+ * Validates AI solution output schema
+ */
+export function validateSolutionResponse(parsed, expectedLanguage = "java") {
+  if (!parsed || typeof parsed !== "object") {
+    throw new Error("AI solution response must be a JSON object.");
+  }
+  if (!Array.isArray(parsed.approaches) || parsed.approaches.length === 0) {
+    throw new Error("AI solution response must contain a non-empty 'approaches' array.");
+  }
+
+  for (let i = 0; i < parsed.approaches.length; i++) {
+    const app = parsed.approaches[i];
+    if (!app || typeof app !== "object") {
+      throw new Error(`Approach #${i + 1} must be an object.`);
+    }
+    if (typeof app.name !== "string" || !app.name.trim()) {
+      throw new Error(`Approach #${i + 1} missing required string 'name'.`);
+    }
+    if (typeof app.idea !== "string") {
+      app.idea = "";
+    }
+    if (typeof app.code !== "string" || !app.code.trim()) {
+      throw new Error(`Approach #${i + 1} ("${app.name}") missing valid runnable 'code' string.`);
+    }
+    if (!app.complexity || typeof app.complexity !== "object") {
+      app.complexity = { time: "O(N)", space: "O(1)" };
+    } else {
+      if (typeof app.complexity.time !== "string") app.complexity.time = "O(N)";
+      if (typeof app.complexity.space !== "string") app.complexity.space = "O(1)";
+    }
+  }
+
+  parsed.language = expectedLanguage;
+  return parsed;
+}
+
+/**
+ * Validates AI problem description schema
+ */
+export function validateProblemDescription(parsed) {
+  if (!parsed || typeof parsed !== "object") {
+    throw new Error("AI problem description must be a JSON object.");
+  }
+  if (typeof parsed.description !== "string" || !parsed.description.trim()) {
+    throw new Error("AI problem description missing valid 'description' text.");
+  }
+  if (!Array.isArray(parsed.examples)) {
+    parsed.examples = [];
+  }
+  if (!Array.isArray(parsed.constraints)) {
+    parsed.constraints = [];
+  }
+  if (!parsed.complexity || typeof parsed.complexity !== "object") {
+    parsed.complexity = { time: "O(N)", space: "O(1)" };
+  }
+  if (!Array.isArray(parsed.hints)) {
+    parsed.hints = [];
+  }
+  return parsed;
+}
+
+/**
  * Server-only API Caller
  * Routes all traffic strictly through /api/gemini backend proxy
  */
-export async function callGeminiApi({ systemInstruction, contents, generationConfig, model = 'gemini-3.6-flash' }) {
+export async function callGeminiApi({ systemInstruction, contents, generationConfig, model = "gemini-2.5-flash" }) {
   const payload = {
     contents,
     generationConfig: generationConfig || { temperature: 0.7, maxOutputTokens: 1500 }
   };
   if (systemInstruction) {
-    payload.systemInstruction = typeof systemInstruction === 'string'
+    payload.systemInstruction = typeof systemInstruction === "string"
       ? { parts: [{ text: systemInstruction }] }
       : systemInstruction;
   }
 
-  const res = await fetch('/api/gemini', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+  const res = await fetch("/api/gemini", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ model, payload })
   });
 
@@ -53,9 +145,9 @@ export async function callGeminiApi({ systemInstruction, contents, generationCon
 /**
  * Language-aware 3-Approach Solution Generator
  */
-export async function generateProblemSolutions({ problem, language = 'java', description = null }) {
+export async function generateProblemSolutions({ problem, language = "java", description = null }) {
   const langConfig = SUPPORTED_LANGUAGES.find(l => l.id === language) || SUPPORTED_LANGUAGES[1];
-  const descText = description?.description?.replace(/<[^>]*>/g, '') || problem.name;
+  const descText = description?.description?.replace(/<[^>]*>/g, "") || problem.name;
 
   const prompt = `You are a DSA expert. Provide exactly 3 approaches in ${langConfig.label} for LeetCode #${problem.id} "${problem.name}" (${problem.difficulty}):
 Problem statement: ${descText}
@@ -98,17 +190,9 @@ Return ONLY a valid JSON object matching this schema with NO markdown code block
     generationConfig: { temperature: 0.2, maxOutputTokens: 2500 }
   });
 
-  const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-  const match = rawText.match(/\{[\s\S]*"approaches"[\s\S]*\}/);
-  if (!match) throw new Error('Could not parse generated solution format.');
-
-  const parsed = JSON.parse(match[0]);
-  if (!parsed.approaches || parsed.approaches.length === 0) {
-    throw new Error('No approaches returned in response.');
-  }
-
-  parsed.language = langConfig.id;
-  return parsed;
+  const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+  const parsed = extractJsonFromText(rawText);
+  return validateSolutionResponse(parsed, langConfig.id);
 }
 
 /**
@@ -134,9 +218,7 @@ Return ONLY a valid JSON object matching this schema:
     generationConfig: { temperature: 0.2, maxOutputTokens: 1500 }
   });
 
-  const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-  const match = rawText.match(/\{[\s\S]*"description"[\s\S]*\}/);
-  if (!match) throw new Error('Could not parse generated description format.');
-
-  return JSON.parse(match[0]);
+  const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+  const parsed = extractJsonFromText(rawText);
+  return validateProblemDescription(parsed);
 }

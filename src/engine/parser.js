@@ -1,3 +1,25 @@
+export class ParseError extends Error {
+  constructor(message, line, column = null) {
+    super(message);
+    this.name = "ParseError";
+    this.line = line;
+    this.column = column;
+  }
+}
+
+export class UnsupportedSyntaxError extends ParseError {
+  constructor(feature, line, column = null, suggestion = "") {
+    const loc = column ? `line ${line}, column ${column}` : `line ${line}`;
+    super(
+      `Unsupported syntax '${feature}' at ${loc} in TRACE Java Subset v1.${suggestion ? " " + suggestion : ""}`,
+      line,
+      column
+    );
+    this.name = "UnsupportedSyntaxError";
+    this.feature = feature;
+  }
+}
+
 
 // ─────────────────────────────────────────────────────────────
 //  TRACE — Java Parser  (recursive-descent, LeetCode subset)
@@ -22,7 +44,15 @@ class Parser {
     return false;
   }
   expect(type, msg) {
-    if (!this.check(type)) throw new Error(`Line ${this.cur().line}: expected ${msg ?? type}, got '${this.cur().value ?? this.cur().type}'`);
+    if (!this.check(type)) {
+      const cur = this.cur();
+      const loc = cur.col ? `line ${cur.line}, column ${cur.col}` : `line ${cur.line}`;
+      throw new ParseError(
+        `Syntax Error at ${loc}: expected ${msg ?? type}, got '${cur.value ?? cur.type}'`,
+        cur.line,
+        cur.col
+      );
+    }
     return this.advance();
   }
   ln() { return this.cur().line; }
@@ -33,6 +63,13 @@ class Parser {
     while (!this.check(T.EOF)) {
       while (MOD_KW.has(this.cur().type)) this.advance();
       if (this.check(T.EOF)) break;
+
+      // Support package and import statements gracefully
+      if (this.check(T.ID) && (this.cur().value === "import" || this.cur().value === "package")) {
+        while (!this.check(T.SEMICOLON) && !this.check(T.EOF)) this.advance();
+        if (this.check(T.SEMICOLON)) this.advance();
+        continue;
+      }
 
       if (this.check(T.CLASS)) {
         prog.body.push(this.parseClassDecl());
@@ -165,6 +202,25 @@ class Parser {
 
   parseStatement() {
     const ln = this.ln();
+    const cur = this.cur();
+
+    if (cur.type === T.ID) {
+      if (cur.value === "try") {
+        throw new UnsupportedSyntaxError("try-catch", ln, cur.col, "Exception handling is outside the TRACE algorithmic execution subset.");
+      }
+      if (cur.value === "throw") {
+        throw new UnsupportedSyntaxError("throw", ln, cur.col, "Manual exception throwing is not supported in TRACE Java Subset v1.");
+      }
+      if (cur.value === "switch") {
+        throw new UnsupportedSyntaxError("switch", ln, cur.col, "Use if/else conditional chains for multi-way branching in TRACE.");
+      }
+      if (cur.value === "synchronized") {
+        throw new UnsupportedSyntaxError("synchronized", ln, cur.col, "Multi-threading primitives are outside the TRACE execution subset.");
+      }
+      if (cur.value === "interface") {
+        throw new UnsupportedSyntaxError("interface", ln, cur.col, "Interface definitions are outside the TRACE execution subset.");
+      }
+    }
     // if
     if (this.check(T.IF))       return this.parseIf();
     // while
@@ -520,9 +576,14 @@ class Parser {
       return { kind:'ArrayLiteral', items, line:ln };
     }
 
-    // unknown — skip and return null literal
-    this.advance();
-    return { kind:'Literal', vtype:'null', value:null, line:ln };
+    // Unknown / unsupported primary expression
+    const unk = this.cur();
+    throw new UnsupportedSyntaxError(
+      unk.value ?? unk.type,
+      unk.line,
+      unk.col,
+      "This expression construct is not supported in TRACE Java Subset v1."
+    );
   }
 
   parseArgList() {

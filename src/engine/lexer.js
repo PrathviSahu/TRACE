@@ -1,8 +1,18 @@
-
 // ─────────────────────────────────────────────────────────────
 //  TRACE — Java Lexer
 //  Tokenises a subset of Java sufficient for LeetCode problems
 // ─────────────────────────────────────────────────────────────
+
+export class LexerError extends Error {
+  constructor(message, line, column, char, snippet = "") {
+    super(message);
+    this.name = "LexerError";
+    this.line = line;
+    this.column = column;
+    this.char = char;
+    this.snippet = snippet;
+  }
+}
 
 export const T = {
   // primitives / types
@@ -64,9 +74,15 @@ export function tokenize(src) {
     return lo + 1;
   }
 
+  function colOf(pos) {
+    const ln = lineOf(pos);
+    return pos - lineStarts[ln - 1] + 1;
+  }
+
   while (i < src.length) {
     const start = i;
     const ln = lineOf(i);
+    const col = colOf(i);
     let c = src[i];
 
     // whitespace
@@ -92,7 +108,7 @@ export function tokenize(src) {
         i++;
       }
       i++;
-      tokens.push({ type: T.STRING_LIT, value: v, line: ln });
+      tokens.push({ type: T.STRING_LIT, value: v, line: ln, col });
       continue;
     }
     // char literal
@@ -101,7 +117,7 @@ export function tokenize(src) {
       if (src[i] === '\\') { i++; v = src[i]; } else v = src[i];
       i++;
       if (src[i] === "'") i++;
-      tokens.push({ type: T.CHAR_LIT, value: v, line: ln });
+      tokens.push({ type: T.CHAR_LIT, value: v, line: ln, col });
       continue;
     }
     // numbers
@@ -109,73 +125,83 @@ export function tokenize(src) {
       let n = '';
       while (i < src.length && /[0-9._]/.test(src[i])) n += src[i++];
       if (i < src.length && /[LlFfDd]/.test(src[i])) i++;
-      tokens.push({ type: T.NUMBER, value: parseFloat(n.replace(/_/g,'')), line: ln });
+      tokens.push({ type: T.NUMBER, value: parseFloat(n.replace(/_/g,'')), line: ln, col });
       continue;
     }
     // identifiers / keywords
     if (/[a-zA-Z_$]/.test(c)) {
       let id = '';
       while (i < src.length && /[\w$]/.test(src[i])) id += src[i++];
-      tokens.push({ type: KEYWORDS.get(id) ?? T.ID, value: id, line: ln });
+      tokens.push({ type: KEYWORDS.get(id) ?? T.ID, value: id, line: ln, col });
       continue;
     }
 
     // operators & delimiters
     i++;
     switch (c) {
-      case '+': if (src[i]==='+'){tokens.push({type:T.PLUS_PLUS,line:ln});i++;}
-               else if(src[i]==='='){tokens.push({type:T.PLUS_ASSIGN,line:ln});i++;}
-               else tokens.push({type:T.PLUS,line:ln}); break;
-      case '-': if (src[i]==='-'){tokens.push({type:T.MINUS_MINUS,line:ln});i++;}
-               else if(src[i]==='>'){tokens.push({type:T.ARROW,line:ln});i++;}
-               else if(src[i]==='='){tokens.push({type:T.MINUS_ASSIGN,line:ln});i++;}
-               else tokens.push({type:T.MINUS,line:ln}); break;
-      case '*': src[i]==='='?(tokens.push({type:T.STAR_ASSIGN,line:ln}),i++):tokens.push({type:T.STAR,line:ln}); break;
-      case '/': src[i]==='='?(tokens.push({type:T.SLASH_ASSIGN,line:ln}),i++):tokens.push({type:T.SLASH,line:ln}); break;
-      case '%': src[i]==='='?(tokens.push({type:T.PERCENT_ASSIGN,line:ln}),i++):tokens.push({type:T.PERCENT,line:ln}); break;
-      case '=': src[i]==='='?(tokens.push({type:T.EQ,line:ln}),i++):tokens.push({type:T.ASSIGN,line:ln}); break;
-      case '!': src[i]==='='?(tokens.push({type:T.NEQ,line:ln}),i++):tokens.push({type:T.NOT,line:ln}); break;
+      case '+': if (src[i]==='+'){tokens.push({type:T.PLUS_PLUS,line:ln,col});i++;}
+               else if(src[i]==='='){tokens.push({type:T.PLUS_ASSIGN,line:ln,col});i++;}
+               else tokens.push({type:T.PLUS,line:ln,col}); break;
+      case '-': if (src[i]==='-'){tokens.push({type:T.MINUS_MINUS,line:ln,col});i++;}
+               else if(src[i]==='>'){tokens.push({type:T.ARROW,line:ln,col});i++;}
+               else if(src[i]==='='){tokens.push({type:T.MINUS_ASSIGN,line:ln,col});i++;}
+               else tokens.push({type:T.MINUS,line:ln,col}); break;
+      case '*': src[i]==='='?(tokens.push({type:T.STAR_ASSIGN,line:ln,col}),i++):tokens.push({type:T.STAR,line:ln,col}); break;
+      case '/': src[i]==='='?(tokens.push({type:T.SLASH_ASSIGN,line:ln,col}),i++):tokens.push({type:T.SLASH,line:ln,col}); break;
+      case '%': src[i]==='='?(tokens.push({type:T.PERCENT_ASSIGN,line:ln,col}),i++):tokens.push({type:T.PERCENT,line:ln,col}); break;
+      case '=': src[i]==='='?(tokens.push({type:T.EQ,line:ln,col}),i++):tokens.push({type:T.ASSIGN,line:ln,col}); break;
+      case '!': src[i]==='='?(tokens.push({type:T.NEQ,line:ln,col}),i++):tokens.push({type:T.NOT,line:ln,col}); break;
       case '<':
         if (src[i] === '<') {
           i++;
-          if (src[i] === '=') { tokens.push({type: T.SHIFT_LEFT_ASSIGN, line: ln}); i++; }
-          else tokens.push({type: T.SHIFT_LEFT, line: ln});
-        } else if (src[i] === '=') { tokens.push({type: T.LTE, line: ln}); i++; }
-        else tokens.push({type: T.LT, line: ln});
+          if (src[i] === '=') { tokens.push({type: T.SHIFT_LEFT_ASSIGN, line: ln, col}); i++; }
+          else tokens.push({type: T.SHIFT_LEFT, line: ln, col});
+        } else if (src[i] === '=') { tokens.push({type: T.LTE, line: ln, col}); i++; }
+        else tokens.push({type: T.LT, line: ln, col});
         break;
       case '>':
         if (src[i] === '>' && src[i+1] === '>') {
           i += 2;
-          if (src[i] === '=') { tokens.push({type: T.UNSIGNED_SHIFT_RIGHT_ASSIGN, line: ln}); i++; }
-          else tokens.push({type: T.UNSIGNED_SHIFT_RIGHT, line: ln});
+          if (src[i] === '=') { tokens.push({type: T.UNSIGNED_SHIFT_RIGHT_ASSIGN, line: ln, col}); i++; }
+          else tokens.push({type: T.UNSIGNED_SHIFT_RIGHT, line: ln, col});
         } else if (src[i] === '>') {
           i++;
-          if (src[i] === '=') { tokens.push({type: T.SHIFT_RIGHT_ASSIGN, line: ln}); i++; }
-          else tokens.push({type: T.SHIFT_RIGHT, line: ln});
-        } else if (src[i] === '=') { tokens.push({type: T.GTE, line: ln}); i++; }
-        else tokens.push({type: T.GT, line: ln});
+          if (src[i] === '=') { tokens.push({type: T.SHIFT_RIGHT_ASSIGN, line: ln, col}); i++; }
+          else tokens.push({type: T.SHIFT_RIGHT, line: ln, col});
+        } else if (src[i] === '=') { tokens.push({type: T.GTE, line: ln, col}); i++; }
+        else tokens.push({type: T.GT, line: ln, col});
         break;
-      case '^': tokens.push({type:T.CARET,line:ln}); break;
-      case '~': tokens.push({type:T.TILDE,line:ln}); break;
-      case '&': src[i]==='&'?(tokens.push({type:T.AND,line:ln}),i++):(src[i]==='='?(tokens.push({type:T.AND_ASSIGN,line:ln}),i++):tokens.push({type:T.AMP,line:ln})); break;
-      case '|': src[i]==='|'?(tokens.push({type:T.OR,line:ln}),i++):(src[i]==='='?(tokens.push({type:T.OR_ASSIGN,line:ln}),i++):tokens.push({type:T.PIPE,line:ln})); break;
-      case '?': tokens.push({type:T.QUESTION,line:ln}); break;
-      case ':': tokens.push({type:T.COLON,line:ln}); break;
-      case '(': tokens.push({type:T.LPAREN,line:ln}); break;
-      case ')': tokens.push({type:T.RPAREN,line:ln}); break;
-      case '{': tokens.push({type:T.LBRACE,line:ln}); break;
-      case '}': tokens.push({type:T.RBRACE,line:ln}); break;
-      case '[': tokens.push({type:T.LBRACKET,line:ln}); break;
-      case ']': tokens.push({type:T.RBRACKET,line:ln}); break;
-      case ';': tokens.push({type:T.SEMICOLON,line:ln}); break;
-      case ',': tokens.push({type:T.COMMA,line:ln}); break;
+      case '^': tokens.push({type:T.CARET,line:ln,col}); break;
+      case '~': tokens.push({type:T.TILDE,line:ln,col}); break;
+      case '&': src[i]==='&'?(tokens.push({type:T.AND,line:ln,col}),i++):(src[i]==='='?(tokens.push({type:T.AND_ASSIGN,line:ln,col}),i++):tokens.push({type:T.AMP,line:ln,col})); break;
+      case '|': src[i]==='|'?(tokens.push({type:T.OR,line:ln,col}),i++):(src[i]==='='?(tokens.push({type:T.OR_ASSIGN,line:ln,col}),i++):tokens.push({type:T.PIPE,line:ln,col})); break;
+      case '?': tokens.push({type:T.QUESTION,line:ln,col}); break;
+      case ':': tokens.push({type:T.COLON,line:ln,col}); break;
+      case '(': tokens.push({type:T.LPAREN,line:ln,col}); break;
+      case ')': tokens.push({type:T.RPAREN,line:ln,col}); break;
+      case '{': tokens.push({type:T.LBRACE,line:ln,col}); break;
+      case '}': tokens.push({type:T.RBRACE,line:ln,col}); break;
+      case '[': tokens.push({type:T.LBRACKET,line:ln,col}); break;
+      case ']': tokens.push({type:T.RBRACKET,line:ln,col}); break;
+      case ';': tokens.push({type:T.SEMICOLON,line:ln,col}); break;
+      case ',': tokens.push({type:T.COMMA,line:ln,col}); break;
       case '.':
-        if (src[i]==='.' && src[i+1]==='.') { tokens.push({type:T.ELLIPSIS,line:ln}); i+=2; }
-        else tokens.push({type:T.DOT,line:ln});
+        if (src[i]==='.' && src[i+1]==='.') { tokens.push({type:T.ELLIPSIS,line:ln,col}); i+=2; }
+        else tokens.push({type:T.DOT,line:ln,col});
         break;
-      default: break; // skip unknown chars
+      default: {
+        const lineContent = src.split('\n')[ln - 1] || '';
+        const pointer = " ".repeat(Math.max(0, col - 1)) + "^";
+        throw new LexerError(
+          `Unexpected character '${c}' at line ${ln}, column ${col}.\n  ${ln} | ${lineContent}\n    | ${pointer}`,
+          ln,
+          col,
+          c,
+          lineContent
+        );
+      }
     }
   }
-  tokens.push({ type: T.EOF, line: lineOf(src.length) });
+  tokens.push({ type: T.EOF, line: lineOf(src.length), col: colOf(src.length) });
   return tokens;
 }
