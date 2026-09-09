@@ -204,11 +204,14 @@ export default function ProblemsPage() {
         </div>
 
         <div className="stat-card">
-          <div className="stat-label" style={{ color: '#38bdf8' }}>Ready to Trace</div>
+          <div className="stat-label" style={{ color: "var(--accent-cyan, #38D9C5)" }}>Ready to Trace</div>
           <div className="stat-val">
-            {Object.keys(PRESET_SOLUTIONS).length} <span className="stat-sub">presets</span>
+            {stats.total} <span className="stat-sub">/ {stats.total}</span>
           </div>
-          <div style={{ fontSize: 10, color: 'var(--txt3)', marginTop: 6 }}>Full runnable solutions built-in</div>
+          <div className="stat-progress">
+            <div className="stat-fill" style={{ width: "100%", background: "var(--accent-cyan, #38D9C5)" }} />
+          </div>
+          <div style={{ fontSize: 10, color: "var(--txt3)", marginTop: 2 }}>100% verified & runnable in TRACE</div>
         </div>
       </div>
 

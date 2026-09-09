@@ -561,8 +561,16 @@ export function getProblemTemplate(problemOrName, maybeDifficulty = 'Medium') {
   // Derive method name from problem title (camelCase)
   const cleanName = rawName.replace(/[^a-zA-Z0-9 ]/g, '').trim();
   const words = cleanName.split(/\s+/).filter(Boolean);
-  const methodName = words.length === 0 ? 'solve' :
+  let methodName = words.length === 0 ? 'solve' :
     words[0].toLowerCase() + words.slice(1).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join('');
+
+  // Sanitize Java method names starting with digits
+  if (/^[0-9]/.test(methodName)) {
+    if (methodName.startsWith('3sumClosest')) methodName = 'threeSumClosest';
+    else if (methodName.startsWith('3sum')) methodName = 'threeSum';
+    else if (methodName.startsWith('4sum')) methodName = 'fourSum';
+    else methodName = 'solve' + methodName;
+  }
 
   // Tailor template based on topic
   let code = '';
