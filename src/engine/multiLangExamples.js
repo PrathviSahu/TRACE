@@ -122,5 +122,363 @@ print(sol.maxSubArray([-2, 1, -3, 4, -1, 2, 1, -5, 4]))`,
       javaInputs: { nums: '[-2, 1, -3, 4, -1, 2, 1, -5, 4]' }
     },
     defaultInputDisplay: "nums = [-2, 1, -3, 4, -1, 2, 1, -5, 4]"
+  },
+
+  'hashmap-hashset': {
+    id: 'hashmap-hashset',
+    name: 'Two Sum (Hash Map)',
+    category: 'HashMap & HashSet',
+    difficulty: 'easy',
+    pattern: 'Hash Map',
+    python: `# Two Sum with Hash Map - LeetCode 1
+class Solution:
+    def twoSum(self, nums, target):
+        lookup = {}
+        for i in range(len(nums)):
+            comp = target - nums[i]
+            if comp in lookup:
+                return [lookup[comp], i]
+            lookup[nums[i]] = i
+        return []
+
+# Test
+sol = Solution()
+print(sol.twoSum([2, 7, 11, 15], 9))`,
+    java: `// Two Sum using HashMap
+class Solution {
+    public int[] twoSum(int[] nums, int target) {
+        HashMap<Integer, Integer> map = new HashMap<>();
+        for (int i = 0; i < nums.length; i++) {
+            int comp = target - nums[i];
+            if (map.containsKey(comp)) {
+                return new int[]{map.get(comp), i};
+            }
+            map.put(nums[i], i);
+        }
+        return new int[]{-1, -1};
+    }
+}`,
+    inputs: {
+      pythonText: "nums = [2, 7, 11, 15]\ntarget = 9",
+      javaInputs: { nums: '[2, 7, 11, 15]', target: '9' }
+    },
+    defaultInputDisplay: "nums = [2, 7, 11, 15]\ntarget = 9"
+  },
+
+  'linked-list': {
+    id: 'linked-list',
+    name: 'Reverse Linked List',
+    category: 'Linked List',
+    difficulty: 'easy',
+    pattern: 'In-place Reversal',
+    python: `# Reverse Linked List - LeetCode 206
+class ListNode:
+    def __init__(self, val=0, next=None):
+        self.val = val
+        self.next = next
+
+class Solution:
+    def reverseList(self, head):
+        prev = None
+        curr = head
+        while curr:
+            next_node = curr.next
+            curr.next = prev
+            prev = curr
+            curr = next_node
+        return prev
+
+# Test
+head = ListNode(1, ListNode(2, ListNode(3)))
+sol = Solution()
+new_head = sol.reverseList(head)`,
+    java: `// Reverse Linked List - LeetCode 206
+class ListNode {
+    int val;
+    ListNode next;
+    ListNode(int val) {
+        this.val = val;
+        this.next = null;
+    }
+}
+
+class Solution {
+    public ListNode reverseList() {
+        ListNode head = new ListNode(1);
+        head.next = new ListNode(2);
+        head.next.next = new ListNode(3);
+
+        ListNode prev = null;
+        ListNode curr = head;
+        while (curr != null) {
+            ListNode nextTemp = curr.next;
+            curr.next = prev;
+            prev = curr;
+            curr = nextTemp;
+        }
+        return prev;
+    }
+}`,
+    inputs: {
+      pythonText: "head = [1, 2, 3]",
+      javaInputs: {}
+    },
+    defaultInputDisplay: "head = [1, 2, 3]"
+  },
+
+  'stack': {
+    id: 'stack',
+    name: 'Valid Parentheses',
+    category: 'Stack',
+    difficulty: 'easy',
+    pattern: 'Stack Matching',
+    python: `# Valid Parentheses - LeetCode 20
+class Solution:
+    def isValid(self, s):
+        stack = []
+        matching = {')': '(', '}': '{', ']': '['}
+        for char in s:
+            if char in matching.values():
+                stack.append(char)
+            elif char in matching:
+                if not stack or stack.pop() != matching[char]:
+                    return False
+        return len(stack) == 0
+
+# Test
+sol = Solution()
+print(sol.isValid("{[()]}"))`,
+    java: `// Valid Parentheses - LeetCode 20
+class Solution {
+    public boolean isValid(String s) {
+        Stack<Character> stack = new Stack<>();
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (c == '(' || c == '{' || c == '[') {
+                stack.push(c);
+            } else {
+                if (stack.isEmpty()) return false;
+                char top = stack.pop();
+                if (c == ')' && top != '(') return false;
+                if (c == '}' && top != '{') return false;
+                if (c == ']' && top != '[') return false;
+            }
+        }
+        return stack.isEmpty();
+    }
+}`,
+    inputs: {
+      pythonText: 's = "{[()]}"',
+      javaInputs: { s: '"{[()]}"' }
+    },
+    defaultInputDisplay: 's = "{[()]}"'
+  },
+
+  'queue-deque': {
+    id: 'queue-deque',
+    name: 'Queue Operations',
+    category: 'Queue & Deque',
+    difficulty: 'easy',
+    pattern: 'FIFO Queue',
+    python: `# Queue / Deque Demonstration
+from collections import deque
+
+class Solution:
+    def queueDemo(self):
+        queue = deque()
+        queue.append(10)
+        queue.append(20)
+        queue.append(30)
+        first = queue.popleft()
+        queue.append(40)
+        peek_elem = queue[0]
+        return first + peek_elem
+
+# Test
+sol = Solution()
+print(sol.queueDemo())`,
+    java: `// Queue / Deque Operations
+class Solution {
+    public int queueDemo() {
+        Queue<Integer> queue = new ArrayDeque<>();
+        queue.offer(10);
+        queue.offer(20);
+        queue.offer(30);
+
+        int first = queue.poll();
+        queue.offer(40);
+        int second = queue.peek();
+        return first + second;
+    }
+}`,
+    inputs: {
+      pythonText: "queue = [10, 20, 30]",
+      javaInputs: {}
+    },
+    defaultInputDisplay: "operations: offer(10, 20, 30), poll(), offer(40)"
+  },
+
+  'binary-tree': {
+    id: 'binary-tree',
+    name: 'Invert Binary Tree',
+    category: 'Binary Tree & BST',
+    difficulty: 'easy',
+    pattern: 'Tree Traversal',
+    python: `# Invert Binary Tree - LeetCode 226
+class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+class Solution:
+    def invertTree(self, root):
+        if not root:
+            return None
+        root.left, root.right = root.right, root.left
+        return root
+
+# Test
+root = TreeNode(4, TreeNode(2), TreeNode(7))
+sol = Solution()
+inverted = sol.invertTree(root)`,
+    java: `// Invert Binary Tree - LeetCode 226
+class TreeNode {
+    int val;
+    TreeNode left;
+    TreeNode right;
+    TreeNode(int val) {
+        this.val = val;
+        this.left = null;
+        this.right = null;
+    }
+}
+
+class Solution {
+    public TreeNode invertTree() {
+        TreeNode root = new TreeNode(4);
+        root.left = new TreeNode(2);
+        root.right = new TreeNode(7);
+        root.left.left = new TreeNode(1);
+        root.left.right = new TreeNode(3);
+        root.right.left = new TreeNode(6);
+        root.right.right = new TreeNode(9);
+
+        TreeNode temp = root.left;
+        root.left = root.right;
+        root.right = temp;
+        return root;
+    }
+}`,
+    inputs: {
+      pythonText: "root = [4, 2, 7, 1, 3, 6, 9]",
+      javaInputs: {}
+    },
+    defaultInputDisplay: "root = [4, 2, 7, 1, 3, 6, 9]"
+  },
+
+  'heap-priority-queue': {
+    id: 'heap-priority-queue',
+    name: 'Kth Largest Element (Min-Heap)',
+    category: 'Heap / Priority Queue',
+    difficulty: 'medium',
+    pattern: 'Min-Heap / Top-K',
+    python: `# Kth Largest Element in an Array - LeetCode 215
+import heapq
+
+class Solution:
+    def findKthLargest(self, nums, k):
+        heap = []
+        for num in nums:
+            heapq.heappush(heap, num)
+            if len(heap) > k:
+                heapq.heappop(heap)
+        return heap[0]
+
+# Test
+sol = Solution()
+print(sol.findKthLargest([3, 2, 1, 5, 6, 4], 2))`,
+    java: `// Kth Largest Element in an Array - LeetCode 215
+class Solution {
+    public int findKthLargest(int[] nums, int k) {
+        PriorityQueue<Integer> pq = new PriorityQueue<>();
+        for (int i = 0; i < nums.length; i++) {
+            pq.offer(nums[i]);
+            if (pq.size() > k) {
+                pq.poll();
+            }
+        }
+        return pq.peek();
+    }
+}`,
+    inputs: {
+      pythonText: "nums = [3, 2, 1, 5, 6, 4]\nk = 2",
+      javaInputs: { nums: '[3, 2, 1, 5, 6, 4]', k: '2' }
+    },
+    defaultInputDisplay: "nums = [3, 2, 1, 5, 6, 4]\nk = 2"
+  },
+
+  'graphs': {
+    id: 'graphs',
+    name: 'Graph BFS Traversal',
+    category: 'Graphs',
+    difficulty: 'medium',
+    pattern: 'Breadth-First Search',
+    python: `# Graph Breadth-First Search (BFS) Traversal
+from collections import deque
+
+class Solution:
+    def bfsGraph(self):
+        adj = {0: [1, 2], 1: [2], 2: []}
+        visited = set([0])
+        queue = deque([0])
+        visited_count = 0
+        while queue:
+            node = queue.popleft()
+            visited_count += 1
+            for neighbor in adj.get(node, []):
+                if neighbor not in visited:
+                    visited.add(neighbor)
+                    queue.append(neighbor)
+        return visited_count
+
+# Test
+sol = Solution()
+print(sol.bfsGraph())`,
+    java: `// Graph Breadth-First Search (BFS) Traversal
+class Solution {
+    public int bfsGraph() {
+        ArrayList<Integer> adj0 = new ArrayList<>();
+        adj0.add(1);
+        adj0.add(2);
+
+        Queue<Integer> queue = new ArrayDeque<>();
+        boolean[] visited = new boolean[3];
+
+        queue.offer(0);
+        visited[0] = true;
+        int visitedNodes = 0;
+
+        while (!queue.isEmpty()) {
+            int node = queue.poll();
+            visitedNodes++;
+            if (node == 0) {
+                for (int i = 0; i < adj0.size(); i++) {
+                    int neighbor = adj0.get(i);
+                    if (!visited[neighbor]) {
+                        visited[neighbor] = true;
+                        queue.offer(neighbor);
+                    }
+                }
+            }
+        }
+        return visitedNodes;
+    }
+}`,
+    inputs: {
+      pythonText: "graph = {0: [1, 2], 1: [2], 2: []}",
+      javaInputs: {}
+    },
+    defaultInputDisplay: "adj: 0->[1,2], 1->[2], 2->[]"
   }
 };

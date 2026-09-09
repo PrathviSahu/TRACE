@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useTraceStore } from '../store/traceStore.js';
 import { MULTI_LANG_EXAMPLES } from '../engine/multiLangExamples.js';
 
-const CATEGORIES = [
+export const SIDEBAR_CATEGORIES = [
   {
     id: 'arrays',
     name: 'Arrays',
@@ -13,12 +13,62 @@ const CATEGORIES = [
       { id: 'maximum-subarray', name: 'Maximum Subarray' },
     ]
   },
-  { id: 'linked-list', name: 'Linked List', icon: '🔗', problems: [] },
-  { id: 'stack', name: 'Stack', icon: '📚', problems: [] },
-  { id: 'queue', name: 'Queue', icon: '📥', problems: [] },
-  { id: 'hashmap', name: 'HashMap', icon: '🗂️', problems: [] },
-  { id: 'binary-tree', name: 'Binary Tree', icon: '🌲', problems: [] },
-  { id: 'graph', name: 'Graph', icon: '🕸️', problems: [] },
+  {
+    id: 'linked-list',
+    name: 'Linked List',
+    icon: '🔗',
+    problems: [
+      { id: 'linked-list', name: 'Reverse Linked List' }
+    ]
+  },
+  {
+    id: 'stack',
+    name: 'Stack',
+    icon: '📚',
+    problems: [
+      { id: 'stack', name: 'Valid Parentheses' }
+    ]
+  },
+  {
+    id: 'queue',
+    name: 'Queue',
+    icon: '📥',
+    problems: [
+      { id: 'queue-deque', name: 'Queue Operations' }
+    ]
+  },
+  {
+    id: 'hashmap',
+    name: 'HashMap',
+    icon: '🗂️',
+    problems: [
+      { id: 'hashmap-hashset', name: 'Two Sum (Hash Map)' }
+    ]
+  },
+  {
+    id: 'binary-tree',
+    name: 'Binary Tree',
+    icon: '🌲',
+    problems: [
+      { id: 'binary-tree', name: 'Invert Binary Tree' }
+    ]
+  },
+  {
+    id: 'heap',
+    name: 'Heap / Priority Queue',
+    icon: '⚡',
+    problems: [
+      { id: 'heap-priority-queue', name: 'Kth Largest (Min-Heap)' }
+    ]
+  },
+  {
+    id: 'graph',
+    name: 'Graph',
+    icon: '🕸️',
+    problems: [
+      { id: 'graphs', name: 'Graph BFS Traversal' }
+    ]
+  },
   { id: 'dp', name: 'Dynamic Programming', icon: '⚡', problems: [] },
   { id: 'sorting', name: 'Sorting', icon: '📶', problems: [] },
   { id: 'recursion', name: 'Recursion', icon: '🔄', problems: [] },
@@ -90,7 +140,7 @@ export default function Sidebar() {
       {/* ── Examples Tree ─────────────────────────────────────── */}
       <div className="sidebar-tree">
         <div className="tree-header">Examples</div>
-        {CATEGORIES.map(cat => {
+        {SIDEBAR_CATEGORIES.map(cat => {
           const isOpen = !!openCategories[cat.id];
           return (
             <div key={cat.id} className="tree-node">

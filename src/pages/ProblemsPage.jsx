@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTraceStore } from '../store/traceStore.js';
 import { ALL_PROBLEMS, TOPICS, TOPIC_ORDER, ROADMAP_PROBLEMS } from '../data/roadmapProblems.js';
 import { getProblemTemplate, PRESET_SOLUTIONS } from '../data/problemTemplates.js';
@@ -9,11 +9,29 @@ import { useSolvedProblemIds } from '../services/progressStore.js';
 
 export default function ProblemsPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { setCode, setInputs } = useTraceStore();
 
+  const initialTopic = searchParams.get('topic');
+  const initialSearch = searchParams.get('search');
+
   // ── Filters & Search state
-  const [search, setSearch] = useState('');
-  const [selectedTopic, setSelectedTopic] = useState('All');
+  const [search, setSearch] = useState(initialSearch || '');
+  const [selectedTopic, setSelectedTopic] = useState((initialTopic && TOPICS.includes(initialTopic)) ? initialTopic : 'All');
+
+  // Sync if search params change dynamically
+  useEffect(() => {
+    const topicParam = searchParams.get('topic');
+    if (topicParam && TOPICS.includes(topicParam)) {
+      setSelectedTopic(topicParam);
+    } else if (topicParam === 'All') {
+      setSelectedTopic('All');
+    }
+    const searchParam = searchParams.get('search');
+    if (searchParam !== null && searchParam !== undefined) {
+      setSearch(searchParam);
+    }
+  }, [searchParams]);
   const [difficulty, setDifficulty] = useState('All');
   const [statusFilter, setStatusFilter] = useState('All'); // 'All' | 'solved' | 'unsolved' | 'preset'
   const [page, setPage] = useState(1);
