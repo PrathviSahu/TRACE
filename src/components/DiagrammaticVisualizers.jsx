@@ -1,5 +1,16 @@
 import React from "react";
 
+/**
+ * Unwraps TRACE execution engine variable snapshots: { value, type } -> value.
+ * Handles primitive numbers, strings, booleans, or nested objects safely.
+ */
+function resolveVar(v) {
+  while (v && typeof v === "object" && "value" in v) {
+    v = v.value;
+  }
+  return v;
+}
+
 // ─────────────────────────────────────────────────────────────
 //  TRACE — Diagrammatic Data Structure Visualizers
 //  Authentic, textbook-grade interactive visual DSA diagrams
@@ -668,22 +679,26 @@ export function DiagrammaticPriorityQueue({ name, items = [], raw }) {
  * live geometry HUD (width, height, area), and step-by-step invariant rationale.
  */
 export function DiagrammaticBarHeights({ name, values = [], pointers = [], variables = {} }) {
-  const leftPtr = pointers.find(p => p.name === "left" || p.name === "i" || p.name === "start")
-    || (variables.left !== undefined ? { name: "left", index: variables.left } : null);
-  const rightPtr = pointers.find(p => p.name === "right" || p.name === "j" || p.name === "end")
-    || (variables.right !== undefined ? { name: "right", index: variables.right } : null);
+  const rawLeft = pointers.find(p => p.name === "left" || p.name === "i" || p.name === "start")?.index
+    ?? (variables.left !== undefined ? resolveVar(variables.left) : (variables.i !== undefined ? resolveVar(variables.i) : null));
+  const rawRight = pointers.find(p => p.name === "right" || p.name === "j" || p.name === "end")?.index
+    ?? (variables.right !== undefined ? resolveVar(variables.right) : (variables.j !== undefined ? resolveVar(variables.j) : null));
+
+  const leftPtr = rawLeft !== null && rawLeft !== undefined ? { name: "left", index: Number(rawLeft) || 0 } : null;
+  const rightPtr = rawRight !== null && rawRight !== undefined ? { name: "right", index: Number(rawRight) || 0 } : null;
 
   const leftIdx = leftPtr ? Math.max(0, Math.min(leftPtr.index, values.length - 1)) : 0;
   const rightIdx = rightPtr ? Math.max(0, Math.min(rightPtr.index, values.length - 1)) : Math.max(0, values.length - 1);
 
   const hasPointers = leftPtr !== null && rightPtr !== null && leftIdx <= rightIdx;
-  const leftH = values[leftIdx] ?? 0;
-  const rightH = values[rightIdx] ?? 0;
+  const leftH = Number(resolveVar(values[leftIdx])) || 0;
+  const rightH = Number(resolveVar(values[rightIdx])) || 0;
   const waterH = Math.min(leftH, rightH);
   const width = Math.max(0, rightIdx - leftIdx);
   const currentArea = width * waterH;
 
-  const maxRecorded = variables.maxWater ?? variables.maxArea ?? variables.max ?? variables.ans ?? variables.res;
+  const rawMax = variables.maxWater ?? variables.maxArea ?? variables.max ?? variables.ans ?? variables.res;
+  const maxRecorded = rawMax !== undefined ? resolveVar(rawMax) : undefined;
   const maxVal = Math.max(...values.map(v => typeof v === "number" ? v : 1), 1);
   const MAX_HEIGHT_PX = 160;
 
@@ -710,7 +725,7 @@ export function DiagrammaticBarHeights({ name, values = [], pointers = [], varia
             </span>
             {maxRecorded !== undefined && (
               <span style={{ fontSize: 10, fontFamily: "var(--font-mono)", padding: "2px 6px", background: "rgba(255, 159, 67, 0.15)", borderRadius: 4, border: "1px solid rgba(255, 159, 67, 0.3)", color: "var(--accent-amber, #FF9F43)" }}>
-                Max Area: <strong>{maxRecorded}</strong>
+                Max Area: <strong>{typeof maxRecorded === "object" ? JSON.stringify(maxRecorded) : String(maxRecorded)}</strong>
               </span>
             )}
           </div>
