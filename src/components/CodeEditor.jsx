@@ -9,10 +9,77 @@ export default function CodeEditor() {
   const currentStep = useTraceStore(s => s.currentStep);
   const language    = useTraceStore(s => s.language);
   const theme       = useTraceStore(s => s.theme);
-  const editorRef   = useRef(null);
-  const monacoRef   = useRef(null);
-  const decoRef     = useRef([]);
+  const editorRef    = useRef(null);
+  const monacoRef    = useRef(null);
+  const containerRef = useRef(null);
+  const decoRef      = useRef([]);
   const [toastMsg, setToastMsg] = useState("");
+
+  // Direct robust capture-phase shortcut handler for Cmd/Ctrl + A, C, X, V
+  useEffect(() => {
+    function handleCaptureKey(e) {
+      if (!e.metaKey && !e.ctrlKey) return;
+      const key = (e.key || "").toLowerCase();
+      const code = e.code || "";
+      const isA = key === "a" || code === "KeyA";
+      const isC = key === "c" || code === "KeyC";
+      const isX = key === "x" || code === "KeyX";
+
+      if (!isA && !isC && !isX) return;
+
+      const editor = editorRef.current;
+      if (!editor) return;
+
+      const active = document.activeElement;
+      const wrapEl = containerRef.current;
+      const isInside =
+        (wrapEl && wrapEl.contains(active)) ||
+        Boolean(active?.closest?.(".editor-wrap")) ||
+        Boolean(active?.closest?.(".monaco-editor")) ||
+        Boolean(active?.closest?.(".editor-card-container")) ||
+        editor.hasTextFocus();
+
+      if (!isInside) return;
+
+      if (isA) {
+        e.preventDefault();
+        e.stopPropagation();
+        const model = editor.getModel();
+        if (model) {
+          editor.focus();
+          editor.setSelection(model.getFullModelRange());
+          showEditorToast("All selected");
+        }
+      } else if (isC) {
+        const selection = editor.getSelection();
+        const model = editor.getModel();
+        if (selection && model && !selection.isEmpty()) {
+          const text = model.getValueInRange(selection);
+          navigator.clipboard?.writeText?.(text);
+          showEditorToast("Copied");
+        }
+      } else if (isX) {
+        const selection = editor.getSelection();
+        const model = editor.getModel();
+        if (selection && model && !selection.isEmpty()) {
+          e.preventDefault();
+          e.stopPropagation();
+          const text = model.getValueInRange(selection);
+          navigator.clipboard?.writeText?.(text);
+          editor.executeEdits("cut-shortcut", [{
+            range: selection,
+            text: "",
+            forceMoveMarkers: true
+          }]);
+          editor.pushUndoStop();
+          showEditorToast("Cut");
+        }
+      }
+    }
+
+    window.addEventListener("keydown", handleCaptureKey, true);
+    return () => window.removeEventListener("keydown", handleCaptureKey, true);
+  }, []);
 
   function showEditorToast(msg) {
     setToastMsg(msg);
@@ -42,7 +109,9 @@ export default function CodeEditor() {
         'editorLineNumber.foreground': '#626a75',
         'editorLineNumber.activeForeground': '#ff9f43',
         'editorGutter.background': '#090b0e',
-        'editor.selectionBackground': '#222831',
+        'editor.selectionBackground': '#264f78',
+        'editor.inactiveSelectionBackground': '#3a3d41',
+        'editor.selectionHighlightBackground': 'rgba(56, 217, 197, 0.25)',
         'editor.lineHighlightBackground': '#111419',
       }
     });
@@ -165,14 +234,7 @@ export default function CodeEditor() {
       }
     });
 
-    // Prevent editor keys from leaking to outer window navigation shortcuts,
-    // BUT ALWAYS allow Ctrl/Cmd modifier shortcuts (Ctrl+A, Ctrl+C, Ctrl+X, Ctrl+V, etc.)
-    editor.onKeyDown((e) => {
-      if (e.metaKey || e.ctrlKey) {
-        return;
-      }
-      e.stopPropagation();
-    });
+
   }
 
   // Switch Monaco theme on global theme toggle
@@ -321,7 +383,7 @@ export default function CodeEditor() {
   const lineCount = (code || '').split('\n').length;
 
   return (
-    <div className="editor-wrap" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <div ref={containerRef} className="editor-wrap" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       {/* ── Editor Action Header Toolbar ──────────────────────── */}
       <div className="editor-top-toolbar">
         <div className="editor-toolbar-left">
