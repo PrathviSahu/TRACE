@@ -57,7 +57,7 @@ export default function ExplanationPanel() {
           <span>Entering <code className="exp-code">{exp.name}()</code></span>
         )}
         {exp.type === 'output' && (
-          <span>Prints: <code className="exp-code">"{exp.value}"</code></span>
+          <span>Prints: <code className="exp-code">"{fmtVal(exp.value)}"</code></span>
         )}
         {exp.type === 'done' && (
           <span style={{color:'var(--green)'}}>✓ Execution complete · Result: <code className="exp-code">{fmtVal(exp.value)}</code></span>

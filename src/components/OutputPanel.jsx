@@ -4,6 +4,7 @@ import { useTraceStore } from '../store/traceStore.js';
 function fmtVal(v) {
   if (v === null || v === undefined) return 'null';
   if (Array.isArray(v)) return `[${v.join(', ')}]`;
+  if (typeof v === 'object') return JSON.stringify(v);
   return String(v);
 }
 

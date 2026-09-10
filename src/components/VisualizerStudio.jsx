@@ -414,7 +414,7 @@ export default function VisualizerStudio() {
                     <div key={col.name} className="ds-block" style={{ marginBottom: 20 }}>
                       <div className="ds-title">StringBuilder: {col.name}</div>
                       <div style={{ padding: "6px 10px", background: "var(--bg2)", borderRadius: 4, fontFamily: "monospace" }}>
-                        "{col.value}"
+                        "{typeof col.value === "object" ? JSON.stringify(col.value) : String(col.value ?? "")}"
                       </div>
                     </div>
                   );

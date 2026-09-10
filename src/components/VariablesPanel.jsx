@@ -15,6 +15,7 @@ export default function VariablesPanel() {
   const fmt = (v) => {
     if (v === null || v === undefined) return 'null';
     if (typeof v === 'boolean') return String(v);
+    if (typeof v === 'object') return v.__type ? `${v.__type}(ref)` : JSON.stringify(v);
     return String(v);
   };
 
