@@ -222,10 +222,12 @@ export function normalizeStepData(stepData, prevStepData = null) {
     explanation = { lineText, summary, bullets, why };
   }
 
-  const hasData = arrays.length > 0 || collections.length > 0 || objects.length > 0;
+  const slidingWindow = detectSlidingWindow(stepData, arrays);
+  const hasData = arrays.length > 0 || collections.length > 0 || objects.length > 0 || !!slidingWindow;
 
   return {
     hasData,
+    slidingWindow,
     arrays,
     collections,
     objects,
@@ -288,4 +290,141 @@ export function formatObjectTree(obj, rootName = "", depth = 0, seen = new WeakS
   }
 
   return nodes;
+}
+
+
+/**
+ * Detects whether the current step state constitutes a sliding window on a string or array.
+ */
+export function detectSlidingWindow(stepData, arrays = []) {
+  if (!stepData || !stepData.variables) return null;
+  const vars = stepData.variables;
+
+  // 1. Find sequence (string or array)
+  let seqName = null;
+  let seqType = null;
+  let seqItems = [];
+
+  // Check strings in variables first (e.g., s, str, text, or any String with length >= 2)
+  const preferredStringNames = ['s', 'str', 'text', 'string', 'word', 'pattern'];
+  for (const name of preferredStringNames) {
+    const v = vars[name];
+    if (v && typeof v.value === 'string' && v.value.length >= 2) {
+      seqName = name;
+      seqType = 'string';
+      seqItems = v.value.split('');
+      break;
+    }
+  }
+
+  if (!seqName) {
+    for (const [vName, vInfo] of Object.entries(vars)) {
+      const val = vInfo?.value;
+      if (typeof val === 'string' && val.length >= 2) {
+        seqName = vName;
+        seqType = 'string';
+        seqItems = val.split('');
+        break;
+      }
+    }
+  }
+
+  // If no string sequence found, check arrays (skip frequency/counter arrays)
+  if (!seqName && arrays && arrays.length > 0) {
+    for (const arr of arrays) {
+      if (!/^(count|counts|freq|frequency|dp|memo)$/i.test(arr.name) && Array.isArray(arr.values) && arr.values.length >= 2) {
+        seqName = arr.name;
+        seqType = 'array';
+        seqItems = [...arr.values];
+        break;
+      }
+    }
+  }
+
+  if (!seqName || seqItems.length === 0) return null;
+
+  // 2. Find left and right window pointers
+  const leftNames = ['left', 'l', 'start', 'windowStart', 'i', 'p1', 'low'];
+  const rightNames = ['right', 'r', 'end', 'windowEnd', 'j', 'p2', 'high'];
+
+  let leftPtr = null;
+  for (const name of leftNames) {
+    const rawVal = vars[name]?.value;
+    if (rawVal !== undefined && typeof rawVal === 'number' && Number.isInteger(rawVal)) {
+      leftPtr = { name, index: rawVal };
+      break;
+    }
+  }
+
+  let rightPtr = null;
+  for (const name of rightNames) {
+    const rawVal = vars[name]?.value;
+    if (rawVal !== undefined && typeof rawVal === 'number' && Number.isInteger(rawVal)) {
+      if (!leftPtr || name !== leftPtr.name) {
+        rightPtr = { name, index: rawVal };
+        break;
+      }
+    }
+  }
+
+  // Need at least one window pointer
+  if (!leftPtr && !rightPtr) return null;
+
+  const leftIdx = leftPtr ? leftPtr.index : 0;
+  const rightIdx = rightPtr ? rightPtr.index : (seqItems.length - 1);
+
+  // Clamp active slice
+  const clampedL = Math.max(0, Math.min(leftIdx, seqItems.length - 1));
+  const clampedR = Math.max(0, Math.min(rightIdx, seqItems.length - 1));
+  const inWindow = rightIdx >= leftIdx && leftIdx >= 0 && rightIdx < seqItems.length;
+  const windowItems = inWindow ? seqItems.slice(clampedL, clampedR + 1) : [];
+  const windowStr = seqType === 'string' ? windowItems.join('') : JSON.stringify(windowItems);
+  const windowLen = inWindow ? (rightIdx - leftIdx + 1) : 0;
+
+  // Window frequency breakdown
+  const windowFreq = {};
+  let currentWindowMaxFreq = 0;
+  for (const item of windowItems) {
+    const key = String(item);
+    windowFreq[key] = (windowFreq[key] || 0) + 1;
+    if (windowFreq[key] > currentWindowMaxFreq) {
+      currentWindowMaxFreq = windowFreq[key];
+    }
+  }
+
+  const kVal = vars.k?.value !== undefined && typeof vars.k.value === 'number' ? vars.k.value : null;
+  const maxCountVal = vars.maxCount?.value !== undefined && typeof vars.maxCount.value === 'number' ? vars.maxCount.value : null;
+  const maxLenVal = vars.maxLen?.value !== undefined && typeof vars.maxLen.value === 'number' ? vars.maxLen.value : null;
+
+  let isValid = null;
+  let statusText = '';
+  if (kVal !== null) {
+    const effectiveMax = currentWindowMaxFreq > 0 ? currentWindowMaxFreq : (maxCountVal || 0);
+    const replacements = Math.max(0, windowLen - effectiveMax);
+    isValid = replacements <= kVal;
+    statusText = isValid
+      ? `Valid Window: ${replacements} replacement${replacements === 1 ? '' : 's'} <= k (${kVal})`
+      : `Invalid Window: ${replacements} replacements > k (${kVal}) → Shrink Left`;
+  } else if (maxCountVal !== null) {
+    statusText = `Max Count: ${maxCountVal}`;
+  }
+
+  return {
+    seqName,
+    seqType,
+    seqItems,
+    leftPtr,
+    rightPtr,
+    leftIdx,
+    rightIdx,
+    windowItems,
+    windowStr,
+    windowLen,
+    windowFreq,
+    kVal,
+    maxCountVal,
+    maxLenVal,
+    isValid,
+    statusText
+  };
 }

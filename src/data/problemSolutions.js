@@ -2006,8 +2006,87 @@ export const PROBLEM_SOLUTIONS = {
 }`
       }
     ]
-  }
+  },
 
+  424: {
+    approaches: [
+      {
+        name: "Brute Force",
+        label: "O(26 · n²) — Check All Substrings",
+        idea: "Examine every substring (i to j). For each substring, count character frequencies and determine if (length - maxFreq) <= k.",
+        complexity: { time: "O(26 · n²)", space: "O(1)" },
+        code: `class Solution {
+    public int characterReplacement(String s, int k) {
+        int maxLen = 0;
+        for (int i = 0; i < s.length(); i++) {
+            int[] count = new int[26];
+            int maxCount = 0;
+            for (int j = i; j < s.length(); j++) {
+                int idx = s.charAt(j) - 'A';
+                count[idx]++;
+                maxCount = Math.max(maxCount, count[idx]);
+                int windowLen = j - i + 1;
+                if (windowLen - maxCount <= k) {
+                    maxLen = Math.max(maxLen, windowLen);
+                }
+            }
+        }
+        return maxLen;
+    }
+}`
+      },
+      {
+        name: "Better",
+        label: "O(n) — Sliding Window with Frequency Array",
+        idea: "Maintain a frequency array of 26 letters and expand right pointer. When window length - maxCount > k, shrink from left.",
+        complexity: { time: "O(n)", space: "O(26) = O(1)" },
+        code: `class Solution {
+    public int characterReplacement(String s, int k) {
+        int[] count = new int[26];
+        int maxCount = 0;
+        int maxLen = 0;
+        int left = 0;
+        for (int right = 0; right < s.length(); right++) {
+            count[s.charAt(right) - 'A']++;
+            maxCount = Math.max(maxCount, count[s.charAt(right) - 'A']);
+            while ((right - left + 1) - maxCount > k) {
+                count[s.charAt(left) - 'A']--;
+                left++;
+            }
+            maxLen = Math.max(maxLen, right - left + 1);
+        }
+        return maxLen;
+    }
+}`
+      },
+      {
+        name: "Optimal",
+        label: "O(n) — Sliding Window with HashMap",
+        idea: "Dynamic window tracking using Map<Character, Integer>. Allows non-uppercase or generic character sets with clean state tracking.",
+        complexity: { time: "O(n)", space: "O(k)" },
+        code: `class Solution {
+    public int characterReplacement(String s, int k) {
+        Map<Character, Integer> count = new HashMap<>();
+        int maxCount = 0;
+        int maxLen = 0;
+        int left = 0;
+        for (int right = 0; right < s.length(); right++) {
+            char c = s.charAt(right);
+            count.put(c, count.getOrDefault(c, 0) + 1);
+            maxCount = Math.max(maxCount, count.get(c));
+            while ((right - left + 1) - maxCount > k) {
+                char l = s.charAt(left);
+                count.put(l, count.get(l) - 1);
+                left++;
+            }
+            maxLen = Math.max(maxLen, right - left + 1);
+        }
+        return maxLen;
+    }
+}`
+      }
+    ]
+  },
 };
 
 export function getProblemSolutions(id) {

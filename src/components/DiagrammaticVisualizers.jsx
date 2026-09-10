@@ -1279,3 +1279,270 @@ export function DiagrammaticHashMap({ name, entries = [], lastOp, variables = {}
     </div>
   );
 }
+
+
+/**
+ * Diagrammatic Sliding Window Visualizer
+ * Renders an animated, high-contrast ribbon of elements with an active glowing
+ * window bracket between left and right pointers, dynamic substring tracking,
+ * and live window valid/invalid replacement diagnostics.
+ */
+export function DiagrammaticSlidingWindow({
+  name = "s",
+  type = "String",
+  items = [],
+  leftIndex = 0,
+  rightIndex = 0,
+  leftName = "left",
+  rightName = "right",
+  windowString = "",
+  windowLength = 0,
+  frequency = {},
+  k = null,
+  maxCount = null,
+  maxLen = null,
+  isValid = null,
+  statusText = ""
+}) {
+  const count = items.length;
+  const isString = type === "String";
+  const clampedL = Math.max(0, Math.min(leftIndex, count - 1));
+  const clampedR = Math.max(0, Math.min(rightIndex, count - 1));
+  const inWindow = rightIndex >= leftIndex && leftIndex >= 0 && rightIndex < count;
+
+  return (
+    <div className="ds-block diagrammatic-sliding-window-block" style={{ marginBottom: 24 }}>
+      {/* ── Title & Live Geometry HUD ─────────────────────── */}
+      <div className="ds-title" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span>Sliding Window: <strong style={{ color: "var(--container-text-primary, var(--txt-bright, #F0F6FC))" }}>{name}</strong></span>
+          <span style={{ fontSize: 10, padding: "2px 8px", background: "rgba(255, 159, 67, 0.15)", color: "var(--accent-amber, #FF9F43)", borderRadius: 4, fontWeight: 600 }}>
+            {isString ? "String Window Ribbon" : "Array Subarray Ribbon"}
+          </span>
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+          <span style={{ fontSize: 10, fontFamily: "var(--font-mono)", padding: "2px 6px", background: "var(--container-card-bg, var(--bg-raised, #1C2128))", borderRadius: 4, border: "1px solid var(--border-subtle, #21262D)", color: "var(--container-text-dim, var(--txt-dim, #6E7681))" }}>
+            Window: <strong style={{ color: "var(--accent-cyan, #38D9C5)" }}>[{leftName}:{leftIndex}..{rightName}:{rightIndex}]</strong>
+          </span>
+          <span style={{ fontSize: 10, fontFamily: "var(--font-mono)", padding: "2px 6px", background: "var(--container-card-bg, var(--bg-raised, #1C2128))", borderRadius: 4, border: "1px solid var(--border-subtle, #21262D)", color: "var(--container-text-dim, var(--txt-dim, #6E7681))" }}>
+            Len: <strong style={{ color: "var(--container-text-primary, var(--txt-bright, #F0F6FC))" }}>{windowLength}</strong>
+          </span>
+          {k !== null && (
+            <span style={{ fontSize: 10, fontFamily: "var(--font-mono)", padding: "2px 6px", background: "rgba(56, 217, 197, 0.12)", borderRadius: 4, border: "1px solid rgba(56, 217, 197, 0.3)", color: "var(--accent-cyan, #38D9C5)" }}>
+              Budget: <strong>k = {k}</strong>
+            </span>
+          )}
+          {maxCount !== null && (
+            <span style={{ fontSize: 10, fontFamily: "var(--font-mono)", padding: "2px 6px", background: "var(--container-card-bg, var(--bg-raised, #1C2128))", borderRadius: 4, border: "1px solid var(--border-subtle, #21262D)", color: "var(--txt-dim, #6E7681)" }}>
+              Max Freq: <strong style={{ color: "var(--accent-amber, #FF9F43)" }}>{maxCount}</strong>
+            </span>
+          )}
+          {maxLen !== null && (
+            <span style={{ fontSize: 10, fontFamily: "var(--font-mono)", padding: "2px 6px", background: "rgba(255, 159, 67, 0.15)", borderRadius: 4, border: "1px solid rgba(255, 159, 67, 0.4)", color: "var(--accent-amber, #FF9F43)" }}>
+              Best Len: <strong>{maxLen}</strong>
+            </span>
+          )}
+          {isValid !== null && (
+            <span style={{
+              fontSize: 10,
+              fontFamily: "var(--font-mono)",
+              padding: "2px 8px",
+              borderRadius: 4,
+              fontWeight: 700,
+              background: isValid ? "rgba(16, 185, 129, 0.15)" : "rgba(239, 68, 68, 0.15)",
+              border: `1px solid ${isValid ? "rgba(16, 185, 129, 0.4)" : "rgba(239, 68, 68, 0.4)"}`,
+              color: isValid ? "#10B981" : "#EF4444"
+            }}>
+              {isValid ? "✓ VALID (EXPAND)" : "⚠ INVALID (SHRINK)"}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* ── Active Window String & Diagnostics Subheader ── */}
+      <div style={{
+        margin: "10px 14px 14px",
+        padding: "8px 12px",
+        borderRadius: 6,
+        background: "var(--container-card-bg, var(--bg-raised, #161B22))",
+        border: "1px solid var(--container-card-border, var(--border-subtle, #21262D))",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        flexWrap: "wrap",
+        gap: 8
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ fontSize: 11, color: "var(--txt-dim, #6E7681)", fontFamily: "var(--font-mono)" }}>
+            Current Window:
+          </span>
+          <span style={{
+            fontSize: 13,
+            fontFamily: "var(--font-mono)",
+            fontWeight: 700,
+            color: "var(--accent-cyan, #38D9C5)",
+            background: "rgba(56, 217, 197, 0.1)",
+            padding: "2px 8px",
+            borderRadius: 4,
+            border: "1px solid rgba(56, 217, 197, 0.3)",
+            letterSpacing: "0.1em"
+          }}>
+            {inWindow ? `"${windowString}"` : "[ Empty Window ]"}
+          </span>
+        </div>
+
+        {statusText && (
+          <div style={{
+            fontSize: 11,
+            fontFamily: "var(--font-mono)",
+            color: isValid === false ? "#EF4444" : "var(--accent-amber, #FF9F43)"
+          }}>
+            {statusText}
+          </div>
+        )}
+
+        {/* Character Frequencies Pill List */}
+        {Object.keys(frequency).length > 0 && (
+          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+            <span style={{ fontSize: 10, color: "var(--txt-dim, #6E7681)", fontFamily: "var(--font-mono)" }}>Window Freq:</span>
+            {Object.entries(frequency).map(([ch, cnt]) => (
+              <span key={ch} style={{
+                fontSize: 10.5,
+                fontFamily: "var(--font-mono)",
+                padding: "1px 6px",
+                borderRadius: 4,
+                background: "rgba(255, 159, 67, 0.12)",
+                border: "1px solid rgba(255, 159, 67, 0.3)",
+                color: "var(--accent-amber, #FF9F43)"
+              }}>
+                <strong>'{ch}'</strong>:{cnt}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ── Visual Ribbon Cells & Pointers ───────────────── */}
+      <div style={{
+        overflowX: "auto",
+        padding: "12px 14px 18px",
+        background: "var(--bg-canvas, #090B0E)",
+        borderRadius: "0 0 8px 8px"
+      }}>
+        {/* Row 1: Index Numbers */}
+        <div style={{ display: "flex", gap: 6, marginBottom: 4 }}>
+          {items.map((_, idx) => (
+            <div
+              key={idx}
+              style={{
+                width: 38,
+                textAlign: "center",
+                fontSize: 10,
+                fontFamily: "var(--font-mono)",
+                color: (idx >= clampedL && idx <= clampedR) ? "var(--accent-cyan, #38D9C5)" : "var(--txt-dim, #6E7681)",
+                fontWeight: (idx >= clampedL && idx <= clampedR) ? 700 : 400
+              }}
+            >
+              {idx}
+            </div>
+          ))}
+        </div>
+
+        {/* Row 2: Character/Element Cells with Window Highlighting */}
+        <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
+          {items.map((item, idx) => {
+            const isInside = idx >= clampedL && idx <= clampedR;
+            const isLeft = idx === leftIndex;
+            const isRight = idx === rightIndex;
+
+            return (
+              <div
+                key={idx}
+                style={{
+                  width: 38,
+                  height: 44,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  borderRadius: 6,
+                  fontFamily: "var(--font-mono)",
+                  fontSize: 16,
+                  fontWeight: 700,
+                  transition: "all 0.2s ease",
+                  background: isInside
+                    ? "rgba(255, 159, 67, 0.15)"
+                    : "rgba(255, 255, 255, 0.03)",
+                  border: isLeft && isRight
+                    ? "2px solid #38D9C5"
+                    : isLeft
+                      ? "2px solid #38D9C5"
+                      : isRight
+                        ? "2px solid #FF9F43"
+                        : isInside
+                          ? "1px solid rgba(255, 159, 67, 0.5)"
+                          : "1px solid var(--border-subtle, #21262D)",
+                  boxShadow: isInside ? "0 0 12px rgba(255, 159, 67, 0.2)" : "none",
+                  color: isInside ? "var(--txt-bright, #F0F6FC)" : "var(--txt-dim, #6E7681)",
+                  opacity: isInside ? 1 : 0.45,
+                  position: "relative"
+                }}
+              >
+                {String(item)}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Row 3: Pointers (Left and Right markers) */}
+        <div style={{ display: "flex", gap: 6, minHeight: 28 }}>
+          {items.map((_, idx) => {
+            const isLeft = idx === leftIndex;
+            const isRight = idx === rightIndex;
+
+            if (!isLeft && !isRight) {
+              return <div key={idx} style={{ width: 38 }} />;
+            }
+
+            return (
+              <div
+                key={idx}
+                style={{
+                  width: 38,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: 1
+                }}
+              >
+                <span style={{ fontSize: 10, color: isLeft ? "#38D9C5" : "#FF9F43", lineHeight: 1 }}>▲</span>
+                <span
+                  style={{
+                    fontSize: 9,
+                    fontFamily: "var(--font-mono)",
+                    fontWeight: 700,
+                    padding: "1px 3px",
+                    borderRadius: 3,
+                    background: isLeft && isRight
+                      ? "rgba(56, 217, 197, 0.2)"
+                      : isLeft
+                        ? "rgba(56, 217, 197, 0.2)"
+                        : "rgba(255, 159, 67, 0.2)",
+                    color: isLeft && isRight
+                      ? "#38D9C5"
+                      : isLeft
+                        ? "#38D9C5"
+                        : "#FF9F43",
+                    whiteSpace: "nowrap"
+                  }}
+                >
+                  {isLeft && isRight ? "L,R" : isLeft ? "L" : "R"}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -317,12 +317,16 @@ class Interpreter {
         vars[k] = { value: this.safeSnapshotValue(v.value), type: v.type };
       }
     }
-    // detect pointer variables for each array
+    // detect pointer variables for each array (excluding frequency / dp counters from window pointer collision)
     for (const [arrName, arrInfo] of Object.entries(arrays)) {
       const pointers = {};
+      const isFreqOrDp = /^(count|counts|freq|frequency|dp|memo)$/i.test(arrName);
       for (const [varName, varInfo] of Object.entries(vars)) {
         const val = varInfo.value;
         if (typeof val === 'number' && Number.isInteger(val) && val >= 0 && val < arrInfo.values.length) {
+          if (isFreqOrDp && /^(left|right|start|end|l|r)$/i.test(varName)) {
+            continue;
+          }
           pointers[varName] = val;
         }
       }
@@ -584,24 +588,28 @@ class Interpreter {
     if (node.op === 'OR')  { const l=this.evalExpr(node.left,env); return l ? true : this.evalExpr(node.right,env); }
     const l = this.evalExpr(node.left, env);
     const r = this.evalExpr(node.right, env);
+    const toNum = (v) => (typeof v === 'string' && v.length === 1 ? v.charCodeAt(0) : v);
     switch(node.op) {
       case 'PLUS':    return (typeof l==='string'||typeof r==='string') ? String(l)+String(r) : l+r;
-      case 'MINUS':   return l-r;
-      case 'STAR':    return l*r;
-      case 'SLASH':   return r===0 ? (() => { throw new Error('Division by zero'); })() : Math.trunc(l/r);
-      case 'PERCENT': return l%r;
+      case 'MINUS':   return toNum(l) - toNum(r);
+      case 'STAR':    return toNum(l) * toNum(r);
+      case 'SLASH':   {
+        const denom = toNum(r);
+        return denom === 0 ? (() => { throw new Error('Division by zero'); })() : Math.trunc(toNum(l) / denom);
+      }
+      case 'PERCENT': return toNum(l) % toNum(r);
       case 'EQ':      return l===r;
       case 'NEQ':     return l!==r;
-      case 'LT':      return l<r;
-      case 'GT':      return l>r;
-      case 'LTE':     return l<=r;
-      case 'GTE':     return l>=r;
-      case 'CARET':   return l ^ r;
-      case 'AMP':     return l & r;
-      case 'PIPE':    return l | r;
-      case 'SHIFT_LEFT':           return l << r;
-      case 'SHIFT_RIGHT':          return l >> r;
-      case 'UNSIGNED_SHIFT_RIGHT': return l >>> r;
+      case 'LT':      return toNum(l) < toNum(r);
+      case 'GT':      return toNum(l) > toNum(r);
+      case 'LTE':     return toNum(l) <= toNum(r);
+      case 'GTE':     return toNum(l) >= toNum(r);
+      case 'CARET':   return toNum(l) ^ toNum(r);
+      case 'AMP':     return toNum(l) & toNum(r);
+      case 'PIPE':    return toNum(l) | toNum(r);
+      case 'SHIFT_LEFT':           return toNum(l) << toNum(r);
+      case 'SHIFT_RIGHT':          return toNum(l) >> toNum(r);
+      case 'UNSIGNED_SHIFT_RIGHT': return toNum(l) >>> toNum(r);
       default:
         throw new RuntimeError(`Unsupported binary operator '${node.op}' at line ${node.line || "?"}.`, node.line);
     }
@@ -625,20 +633,21 @@ class Interpreter {
     let rval = this.evalExpr(node.right, env);
     if (node.op !== 'ASSIGN') {
       const cur = this.evalExpr(node.left, env);
+      const toNum = (v) => (typeof v === 'string' && v.length === 1 ? v.charCodeAt(0) : v);
       switch(node.op) {
         case 'PLUS_ASSIGN':    rval = (typeof cur==='string'||typeof rval==='string') ? String(cur)+String(rval) : cur+rval; break;
-        case 'MINUS_ASSIGN':   rval = cur-rval; break;
-        case 'STAR_ASSIGN':    rval = cur*rval; break;
+        case 'MINUS_ASSIGN':   rval = toNum(cur) - toNum(rval); break;
+        case 'STAR_ASSIGN':    rval = toNum(cur) * toNum(rval); break;
         case 'SLASH_ASSIGN':
-          if (rval === 0) throw new Error('ArithmeticException: / by zero');
-          rval = Math.trunc(cur / rval);
+          if (toNum(rval) === 0) throw new Error('ArithmeticException: / by zero');
+          rval = Math.trunc(toNum(cur) / toNum(rval));
           break;
-        case 'PERCENT_ASSIGN': rval = cur % rval; break;
-        case 'AND_ASSIGN':     rval = cur & rval; break;
-        case 'OR_ASSIGN':      rval = cur | rval; break;
-        case 'SHIFT_LEFT_ASSIGN':           rval = cur << rval; break;
-        case 'SHIFT_RIGHT_ASSIGN':          rval = cur >> rval; break;
-        case 'UNSIGNED_SHIFT_RIGHT_ASSIGN': rval = cur >>> rval; break;
+        case 'PERCENT_ASSIGN': rval = toNum(cur) % toNum(rval); break;
+        case 'AND_ASSIGN':     rval = toNum(cur) & toNum(rval); break;
+        case 'OR_ASSIGN':      rval = toNum(cur) | toNum(rval); break;
+        case 'SHIFT_LEFT_ASSIGN':           rval = toNum(cur) << toNum(rval); break;
+        case 'SHIFT_RIGHT_ASSIGN':          rval = toNum(cur) >> toNum(rval); break;
+        case 'UNSIGNED_SHIFT_RIGHT_ASSIGN': rval = toNum(cur) >>> toNum(rval); break;
       }
     }
     this.assignTo(node.left, rval, env);
@@ -663,7 +672,8 @@ class Interpreter {
       }
     } else if (target.kind === 'ArrayAccess') {
       const arr = this.evalExpr(target.object, env);
-      const idx = this.evalExpr(target.index, env);
+      let idx = this.evalExpr(target.index, env);
+      if (typeof idx === 'string' && idx.length === 1) idx = idx.charCodeAt(0);
       if (Array.isArray(arr)) arr[idx] = value;
     } else if (target.kind === 'MemberAccess') {
       const obj = this.evalExpr(target.object, env);
@@ -678,9 +688,10 @@ class Interpreter {
 
   evalArrayAccess(node, env) {
     const arr = this.evalExpr(node.object, env);
-    const idx = this.evalExpr(node.index, env);
+    let idx = this.evalExpr(node.index, env);
+    if (typeof idx === 'string' && idx.length === 1) idx = idx.charCodeAt(0);
     if (!Array.isArray(arr)) throw new Error(`Not an array`);
-    if (idx < 0 || idx >= arr.length) throw new Error(`ArrayIndexOutOfBoundsException: index ${idx}, length ${arr.length}`);
+    if (idx < 0 || idx >= arr.length || Number.isNaN(idx)) throw new Error(`ArrayIndexOutOfBoundsException: index ${idx}, length ${arr.length}`);
     return arr[idx];
   }
 
@@ -1433,6 +1444,7 @@ class Interpreter {
   }
 }
 
+export { Interpreter };
 export function runJava(src, rawInputs={}) {
   const inputs = typeof rawInputs === "string" ? parseInputString(rawInputs) : (rawInputs || {});
   const interp = new Interpreter();

@@ -579,7 +579,32 @@ export const PROBLEM_DESCRIPTIONS = {
     complexity: { time: "O(n)", space: "O(1)" },
     topics: ["Hash Table", "Linked List", "Two Pointers"],
     companies: ["Amazon", "Microsoft", "Apple", "Bloomberg"]
-  }
+  },
+
+  424: {
+    title: "Longest Repeating Character Replacement",
+    difficulty: "medium",
+    category: "Sliding Window / String",
+    acceptance: "54.2%",
+    description: `You are given a string <code>s</code> and an integer <code>k</code>. You can choose any character of the string and change it to any other uppercase English character. You can perform this operation at most <code>k</code> times. Return <em>the length of the longest substring containing the same letter you can get after performing the above operations</em>.`,
+    examples: [
+      { input: 's = "ABAB", k = 2', output: "4", explanation: 'Replace the two \'A\'s with \'B\'s or vice versa.' },
+      { input: 's = "AABABBA", k = 1', output: "4", explanation: 'Replace the one \'A\' in the middle with \'B\' and form "AABBBBA". The substring "BBBB" has the longest repeating letters, which is 4.' }
+    ],
+    constraints: [
+      "1 ≤ s.length ≤ 10⁵",
+      "s consists of only uppercase English letters.",
+      "0 ≤ k ≤ s.length"
+    ],
+    hints: [
+      "Use two pointers (left and right) to maintain a dynamic sliding window.",
+      "Count character frequencies inside the window. The most frequent character determines the target letter.",
+      "If (window_length - max_frequency) > k, the window is invalid and must be shrunk from the left."
+    ],
+    complexity: { time: "O(n)", space: "O(26) = O(1)" },
+    topics: ["Hash Table", "String", "Sliding Window"],
+    companies: ["Amazon", "Google", "Facebook", "Microsoft", "Uber"]
+  },
 };
 
 export function getProblemDescription(id) {

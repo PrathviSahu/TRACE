@@ -12,7 +12,8 @@ import {
   DiagrammaticPriorityQueue,
   DiagrammaticBarHeights,
   DiagrammaticHashSet,
-  DiagrammaticHashMap
+  DiagrammaticHashMap,
+  DiagrammaticSlidingWindow
 } from "./DiagrammaticVisualizers.jsx";
 
 export default function VisualizerStudio() {
@@ -58,7 +59,7 @@ export default function VisualizerStudio() {
     () => normalizeStepData(stepData, prevStepData),
     [stepData, prevStepData]
   );
-  const { hasData, arrays, collections, objects, variables, callStack, explanation } = normalized;
+  const { hasData, slidingWindow, arrays, collections, objects, variables, callStack, explanation } = normalized;
 
   // Global keyboard navigation (only when NOT focused in any code editor or input field)
   useEffect(() => {
@@ -249,6 +250,27 @@ export default function VisualizerStudio() {
         <div className="ds-canvas">
           {hasData || (callStack && callStack.length > 0) ? (
             <>
+              {/* 0. Sliding Window Ribbon Visualizer */}
+              {slidingWindow && (
+                <DiagrammaticSlidingWindow
+                  name={slidingWindow.seqName}
+                  type={slidingWindow.seqType === "string" ? "String" : "Array"}
+                  items={slidingWindow.seqItems}
+                  leftIndex={slidingWindow.leftIdx}
+                  rightIndex={slidingWindow.rightIdx}
+                  leftName={slidingWindow.leftPtr?.name || "left"}
+                  rightName={slidingWindow.rightPtr?.name || "right"}
+                  windowString={slidingWindow.windowStr}
+                  windowLength={slidingWindow.windowLen}
+                  frequency={slidingWindow.windowFreq}
+                  k={slidingWindow.kVal}
+                  maxCount={slidingWindow.maxCountVal}
+                  maxLen={slidingWindow.maxLenVal}
+                  isValid={slidingWindow.isValid}
+                  statusText={slidingWindow.statusText}
+                />
+              )}
+
               {/* 1. Arrays (with Diagrammatic Bar Heights option) */}
               {arrays.map((arr) => {
                 const isNumeric = arr.values.length > 0 && arr.values.every(v => typeof v === "number" || (!isNaN(Number(v)) && v !== ""));
