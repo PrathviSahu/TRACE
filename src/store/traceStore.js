@@ -5,6 +5,7 @@ import { MULTI_LANG_EXAMPLES } from '../engine/multiLangExamples.js';
 import { ALL_PROBLEMS } from '../data/roadmapProblems.js';
 import { getProblemTemplate } from '../data/problemTemplates.js';
 import { PROBLEM_DESCRIPTIONS } from '../data/problemDescriptions.js';
+import { COMPANY_DATA } from '../data/companyData.js';
 
 const getInitialTheme = () => {
   if (typeof window !== "undefined" && window.localStorage) {
@@ -195,6 +196,23 @@ export const useTraceStore = create((set, get) => ({
     if (!prob && !isNaN(num)) {
       const desc = PROBLEM_DESCRIPTIONS[num];
       if (desc) prob = { id: num, name: desc.title, difficulty: desc.difficulty, topic: desc.category };
+    }
+    if (!prob) {
+      const qLower = trimmed.toLowerCase();
+      for (const comp of Object.values(COMPANY_DATA)) {
+        const list = [...(comp.thirtyDays || []), ...(comp.sixMonths || [])];
+        const found = list.find(p => (!isNaN(num) && p.id === num) || (p.title && p.title.toLowerCase().includes(qLower)));
+        if (found) {
+          prob = {
+            id: found.id,
+            name: found.title,
+            difficulty: (found.difficulty || "medium").toLowerCase(),
+            topic: (found.topics && found.topics[0]) || "Algorithms",
+            url: found.url
+          };
+          break;
+        }
+      }
     }
     if (!prob) return null;
 

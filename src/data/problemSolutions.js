@@ -2087,6 +2087,113 @@ export const PROBLEM_SOLUTIONS = {
       }
     ]
   },
+
+  567: {
+    approaches: [
+      {
+        name: "Brute Force",
+        label: "O(n · m) — Check Every Substring",
+        idea: "Iterate through all substrings in s2 of length equal to s1. For each window, count character frequencies and compare with s1.",
+        complexity: { time: "O(26 · n)", space: "O(26) = O(1)" },
+        code: `class Solution {
+    public boolean checkInclusion(String s1, String s2) {
+        if (s1.length() > s2.length()) return false;
+        int[] count1 = new int[26];
+        for (int i = 0; i < s1.length(); i++) {
+            count1[s1.charAt(i) - 'a']++;
+        }
+        for (int i = 0; i <= s2.length() - s1.length(); i++) {
+            int[] count2 = new int[26];
+            for (int j = 0; j < s1.length(); j++) {
+                count2[s2.charAt(i + j) - 'a']++;
+            }
+            boolean match = true;
+            for (int k = 0; k < 26; k++) {
+                if (count1[k] != count2[k]) {
+                    match = false;
+                    break;
+                }
+            }
+            if (match) return true;
+        }
+        return false;
+    }
+}`
+      },
+      {
+        name: "Better",
+        label: "O(n) — Fixed Sliding Window with Array",
+        idea: "Maintain a sliding window of size s1.length() over s2. Update incoming character at right and outgoing character at left in O(1).",
+        complexity: { time: "O(26 · n)", space: "O(26) = O(1)" },
+        code: `class Solution {
+    public boolean checkInclusion(String s1, String s2) {
+        if (s1.length() > s2.length()) return false;
+        int[] count1 = new int[26];
+        int[] count2 = new int[26];
+        for (int i = 0; i < s1.length(); i++) {
+            count1[s1.charAt(i) - 'a']++;
+            count2[s2.charAt(i) - 'a']++;
+        }
+        int left = 0;
+        int right = s1.length() - 1;
+        while (right < s2.length()) {
+            boolean match = true;
+            for (int i = 0; i < 26; i++) {
+                if (count1[i] != count2[i]) {
+                    match = false;
+                    break;
+                }
+            }
+            if (match) return true;
+            right++;
+            if (right < s2.length()) {
+                count2[s2.charAt(right) - 'a']++;
+                count2[s2.charAt(left) - 'a']--;
+                left++;
+            }
+        }
+        return false;
+    }
+}`
+      },
+      {
+        name: "Optimal",
+        label: "O(n) — Sliding Window with Match Count",
+        idea: "Track how many of the 26 characters currently match. Moving the window only changes counts for two characters, updating matches in O(1).",
+        complexity: { time: "O(n)", space: "O(26) = O(1)" },
+        code: `class Solution {
+    public boolean checkInclusion(String s1, String s2) {
+        if (s1.length() > s2.length()) return false;
+        int[] count1 = new int[26];
+        int[] count2 = new int[26];
+        for (int i = 0; i < s1.length(); i++) {
+            count1[s1.charAt(i) - 'a']++;
+            count2[s2.charAt(i) - 'a']++;
+        }
+        int matches = 0;
+        for (int i = 0; i < 26; i++) {
+            if (count1[i] == count2[i]) matches++;
+        }
+        int left = 0;
+        for (int right = s1.length(); right < s2.length(); right++) {
+            if (matches == 26) return true;
+            int r = s2.charAt(right) - 'a';
+            count2[r]++;
+            if (count2[r] == count1[r]) matches++;
+            else if (count2[r] == count1[r] + 1) matches--;
+
+            int l = s2.charAt(left) - 'a';
+            count2[l]--;
+            if (count2[l] == count1[l]) matches++;
+            else if (count2[l] == count1[l] - 1) matches--;
+            left++;
+        }
+        return matches == 26;
+    }
+}`
+      }
+    ]
+  },
 };
 
 export function getProblemSolutions(id) {

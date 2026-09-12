@@ -605,6 +605,30 @@ export const PROBLEM_DESCRIPTIONS = {
     topics: ["Hash Table", "String", "Sliding Window"],
     companies: ["Amazon", "Google", "Facebook", "Microsoft", "Uber"]
   },
+
+  567: {
+    title: "Permutation in String",
+    difficulty: "medium",
+    category: "Sliding Window / String",
+    acceptance: "44.6%",
+    description: `Given two strings <code>s1</code> and <code>s2</code>, return <code>true</code> if <code>s2</code> contains a permutation of <code>s1</code>, or <code>false</code> otherwise.<br/><br/>In other words, return <code>true</code> if one of <code>s1</code>'s permutations is the substring of <code>s2</code>.`,
+    examples: [
+      { input: 's1 = "ab", s2 = "eidbaooo"', output: "true", explanation: 's2 contains one permutation of s1 ("ba").' },
+      { input: 's1 = "ab", s2 = "eidboaoo"', output: "false", explanation: 'Neither "ab" nor "ba" is present in s2.' }
+    ],
+    constraints: [
+      "1 ≤ s1.length, s2.length ≤ 10⁴",
+      "s1 and s2 consist of lowercase English letters."
+    ],
+    hints: [
+      "Obviously, brute force will result in Time Limit Exceeded. Think of how we can use frequency counts.",
+      "Two strings are permutations of each other if and only if they have the exact same character frequencies.",
+      "Maintain a fixed sliding window of size s1.length() over s2 and compare character frequency distributions."
+    ],
+    complexity: { time: "O(n)", space: "O(1) — 26 char counts" },
+    topics: ["Hash Table", "Two Pointers", "String", "Sliding Window"],
+    companies: ["Apple", "Microsoft", "Amazon", "Walmart Labs", "TCS"]
+  },
 };
 
 export function getProblemDescription(id) {

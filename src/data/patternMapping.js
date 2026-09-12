@@ -175,6 +175,7 @@ export const CURATED_PROBLEM_PATTERNS = {
   "424": { topic: "String", patterns: ["Sliding Window", "Frequency Counting"] },
   "443": { topic: "String", patterns: ["Two Pointers"] },
   "560": { topic: "Hash Table", patterns: ["Prefix Sum + HashMap"] },
+  "567": { topic: "String", patterns: ["Sliding Window", "Frequency Counting", "Two Pointers"] },
   "680": { topic: "String", patterns: ["Two Pointers"] },
 
   // ── Binary Search

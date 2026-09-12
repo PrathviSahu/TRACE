@@ -300,50 +300,7 @@ export function detectSlidingWindow(stepData, arrays = []) {
   if (!stepData || !stepData.variables) return null;
   const vars = stepData.variables;
 
-  // 1. Find sequence (string or array)
-  let seqName = null;
-  let seqType = null;
-  let seqItems = [];
-
-  // Check strings in variables first (e.g., s, str, text, or any String with length >= 2)
-  const preferredStringNames = ['s', 'str', 'text', 'string', 'word', 'pattern'];
-  for (const name of preferredStringNames) {
-    const v = vars[name];
-    if (v && typeof v.value === 'string' && v.value.length >= 2) {
-      seqName = name;
-      seqType = 'string';
-      seqItems = v.value.split('');
-      break;
-    }
-  }
-
-  if (!seqName) {
-    for (const [vName, vInfo] of Object.entries(vars)) {
-      const val = vInfo?.value;
-      if (typeof val === 'string' && val.length >= 2) {
-        seqName = vName;
-        seqType = 'string';
-        seqItems = val.split('');
-        break;
-      }
-    }
-  }
-
-  // If no string sequence found, check arrays (skip frequency/counter arrays)
-  if (!seqName && arrays && arrays.length > 0) {
-    for (const arr of arrays) {
-      if (!/^(count|counts|freq|frequency|dp|memo)$/i.test(arr.name) && Array.isArray(arr.values) && arr.values.length >= 2) {
-        seqName = arr.name;
-        seqType = 'array';
-        seqItems = [...arr.values];
-        break;
-      }
-    }
-  }
-
-  if (!seqName || seqItems.length === 0) return null;
-
-  // 2. Find left and right window pointers
+  // 1. Find left and right window pointers first to determine search space bounds
   const leftNames = ['left', 'l', 'start', 'windowStart', 'i', 'p1', 'low'];
   const rightNames = ['right', 'r', 'end', 'windowEnd', 'j', 'p2', 'high'];
 
@@ -369,6 +326,53 @@ export function detectSlidingWindow(stepData, arrays = []) {
 
   // Need at least one window pointer
   if (!leftPtr && !rightPtr) return null;
+
+  const maxPtrVal = Math.max(leftPtr?.index ?? 0, rightPtr?.index ?? 0);
+
+  // 2. Find sequence (string or array)
+  let seqName = null;
+  let seqType = null;
+  let seqItems = [];
+
+  // Candidate strings
+  const stringCandidates = [];
+  for (const [vName, vInfo] of Object.entries(vars)) {
+    const val = vInfo?.value;
+    if (typeof val === 'string' && val.length >= 2) {
+      stringCandidates.push({ name: vName, val });
+    }
+  }
+
+  if (stringCandidates.length > 0) {
+    stringCandidates.sort((a, b) => {
+      const aFits = a.val.length > maxPtrVal;
+      const bFits = b.val.length > maxPtrVal;
+      if (aFits && !bFits) return -1;
+      if (!aFits && bFits) return 1;
+      if (a.val.length !== b.val.length) return b.val.length - a.val.length;
+      const preferred = ['s', 's2', 'text', 'str', 'string', 'word', 'pattern', 's1'];
+      const aRank = preferred.indexOf(a.name) !== -1 ? preferred.indexOf(a.name) : 99;
+      const bRank = preferred.indexOf(b.name) !== -1 ? preferred.indexOf(b.name) : 99;
+      return aRank - bRank;
+    });
+    seqName = stringCandidates[0].name;
+    seqType = 'string';
+    seqItems = stringCandidates[0].val.split('');
+  }
+
+  // If no string sequence found, check arrays (skip frequency/counter arrays)
+  if (!seqName && arrays && arrays.length > 0) {
+    for (const arr of arrays) {
+      if (!/^(count|counts|freq|frequency|dp|memo)$/i.test(arr.name) && Array.isArray(arr.values) && arr.values.length >= 2) {
+        seqName = arr.name;
+        seqType = 'array';
+        seqItems = [...arr.values];
+        break;
+      }
+    }
+  }
+
+  if (!seqName || seqItems.length === 0) return null;
 
   const leftIdx = leftPtr ? leftPtr.index : 0;
   const rightIdx = rightPtr ? rightPtr.index : (seqItems.length - 1);
@@ -396,6 +400,7 @@ export function detectSlidingWindow(stepData, arrays = []) {
   const maxCountVal = vars.maxCount?.value !== undefined && typeof vars.maxCount.value === 'number' ? vars.maxCount.value : null;
   const maxLenVal = vars.maxLen?.value !== undefined && typeof vars.maxLen.value === 'number' ? vars.maxLen.value : null;
 
+  const matchVal = vars.match?.value !== undefined ? vars.match.value : (vars.matches?.value !== undefined ? vars.matches.value : null);
   let isValid = null;
   let statusText = '';
   if (kVal !== null) {
@@ -405,6 +410,14 @@ export function detectSlidingWindow(stepData, arrays = []) {
     statusText = isValid
       ? `Valid Window: ${replacements} replacement${replacements === 1 ? '' : 's'} <= k (${kVal})`
       : `Invalid Window: ${replacements} replacements > k (${kVal}) → Shrink Left`;
+  } else if (matchVal !== null) {
+    if (typeof matchVal === 'boolean') {
+      isValid = matchVal;
+      statusText = matchVal ? `Permutation Found in Window "${windowStr}"!` : `Window "${windowStr}" — Frequency Mismatch`;
+    } else if (typeof matchVal === 'number') {
+      isValid = matchVal === 26;
+      statusText = isValid ? `All 26 Characters Match — Permutation Found!` : `Matches: ${matchVal}/26`;
+    }
   } else if (maxCountVal !== null) {
     statusText = `Max Count: ${maxCountVal}`;
   }

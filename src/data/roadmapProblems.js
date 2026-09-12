@@ -71,6 +71,7 @@ export const ROADMAP_PROBLEMS = {
     { id: 76,  name: "Minimum Window Substring",                   difficulty: "hard",   url: "https://leetcode.com/problems/minimum-window-substring/" },
     { id: 209, name: "Minimum Size Subarray Sum",                  difficulty: "medium", url: "https://leetcode.com/problems/minimum-size-subarray-sum/" },
     { id: 424, name: "Longest Repeating Character Replacement",    difficulty: "medium", url: "https://leetcode.com/problems/longest-repeating-character-replacement/" },
+    { id: 567, name: "Permutation in String",                      difficulty: "medium", url: "https://leetcode.com/problems/permutation-in-string/" },
     { id: 713, name: "Subarray Product Less Than K",               difficulty: "medium", url: "https://leetcode.com/problems/subarray-product-less-than-k/" },
     { id: 904, name: "Fruit Into Baskets",                         difficulty: "medium", url: "https://leetcode.com/problems/fruit-into-baskets/" },
     { id: 1004, name: "Max Consecutive Ones III",                  difficulty: "medium", url: "https://leetcode.com/problems/max-consecutive-ones-iii/" },

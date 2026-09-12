@@ -597,6 +597,43 @@ export const PRESET_SOLUTIONS = {
     inputs: { s: '"AABABBA"', k: 1 }
   },
 
+
+  567: {
+    name: 'Permutation in String',
+    description: 'Check if s2 contains a permutation of s1 using sliding window frequency matching.',
+    code: `class Solution {
+    public boolean checkInclusion(String s1, String s2) {
+        if (s1.length() > s2.length()) return false;
+        int[] count1 = new int[26];
+        int[] count2 = new int[26];
+        for (int i = 0; i < s1.length(); i++) {
+            count1[s1.charAt(i) - 'a']++;
+            count2[s2.charAt(i) - 'a']++;
+        }
+        int left = 0;
+        int right = s1.length() - 1;
+        while (right < s2.length()) {
+            boolean match = true;
+            for (int i = 0; i < 26; i++) {
+                if (count1[i] != count2[i]) {
+                    match = false;
+                    break;
+                }
+            }
+            if (match) return true;
+            right++;
+            if (right < s2.length()) {
+                count2[s2.charAt(right) - 'a']++;
+                count2[s2.charAt(left) - 'a']--;
+                left++;
+            }
+        }
+        return false;
+    }
+}`,
+    inputs: { s1: '"ab"', s2: '"eidbaooo"' }
+  },
+
   1480: {
     name: 'Running Sum of 1d Array',
     description: 'Prefix sum transformation runningSum[i] = sum(nums[0]..nums[i]).',
