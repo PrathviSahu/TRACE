@@ -1,12 +1,22 @@
+import FeedbackModal from './FeedbackModal.jsx';
 import TraceLogo from './TraceLogo.jsx';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTraceStore } from '../store/traceStore.js';
 
 export default function Navbar() {
   const loc = useLocation();
   const navigate = useNavigate();
-  const [navSearch, setNavSearch] = useState('');
+  const [navSearch, setNavSearch] = useState("");
+  const [showFeedback, setShowFeedback] = useState(false);
+
+  useEffect(() => {
+    function handleOpenFeedback() {
+      setShowFeedback(true);
+    }
+    window.addEventListener("open-feedback-modal", handleOpenFeedback);
+    return () => window.removeEventListener("open-feedback-modal", handleOpenFeedback);
+  }, []);
 
   function handleSearchSubmit(e) {
     if (e.key === 'Enter' && navSearch.trim()) {
@@ -91,6 +101,34 @@ export default function Navbar() {
           />
         </div>
 
+        <button
+          type="button"
+          className="nav-feedback-btn"
+          onClick={() => setShowFeedback(true)}
+          title="Send feedback or report an issue directly to the developer"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 5,
+            padding: "5px 11px",
+            fontSize: 11.5,
+            fontWeight: 600,
+            fontFamily: "inherit",
+            background: "rgba(255, 159, 67, 0.12)",
+            border: "1px solid rgba(255, 159, 67, 0.35)",
+            color: "var(--accent-amber, #ff9f43)",
+            borderRadius: 6,
+            cursor: "pointer",
+            transition: "all 0.15s ease",
+            whiteSpace: "nowrap"
+          }}
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+          </svg>
+          <span>Feedback</span>
+        </button>
+
         <div className="theme-toggle-group" role="group" aria-label="Theme selection">
           <button
             type="button"
@@ -130,6 +168,7 @@ export default function Navbar() {
           <span>S</span>
         </div>
       </div>
+      <FeedbackModal isOpen={showFeedback} onClose={() => setShowFeedback(false)} />
     </header>
   );
 }

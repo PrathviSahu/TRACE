@@ -407,9 +407,31 @@ export default function BottomPanels() {
                       <div style={{ color: "var(--txt-bright)", fontFamily: "var(--font-mono)", fontSize: 11.5, marginBottom: 10, whiteSpace: "pre-wrap" }}>
                         {error}
                       </div>
-                      <button
-                        className="btn-ai-hint-fix"
-                        onClick={() => handleAskAiHint()}
+                      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                        <button
+                          type="button"
+                          onClick={() => window.dispatchEvent(new CustomEvent("open-feedback-modal"))}
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 5,
+                            padding: "5px 10px",
+                            background: "rgba(239, 68, 68, 0.15)",
+                            border: "1px solid rgba(239, 68, 68, 0.35)",
+                            color: "#f87171",
+                            borderRadius: 4,
+                            fontSize: 11,
+                            fontFamily: "var(--font-mono)",
+                            cursor: "pointer",
+                            fontWeight: 600
+                          }}
+                          title="Report this error directly to the developer"
+                        >
+                          <span>🐛 Report Bug</span>
+                        </button>
+                        <button
+                          className="btn-ai-hint-fix"
+                          onClick={() => handleAskAiHint()}
                         style={{
                           display: "inline-flex",
                           alignItems: "center",
@@ -427,6 +449,7 @@ export default function BottomPanels() {
                       >
                         ✦ Ask ARIA to Fix
                       </button>
+                      </div>
                     </div>
                   )}
                   {outputs && outputs.length > 0 ? (
