@@ -9,6 +9,9 @@ export default function CodeEditor() {
   const currentStep = useTraceStore(s => s.currentStep);
   const language    = useTraceStore(s => s.language);
   const theme       = useTraceStore(s => s.theme);
+  const breakpoints       = useTraceStore(s => s.breakpoints || []);
+  const toggleBreakpoint  = useTraceStore(s => s.toggleBreakpoint);
+  const clearBreakpoints   = useTraceStore(s => s.clearBreakpoints);
   const editorRef    = useRef(null);
   const monacoRef    = useRef(null);
   const containerRef = useRef(null);
@@ -116,6 +119,19 @@ export default function CodeEditor() {
       }
     });
     monaco.editor.setTheme(theme === 'light' ? 'vs' : 'trace-dark');
+
+    // ── Breakpoint Gutter Mouse Down Listener ──
+    editor.onMouseDown((e) => {
+      if (
+        e.target?.type === monaco.editor.MouseTargetType.GUTTER_GLYPH_MARGIN ||
+        e.target?.type === monaco.editor.MouseTargetType.GUTTER_LINE_NUMBERS
+      ) {
+        const line = e.target?.position?.lineNumber;
+        if (line) {
+          useTraceStore.getState().toggleBreakpoint(line);
+        }
+      }
+    });
 
     // ── 1. Explicit Select All Action (Context Menu + Ctrl/Cmd+A) ──
     editor.addAction({
@@ -244,29 +260,44 @@ export default function CodeEditor() {
     }
   }, [theme]);
 
-  // Highlight the current executing line
+  // Highlight the current executing line AND active breakpoints
   useEffect(() => {
     const editor = editorRef.current;
     const monaco = monacoRef.current;
     if (!editor || !monaco) return;
-    const step = trace && trace[currentStep] ? trace[currentStep] : null;
-    if (!step) {
-      editor.deltaDecorations(decoRef.current, []);
-      decoRef.current = [];
-      return;
+
+    const newDecos = [];
+
+    // Render Breakpoint Glyphs
+    for (const bLine of (breakpoints || [])) {
+      newDecos.push({
+        range: new monaco.Range(bLine, 1, bLine, 1),
+        options: {
+          isWholeLine: false,
+          glyphMarginClassName: "editor-breakpoint-glyph",
+          overviewRuler: { color: "#ef4444", position: monaco.editor.OverviewRulerLane.Right }
+        }
+      });
     }
-    const ln = step.line || 5;
-    decoRef.current = editor.deltaDecorations(decoRef.current, [{
-      range: new monaco.Range(ln, 1, ln, 1),
-      options: {
-        isWholeLine: true,
-        className: 'editor-active-line',
-        glyphMarginClassName: 'editor-glyph',
-        overviewRuler: { color: '#ff9f43', position: monaco.editor.OverviewRulerLane.Left },
-      },
-    }]);
-    editor.revealLineInCenterIfOutsideViewport(ln, monaco.editor.ScrollType.Smooth);
-  }, [trace, currentStep]);
+
+    // Render Current Executing Line
+    const step = trace && trace[currentStep] ? trace[currentStep] : null;
+    if (step && step.line) {
+      const ln = step.line;
+      newDecos.push({
+        range: new monaco.Range(ln, 1, ln, 1),
+        options: {
+          isWholeLine: true,
+          className: "editor-active-line",
+          glyphMarginClassName: "editor-glyph",
+          overviewRuler: { color: "#ff9f43", position: monaco.editor.OverviewRulerLane.Left },
+        },
+      });
+      editor.revealLineInCenterIfOutsideViewport(ln, monaco.editor.ScrollType.Smooth);
+    }
+
+    decoRef.current = editor.deltaDecorations(decoRef.current, newDecos);
+  }, [trace, currentStep, breakpoints]);
 
   // Toolbar Handlers
   function handleSelectAll() {
@@ -478,6 +509,7 @@ export default function CodeEditor() {
             fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
             fontLigatures: true,
             lineNumbers: 'on',
+            glyphMargin: true,
             minimap: { enabled: false },
             scrollBeyondLastLine: false,
             wordWrap: 'off',
@@ -569,6 +601,15 @@ export default function CodeEditor() {
           color: #ef4444;
           border-color: rgba(239, 68, 68, 0.4);
           background: rgba(239, 68, 68, 0.1);
+        }
+        .editor-breakpoint-glyph::before {
+          content: ●;
+          color: #ef4444;
+          font-size: 14px;
+          line-height: 18px;
+          margin-left: 3px;
+          filter: drop-shadow(0 0 5px rgba(239, 68, 68, 0.8));
+          cursor: pointer;
         }
         .editor-active-line {
           background: rgba(99, 102, 241, 0.25) !important;

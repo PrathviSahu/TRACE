@@ -1,3 +1,17 @@
+
+function loadSharedState() {
+  if (typeof window === "undefined") return null;
+  try {
+    const hash = window.location.hash;
+    if (hash && hash.startsWith("#share=")) {
+      const b64 = hash.slice(7);
+      const json = decodeURIComponent(Array.prototype.map.call(atob(b64), (c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2)).join(""));
+      return JSON.parse(json);
+    }
+  } catch (_) {}
+  return null;
+}
+const _shared = loadSharedState();
 import { create } from 'zustand';
 import { runJava } from '../engine/interpreter.js';
 import { runPython } from '../engine/pythonRunner.js';
@@ -341,6 +355,32 @@ export const useTraceStore = create((set, get) => ({
         });
       }
     }, 10);
+  },
+
+  // ── Breakpoints State
+  breakpoints: [],
+  toggleBreakpoint: (line) => {
+    const { breakpoints } = get();
+    const lineNum = Number(line);
+    const exists = breakpoints.includes(lineNum);
+    const nextBp = exists ? breakpoints.filter(b => b !== lineNum) : [...breakpoints, lineNum].sort((a, b) => a - b);
+    set({ breakpoints: nextBp });
+  },
+  clearBreakpoints: () => set({ breakpoints: [] }),
+  continueToBreakpoint: () => {
+    const { currentStep, trace, breakpoints } = get();
+    if (!trace || trace.length === 0) return;
+    if (!breakpoints || breakpoints.length === 0) {
+      set({ currentStep: trace.length - 1 });
+      return;
+    }
+    for (let s = currentStep + 1; s < trace.length; s++) {
+      if (breakpoints.includes(trace[s]?.line)) {
+        set({ currentStep: s });
+        return;
+      }
+    }
+    set({ currentStep: trace.length - 1 });
   },
 
   // ── Navigation

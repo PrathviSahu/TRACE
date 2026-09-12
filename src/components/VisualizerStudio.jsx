@@ -1,3 +1,4 @@
+import MatrixVisualizer from './MatrixVisualizer.jsx';
 import { useEffect, useState, useMemo } from "react";
 import KeyboardShortcutsModal from "./KeyboardShortcutsModal.jsx";
 import { useTraceStore } from "../store/traceStore.js";
@@ -271,8 +272,20 @@ export default function VisualizerStudio() {
                 />
               )}
 
-              {/* 1. Arrays (with Diagrammatic Bar Heights option) */}
+              {/* 1. Arrays (with Diagrammatic Bar Heights option and 2D Matrix support) */}
               {arrays.map((arr) => {
+                const is2D = Array.isArray(arr.values) && arr.values.length > 0 && Array.isArray(arr.values[0]);
+                if (is2D) {
+                  return (
+                    <MatrixVisualizer
+                      key={arr.name}
+                      name={arr.name}
+                      matrix={arr.values}
+                      variables={stepData?.variables}
+                      pointers={arr.pointers ?? {}}
+                    />
+                  );
+                }
                 const isNumeric = arr.values.length > 0 && arr.values.every(v => typeof v === "number" || (!isNaN(Number(v)) && v !== ""));
                 // Only default to bar diagram for height/bar-chart problems (e.g., Trapping Rain Water, Container With Most Water)
                 // Subarray problems (Maximum Subarray, Two Sum, etc.) always default to Cells view

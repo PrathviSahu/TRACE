@@ -346,10 +346,17 @@ export function DiagrammaticLinkedList({ name, headObj, allVars = {} }) {
                   <div style={{ minHeight: 20, display: "flex", gap: 4, alignItems: "center" }}>
                     {ptrs.map(p => {
                       const isHead = p === "head";
+                      const isSlow = p === "slow";
+                      const isFast = p === "fast";
                       const isCurr = p === "curr" || p === "current";
                       const isPrev = p === "prev";
-                      const bg = isHead ? "var(--accent-amber, #FF9F43)" : isCurr ? "rgba(56, 217, 197, 0.2)" : isPrev ? "rgba(160, 90, 255, 0.2)" : "rgba(255, 255, 255, 0.1)";
-                      const color = isHead ? "#090B0E" : isCurr ? "var(--accent-cyan, #38D9C5)" : isPrev ? "#c792ea" : "var(--container-text-primary, var(--txt-bright, #F0F6FC))";
+                      let bg = "rgba(255, 255, 255, 0.1)";
+                      let color = "var(--container-text-primary, var(--txt-bright, #F0F6FC))";
+                      if (isHead) { bg = "rgba(34, 197, 94, 0.25)"; color = "#4ade80"; }
+                      else if (isSlow) { bg = "rgba(56, 217, 197, 0.25)"; color = "#38d9c5"; }
+                      else if (isFast) { bg = "rgba(217, 70, 239, 0.25)"; color = "#e879f9"; }
+                      else if (isCurr) { bg = "rgba(99, 102, 241, 0.25)"; color = "#818cf8"; }
+                      else if (isPrev) { bg = "rgba(255, 159, 67, 0.25)"; color = "#fbbf24"; }
 
                       return (
                         <span
@@ -420,7 +427,25 @@ export function DiagrammaticLinkedList({ name, headObj, allVars = {} }) {
                 </div>
 
                 {/* Arrow to next */}
-                {idx < nodes.length - 1 ? (
+                {node.isCycle ? (
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 12 }}>
+                    <div
+                      style={{
+                        padding: "4px 8px",
+                        border: "1px solid rgba(239, 68, 68, 0.4)",
+                        borderRadius: 4,
+                        fontSize: 10,
+                        fontFamily: "var(--font-mono)",
+                        color: "#f87171",
+                        background: "rgba(239, 68, 68, 0.12)",
+                        fontWeight: 600,
+                        boxShadow: "0 0 8px rgba(239, 68, 68, 0.25)"
+                      }}
+                    >
+                      ↺ Loopback Detected
+                    </div>
+                  </div>
+                ) : idx < nodes.length - 1 ? (
                   <div style={{ display: "flex", alignItems: "center", color: "var(--accent-cyan, #38D9C5)", fontWeight: 700, fontSize: 16, marginTop: 12 }}>
                     ──►
                   </div>

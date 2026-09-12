@@ -1,3 +1,4 @@
+import MatrixVisualizer from './MatrixVisualizer.jsx';
 
 import { useTraceStore } from '../store/traceStore.js';
 import ArrayVisualizer from './ArrayVisualizer.jsx';
@@ -57,15 +58,29 @@ export default function VisualizationPanel() {
     <div className="right-panels">
       <div className="viz-top">
         {/* Arrays */}
-        {hasArrays && Object.entries(arrays).map(([name, info]) => (
-          <ArrayVisualizer
-            key={name}
-            name={name}
-            values={info.values}
-            pointers={info.pointers ?? {}}
-            prevValues={prevArrays[name]?.values}
-          />
-        ))}
+        {hasArrays && Object.entries(arrays).map(([name, info]) => {
+          const is2D = Array.isArray(info.values) && info.values.length > 0 && Array.isArray(info.values[0]);
+          if (is2D) {
+            return (
+              <MatrixVisualizer
+                key={name}
+                name={name}
+                matrix={info.values}
+                variables={step?.variables}
+                pointers={info.pointers ?? {}}
+              />
+            );
+          }
+          return (
+            <ArrayVisualizer
+              key={name}
+              name={name}
+              values={info.values}
+              pointers={info.pointers ?? {}}
+              prevValues={prevArrays[name]?.values}
+            />
+          );
+        })}
 
         {/* Collections */}
         {hasCols && Object.entries(collections).map(([name, data]) => {

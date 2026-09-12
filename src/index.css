@@ -3607,3 +3607,31 @@ body.light-theme,
   background: rgba(255, 159, 67, 0.08);
   border-radius: 4px;
 }
+
+/* ── Variable Mutation Delta & Pulse Highlight ── */
+.vars-table tr.var-changed {
+  background: rgba(255, 159, 67, 0.12) !important;
+  transition: background 0.25s ease;
+}
+.vars-table tr.var-changed td.vn {
+  color: var(--accent-amber, #ff9f43) !important;
+  font-weight: 700;
+}
+.var-mutation-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-family: var(--font-mono, monospace);
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgba(255, 159, 67, 0.18);
+  color: var(--accent-amber, #ff9f43);
+  border: 1px solid rgba(255, 159, 67, 0.4);
+  animation: varPulse 0.3s ease;
+}
+@keyframes varPulse {
+  0% { transform: scale(0.94); opacity: 0.5; }
+  50% { transform: scale(1.04); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}

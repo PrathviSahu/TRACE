@@ -33,7 +33,8 @@ export default function ProblemsPage() {
     }
   }, [searchParams]);
   const [difficulty, setDifficulty] = useState('All');
-  const [statusFilter, setStatusFilter] = useState('All'); // 'All' | 'solved' | 'unsolved' | 'preset'
+  const [statusFilter, setStatusFilter] = useState('All');
+  const [studyList, setStudyList] = useState('All'); // 'All' | 'blind75' | 'neetcode150' | 'striver' // 'All' | 'solved' | 'unsolved' | 'preset'
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(30);
 
@@ -114,9 +115,34 @@ export default function ProblemsPage() {
         if (!idMatch && !nameMatch && !topicMatch) return false;
       }
 
+      // Curated study list filter
+      if (studyList === "blind75" && !BLIND_75_IDS.has(p.id)) return false;
+      if (studyList === "neetcode150" && !NEETCODE_150_IDS.has(p.id)) return false;
+      if (studyList === "striver" && !STRIVER_SHEET_IDS.has(p.id)) return false;
+
       return true;
     });
-  }, [search, selectedTopic, difficulty, statusFilter, solvedIds]);
+  }, [search, selectedTopic, difficulty, statusFilter, studyList, solvedIds]);
+
+  // Curated study list progress
+  const studyProgress = useMemo(() => {
+    let targetSet = null;
+    if (studyList === "blind75") targetSet = BLIND_75_IDS;
+    else if (studyList === "neetcode150") targetSet = NEETCODE_150_IDS;
+    else if (studyList === "striver") targetSet = STRIVER_SHEET_IDS;
+    if (!targetSet) return null;
+
+    let totalInApp = 0;
+    let solvedInApp = 0;
+    for (const p of ALL_PROBLEMS) {
+      if (targetSet.has(p.id)) {
+        totalInApp++;
+        if (solvedIds.has(p.id)) solvedInApp++;
+      }
+    }
+    const percent = totalInApp > 0 ? Math.round((solvedInApp / totalInApp) * 100) : 0;
+    return { solved: solvedInApp, total: totalInApp, percent };
+  }, [studyList, solvedIds]);
 
   // ── Pagination
   const totalPages = pageSize === 'All' ? 1 : Math.ceil(filtered.length / pageSize) || 1;
@@ -244,6 +270,38 @@ export default function ProblemsPage() {
             </option>
           ))}
         </select>
+      </div>
+
+      {/* ── Curated Study Lists Filter & Progress Bar ───────── */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
+        <span style={{ fontSize: 11, fontWeight: 700, color: "var(--txt-bright, #f0f6fc)" }}>Study Lists:</span>
+        {[
+          { id: "All", label: "All Curated" },
+          { id: "blind75", label: "🔥 Blind 75" },
+          { id: "neetcode150", label: "⚡ NeetCode 150" },
+          { id: "striver", label: "🎯 Striver SDE" }
+        ].map(sl => (
+          <button
+            key={sl.id}
+            type="button"
+            className={`fbtn ${studyList === sl.id ? "on" : ""}`}
+            onClick={() => { setStudyList(sl.id); setPage(1); }}
+            style={{ fontSize: 11 }}
+          >
+            {sl.label}
+          </button>
+        ))}
+
+        {studyProgress && (
+          <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ fontSize: 11, fontFamily: "var(--font-mono)", color: "var(--accent-cyan, #38d9c5)" }}>
+              {studyProgress.solved} / {studyProgress.total} Solved (<b>{studyProgress.percent}%</b>)
+            </span>
+            <div style={{ width: 90, height: 6, background: "rgba(255,255,255,0.1)", borderRadius: 3, overflow: "hidden" }}>
+              <div style={{ width: `${studyProgress.percent}%`, height: "100%", background: "linear-gradient(90deg, #6366f1, #38d9c5)", borderRadius: 3 }} />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ── Quick Filter Buttons ──────────────────────────────── */}

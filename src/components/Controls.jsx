@@ -14,7 +14,8 @@ export default function Controls() {
   const isPlaying   = useTraceStore(s => s.isPlaying);
   const speed       = useTraceStore(s => s.speed);
   const status      = useTraceStore(s => s.status);
-  const { first, prev, next, last, play, pause, reset, setSpeed, goToStep } = useTraceStore();
+  const { first, prev, next, last, play, pause, reset, setSpeed, goToStep, continueToBreakpoint } = useTraceStore();
+  const breakpoints = useTraceStore(s => s.breakpoints || []);
 
   const step    = trace[currentStep];
   const total   = trace.length;
@@ -42,7 +43,8 @@ export default function Controls() {
       if (e.key === 'ArrowRight') { e.preventDefault(); next(); }
       if (e.key === 'ArrowLeft')  { e.preventDefault(); prev(); }
       if (e.key === ' ')          { e.preventDefault(); isPlaying ? pause() : play(); }
-      if (e.key === 'r' || e.key === 'R') reset();
+      if (e.key === "r" || e.key === "R") reset();
+      if (e.key === "F5") { e.preventDefault(); continueToBreakpoint(); }
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -50,17 +52,56 @@ export default function Controls() {
 
   return (
     <div className="cbar">
-      {/* Timeline */}
+      {/* Interactive Timeline Scrubber */}
       {total > 0 && (
-        <div className="timeline">
-          {trace.map((_, i) => (
-            <div
-              key={i}
-              className={`tt ${i===currentStep?'cur':i<currentStep?'vis':''}`}
-              onClick={() => goToStep(i)}
-              title={`Step ${i+1}`}
-            />
-          ))}
+        <div className="timeline-scrubber-container" style={{
+          position: "relative",
+          width: "100%",
+          padding: "4px 8px",
+          background: "var(--bg-raised, #111419)",
+          borderBottom: "1px solid var(--border-subtle, #21262d)"
+        }}>
+          <div style={{
+            position: "relative",
+            height: 8,
+            borderRadius: 4,
+            background: "rgba(255, 255, 255, 0.08)",
+            overflow: "hidden"
+          }}>
+            {/* Progress fill */}
+            <div style={{
+              position: "absolute",
+              left: 0,
+              top: 0,
+              bottom: 0,
+              width: `${((currentStep + 1) / total) * 100}%`,
+              background: "linear-gradient(90deg, #6366f1, var(--accent-amber, #ff9f43))",
+              borderRadius: 4,
+              transition: "width 0.15s ease"
+            }} />
+          </div>
+
+          {/* Interactive Range Input Overlay */}
+          <input
+            type="range"
+            min="0"
+            max={total - 1}
+            value={currentStep}
+            onChange={(e) => goToStep(Number(e.target.value))}
+            title={`Step ${currentStep + 1} of ${total}: ${step ? step.statement : ""}`}
+            style={{
+              position: "absolute",
+              left: 8,
+              right: 8,
+              top: 4,
+              height: 8,
+              width: "calc(100% - 16px)",
+              opacity: 0,
+              cursor: "pointer",
+              margin: 0,
+              zIndex: 10
+            }}
+          />
         </div>
       )}
       <div className="cbar-top">
@@ -74,6 +115,27 @@ export default function Controls() {
           {isPlaying
             ? <Icon d="M5 3h2v10H5V3zm4 0h2v10H9V3z" />
             : <Icon d="M4 3l10 5-10 5V3z" />}
+        </button>
+        <button
+          className="cbtn continue-btn"
+          onClick={continueToBreakpoint}
+          disabled={!hasNext || total===0}
+          title={breakpoints.length > 0 ? `Continue to Next Breakpoint (F5) [${breakpoints.length} active]` : "Continue to End (F5)"}
+          style={{ position: "relative" }}
+        >
+          <Icon d="M3 3l7 5-7 5V3zm9 0h2v10h-2V3z" />
+          {breakpoints.length > 0 && (
+            <span style={{
+              position: "absolute",
+              top: 3,
+              right: 3,
+              width: 6,
+              height: 6,
+              borderRadius: "50%",
+              background: "#ef4444",
+              boxShadow: "0 0 4px #ef4444"
+            }} />
+          )}
         </button>
         <button className="cbtn" onClick={next}   disabled={!hasNext} title="Next (→)">
           <Icon d="M5 3l7 5-7 5V3z" />

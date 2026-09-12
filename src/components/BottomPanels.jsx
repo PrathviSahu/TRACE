@@ -174,7 +174,44 @@ export default function BottomPanels() {
                 onChange={(e) => setInputText(e.target.value)}
                 placeholder="e.g. nums = [2, 7, 11, 15]\ntarget = 9"
               />
-              <div className="input-actions-bar" style={{ display: "flex", justifyContent: "flex-end", marginTop: 6 }}>
+              {/* Corner Cases Generator Chips */}
+              <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 6, flexWrap: "wrap" }}>
+                <span style={{ fontSize: 9.5, color: "var(--txt-dim)", fontFamily: "var(--font-mono)" }}>Corner Cases:</span>
+                {[
+                  { label: "[] Empty", val: "nums = []\ntarget = 0" },
+                  { label: "[1] Single", val: "nums = [1]\ntarget = 1" },
+                  { label: "[-5, 0, 5]", val: "nums = [-5, 0, 5]\ntarget = 0" },
+                  { label: "[2, 2, 2, 2]", val: "nums = [2, 2, 2, 2]\ntarget = 4" },
+                  { label: "[9, 7, 5, 3]", val: "nums = [9, 7, 5, 3]\ntarget = 12" }
+                ].map(cc => (
+                  <button
+                    key={cc.label}
+                    type="button"
+                    style={{
+                      fontSize: 9.5,
+                      fontFamily: "var(--font-mono)",
+                      background: "rgba(255, 255, 255, 0.05)",
+                      border: "1px solid var(--border-subtle)",
+                      color: "var(--txt-dim)",
+                      padding: "1px 5px",
+                      borderRadius: 3,
+                      cursor: "pointer"
+                    }}
+                    onClick={() => {
+                      setInputText(cc.val);
+                      setTimeout(() => run(), 50);
+                    }}
+                    title={`Inject corner case: ${cc.val}`}
+                  >
+                    {cc.label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="input-actions-bar" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 6 }}>
+                <span style={{ fontSize: 10, color: "var(--txt-dim)", fontFamily: "var(--font-mono)" }}>
+                  Press Run to trace live
+                </span>
                 <button className="btn-secondary-run" onClick={run}>
                   ▶ Run
                 </button>
@@ -228,11 +265,25 @@ export default function BottomPanels() {
                       if (displayVal && displayVal.startsWith("{") && !displayVal.includes("__type")) {
                         displayVal = displayVal.replace(/"/g, "");
                       }
+                      const changedVars = stepData?.changedVars || {};
+                      const isChanged = Boolean(changedVars[name]);
                       return (
-                        <tr key={name}>
-                          <td className="var-name">{name}</td>
+                        <tr key={name} className={isChanged ? "var-changed" : ""}>
+                          <td className="var-name">
+                            {name} {isChanged && <span className="var-changed-dot" style={{ display: "inline-block", width: 5, height: 5, borderRadius: "50%", background: "var(--accent-amber)", marginLeft: 4 }} />}
+                          </td>
                           <td className="var-type">{info?.type || "var"}</td>
-                          <td className="var-val">{displayVal}</td>
+                          <td className="var-val">
+                            {isChanged && changedVars[name]?.from !== undefined ? (
+                              <span className="var-mutation-badge">
+                                <span style={{ opacity: 0.65 }}>{String(changedVars[name].from)}</span>
+                                <span>→</span>
+                                <b>{displayVal}</b>
+                              </span>
+                            ) : (
+                              displayVal
+                            )}
+                          </td>
                         </tr>
                       );
                     })

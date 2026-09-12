@@ -22,8 +22,26 @@ export default function StudioHeader() {
   }, []);
 
   function handleShare() {
-    navigator.clipboard?.writeText(window.location.href);
-    showToast('Link copied to clipboard');
+    try {
+      const state = useTraceStore.getState();
+      const payload = {
+        code: state.code,
+        inputs: state.inputs,
+        inputText: state.inputText,
+        language: state.language,
+        activeTab: state.activeTab,
+        activeExampleId: state.activeExampleId
+      };
+      const json = JSON.stringify(payload);
+      const b64 = btoa(encodeURIComponent(json).replace(/%([0-9A-F]{2})/g, (_, p1) => String.fromCharCode("0x" + p1)));
+      const url = window.location.origin + window.location.pathname + "#share=" + b64;
+      navigator.clipboard?.writeText?.(url);
+      window.history.replaceState(null, "", "#share=" + b64);
+      showToast("Shareable link with code & inputs copied!");
+    } catch (_) {
+      navigator.clipboard?.writeText?.(window.location.href);
+      showToast("Link copied to clipboard");
+    }
   }
 
   function handleGetHint() {

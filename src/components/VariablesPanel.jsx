@@ -28,8 +28,17 @@ export default function VariablesPanel() {
             <tr key={name} className={isChanged ? 'var-changed' : ''}>
               <td className="vn">{name}</td>
               <td className="vv">
-                {isChanged && <span style={{color:'var(--txt3)',fontSize:10,marginRight:4}}>{fmt(changed[name].from)}→</span>}
-                {fmt(info.value)}
+                {isChanged ? (
+                  <div style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                    <span className="var-mutation-badge">
+                      <span style={{ opacity: 0.7 }}>{fmt(changed[name].from)}</span>
+                      <span>→</span>
+                      <b>{fmt(info.value)}</b>
+                    </span>
+                  </div>
+                ) : (
+                  fmt(info.value)
+                )}
               </td>
               <td className="vt">{info.type}</td>
             </tr>
