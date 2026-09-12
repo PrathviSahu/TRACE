@@ -2350,6 +2350,584 @@ export const PROBLEM_SOLUTIONS = {
       }
     ]
   },
+  19: {
+      "approaches": [
+          {
+              "name": "Brute Force",
+              "label": "O(L) Two-Pass — Count Length",
+              "idea": "First traverse the list to find total length L. In the second pass, walk to node (L - n) and remove the next node.",
+              "complexity": {
+                  "time": "O(L)",
+                  "space": "O(1)"
+              },
+              "code": "class Solution {\n    public ListNode removeNthFromEnd(ListNode head, int n) {\n        int length = 0;\n        ListNode curr = head;\n        while (curr != null) {\n            length++;\n            curr = curr.next;\n        }\n        if (length == n) return head.next;\n        \n        curr = head;\n        for (int i = 1; i < length - n; i++) {\n            curr = curr.next;\n        }\n        curr.next = curr.next.next;\n        return head;\n    }\n}"
+          },
+          {
+              "name": "Better",
+              "label": "O(L) Space — Node Array / List",
+              "idea": "Store all node references in a List. Access the (L - n - 1)th node directly to update its next pointer.",
+              "complexity": {
+                  "time": "O(L)",
+                  "space": "O(L)"
+              },
+              "code": "class Solution {\n    public ListNode removeNthFromEnd(ListNode head, int n) {\n        List<ListNode> nodes = new ArrayList<>();\n        ListNode curr = head;\n        while (curr != null) {\n            nodes.add(curr);\n            curr = curr.next;\n        }\n        int total = nodes.size();\n        if (total == n) return head.next;\n        \n        ListNode prev = nodes.get(total - n - 1);\n        prev.next = prev.next.next;\n        return head;\n    }\n}"
+          },
+          {
+              "name": "Optimal",
+              "label": "O(L) One-Pass — Two Pointers with Gap n",
+              "idea": "Use dummy node. Advance fast pointer by n+1 steps. Then move both fast and slow together until fast is null. Slow points directly to the node before target.",
+              "complexity": {
+                  "time": "O(L)",
+                  "space": "O(1)"
+              },
+              "code": "class Solution {\n    public ListNode removeNthFromEnd(ListNode head, int n) {\n        ListNode dummy = new ListNode(0);\n        dummy.next = head;\n        ListNode fast = dummy;\n        ListNode slow = dummy;\n        \n        for (int i = 0; i <= n; i++) {\n            fast = fast.next;\n        }\n        while (fast != null) {\n            fast = fast.next;\n            slow = slow.next;\n        }\n        slow.next = slow.next.next;\n        return dummy.next;\n    }\n}"
+          }
+      ]
+  },
+  39: {
+      "approaches": [
+          {
+              "name": "Brute Force",
+              "label": "O(2^target) — Unbounded Recursion",
+              "idea": "Try choosing or skipping each candidate recursively. Use a HashSet of sorted lists to eliminate duplicate combinations.",
+              "complexity": {
+                  "time": "O(2^target)",
+                  "space": "O(target)"
+              },
+              "code": "class Solution {\n    public List<List<Integer>> combinationSum(int[] candidates, int target) {\n        Set<List<Integer>> result = new HashSet<>();\n        recurse(candidates, target, 0, new ArrayList<>(), result);\n        return new ArrayList<>(result);\n    }\n    void recurse(int[] nums, int remain, int idx, List<Integer> cur, Set<List<Integer>> res) {\n        if (remain == 0) {\n            List<Integer> valid = new ArrayList<>(cur);\n            Collections.sort(valid);\n            res.add(valid);\n            return;\n        }\n        if (remain < 0 || idx == nums.length) return;\n        \n        // Pick current\n        cur.add(nums[idx]);\n        recurse(nums, remain - nums[idx], idx, cur, res);\n        cur.remove(cur.size() - 1);\n        \n        // Skip current\n        recurse(nums, remain, idx + 1, cur, res);\n    }\n}"
+          },
+          {
+              "name": "Better",
+              "label": "O(N^(T/M)) — Backtracking with Sorting & Pruning",
+              "idea": "Sort candidates first. Stop exploring a branch as soon as candidates[i] exceeds the remaining sum, avoiding unnecessary recursive calls.",
+              "complexity": {
+                  "time": "O(N^(target/min))",
+                  "space": "O(target/min)"
+              },
+              "code": "class Solution {\n    public List<List<Integer>> combinationSum(int[] candidates, int target) {\n        Arrays.sort(candidates);\n        List<List<Integer>> result = new ArrayList<>();\n        backtrack(candidates, target, 0, new ArrayList<>(), result);\n        return result;\n    }\n    void backtrack(int[] candidates, int remain, int start, List<Integer> cur, List<List<Integer>> res) {\n        if (remain == 0) {\n            res.add(new ArrayList<>(cur));\n            return;\n        }\n        for (int i = start; i < candidates.length; i++) {\n            if (candidates[i] > remain) break; // Early prune\n            cur.add(candidates[i]);\n            backtrack(candidates, remain - candidates[i], i, cur, res);\n            cur.remove(cur.size() - 1);\n        }\n    }\n}"
+          },
+          {
+              "name": "Optimal",
+              "label": "O(N^(T/M)) — Standard Canonical Backtracking",
+              "idea": "At each step, loop from start index. By passing i as start into next call, candidates can be reused while strictly avoiding duplicate combinations.",
+              "complexity": {
+                  "time": "O(N^(target/min))",
+                  "space": "O(target/min)"
+              },
+              "code": "class Solution {\n    public List<List<Integer>> combinationSum(int[] candidates, int target) {\n        List<List<Integer>> result = new ArrayList<>();\n        backtrack(candidates, target, 0, new ArrayList<>(), result);\n        return result;\n    }\n    void backtrack(int[] candidates, int remain, int start, List<Integer> cur, List<List<Integer>> res) {\n        if (remain == 0) {\n            res.add(new ArrayList<>(cur));\n            return;\n        }\n        if (remain < 0) return;\n        for (int i = start; i < candidates.length; i++) {\n            cur.add(candidates[i]);\n            backtrack(candidates, remain - candidates[i], i, cur, res); // Reuse candidate i\n            cur.remove(cur.size() - 1);\n        }\n    }\n}"
+          }
+      ]
+  },
+  46: {
+      "approaches": [
+          {
+              "name": "Brute Force",
+              "label": "O(n! × n) — Backtracking with boolean used[]",
+              "idea": "Maintain a boolean used[] array. At each step, pick any unused element, mark it used, recurse, and unmark it upon backtrack.",
+              "complexity": {
+                  "time": "O(n! × n)",
+                  "space": "O(n)"
+              },
+              "code": "class Solution {\n    public List<List<Integer>> permute(int[] nums) {\n        List<List<Integer>> result = new ArrayList<>();\n        boolean[] used = new boolean[nums.length];\n        backtrack(nums, used, new ArrayList<>(), result);\n        return result;\n    }\n    void backtrack(int[] nums, boolean[] used, List<Integer> cur, List<List<Integer>> res) {\n        if (cur.size() == nums.length) {\n            res.add(new ArrayList<>(cur));\n            return;\n        }\n        for (int i = 0; i < nums.length; i++) {\n            if (used[i]) continue;\n            used[i] = true;\n            cur.add(nums[i]);\n            backtrack(nums, used, cur, res);\n            cur.remove(cur.size() - 1);\n            used[i] = false;\n        }\n    }\n}"
+          },
+          {
+              "name": "Better",
+              "label": "O(n! × n) — Iterative Cascading",
+              "idea": "Start with an empty permutation [[]]. For each number, insert it into every possible position of each previously generated permutation.",
+              "complexity": {
+                  "time": "O(n! × n)",
+                  "space": "O(n! × n)"
+              },
+              "code": "class Solution {\n    public List<List<Integer>> permute(int[] nums) {\n        List<List<Integer>> result = new ArrayList<>();\n        result.add(new ArrayList<>());\n        for (int num : nums) {\n            List<List<Integer>> next = new ArrayList<>();\n            for (List<Integer> p : result) {\n                for (int i = 0; i <= p.size(); i++) {\n                    List<Integer> newPerm = new ArrayList<>(p);\n                    newPerm.add(i, num);\n                    next.add(newPerm);\n                }\n            }\n            result = next;\n        }\n        return result;\n    }\n}"
+          },
+          {
+              "name": "Optimal",
+              "label": "O(n! × n) — In-Place Swap Backtracking",
+              "idea": "Permute the array in-place by swapping each element with the current starting index, recursing on start+1, and swapping back.",
+              "complexity": {
+                  "time": "O(n! × n)",
+                  "space": "O(n) call stack"
+              },
+              "code": "class Solution {\n    public List<List<Integer>> permute(int[] nums) {\n        List<List<Integer>> result = new ArrayList<>();\n        backtrack(0, nums, result);\n        return result;\n    }\n    void backtrack(int start, int[] nums, List<List<Integer>> res) {\n        if (start == nums.length) {\n            List<Integer> list = new ArrayList<>();\n            for (int x : nums) list.add(x);\n            res.add(list);\n            return;\n        }\n        for (int i = start; i < nums.length; i++) {\n            swap(nums, start, i);\n            backtrack(start + 1, nums, res);\n            swap(nums, start, i);\n        }\n    }\n    void swap(int[] nums, int i, int j) {\n        int t = nums[i]; nums[i] = nums[j]; nums[j] = t;\n    }\n}"
+          }
+      ]
+  },
+  76: {
+      "approaches": [
+          {
+              "name": "Brute Force",
+              "label": "O(s³ + t) — Check All Substrings",
+              "idea": "Generate every substring s[i..j]. For each, verify if it contains all characters of t with the required frequency counts.",
+              "complexity": {
+                  "time": "O(s³ + t)",
+                  "space": "O(128)"
+              },
+              "code": "class Solution {\n    public String minWindow(String s, String t) {\n        if (s.length() < t.length()) return \"\";\n        int[] tCount = new int[128];\n        for (char c : t.toCharArray()) tCount[c]++;\n        \n        String result = \"\";\n        int minLen = Integer.MAX_VALUE;\n        for (int i = 0; i < s.length(); i++) {\n            for (int j = i + t.length(); j <= s.length(); j++) {\n                String sub = s.substring(i, j);\n                if (isValid(sub, tCount) && sub.length() < minLen) {\n                    minLen = sub.length();\n                    result = sub;\n                }\n            }\n        }\n        return result;\n    }\n    boolean isValid(String sub, int[] tCount) {\n        int[] subCount = new int[128];\n        for (char c : sub.toCharArray()) subCount[c]++;\n        for (int i = 0; i < 128; i++) {\n            if (subCount[i] < tCount[i]) return false;\n        }\n        return true;\n    }\n}"
+          },
+          {
+              "name": "Better",
+              "label": "O(s × 128 + t) — Sliding Window with Full Vector Check",
+              "idea": "Maintain a sliding window [left, right] and check if the window frequency counts satisfy tCount on each move.",
+              "complexity": {
+                  "time": "O(128 × |s|)",
+                  "space": "O(128)"
+              },
+              "code": "class Solution {\n    public String minWindow(String s, String t) {\n        int[] need = new int[128];\n        for (char c : t.toCharArray()) need[c]++;\n        int[] have = new int[128];\n        int left = 0, minLen = Integer.MAX_VALUE, startIdx = 0;\n        \n        for (int right = 0; right < s.length(); right++) {\n            have[s.charAt(right)]++;\n            while (containsAll(have, need)) {\n                if (right - left + 1 < minLen) {\n                    minLen = right - left + 1;\n                    startIdx = left;\n                }\n                have[s.charAt(left)]--;\n                left++;\n            }\n        }\n        return minLen == Integer.MAX_VALUE ? \"\" : s.substring(startIdx, startIdx + minLen);\n    }\n    boolean containsAll(int[] have, int[] need) {\n        for (int i = 0; i < 128; i++) {\n            if (have[i] < need[i]) return false;\n        }\n        return true;\n    }\n}"
+          },
+          {
+              "name": "Optimal",
+              "label": "O(|s| + |t|) — Sliding Window with Character Match Count",
+              "idea": "Keep an integer 'required = t.length()'. Decrement required when a needed character is satisfied. Contract left as long as required == 0.",
+              "complexity": {
+                  "time": "O(|s| + |t|)",
+                  "space": "O(1) — 128 ASCII array"
+              },
+              "code": "class Solution {\n    public String minWindow(String s, String t) {\n        if (s.length() < t.length()) return \"\";\n        int[] need = new int[128];\n        for (char c : t.toCharArray()) need[c]++;\n        \n        int required = t.length();\n        int left = 0, minLen = Integer.MAX_VALUE, start = 0;\n        \n        for (int right = 0; right < s.length(); right++) {\n            char r = s.charAt(right);\n            if (need[r] > 0) required--;\n            need[r]--;\n            \n            while (required == 0) {\n                if (right - left + 1 < minLen) {\n                    minLen = right - left + 1;\n                    start = left;\n                }\n                char l = s.charAt(left);\n                need[l]++;\n                if (need[l] > 0) required++;\n                left++;\n            }\n        }\n        return minLen == Integer.MAX_VALUE ? \"\" : s.substring(start, start + minLen);\n    }\n}"
+          }
+      ]
+  },
+  78: {
+      "approaches": [
+          {
+              "name": "Brute Force",
+              "label": "O(2ⁿ) — Pick or Skip Recursion",
+              "idea": "At each element index, branch into two recursive choices: include nums[i] in the current subset, or exclude it.",
+              "complexity": {
+                  "time": "O(2ⁿ)",
+                  "space": "O(n) call stack"
+              },
+              "code": "class Solution {\n    public List<List<Integer>> subsets(int[] nums) {\n        List<List<Integer>> result = new ArrayList<>();\n        recurse(nums, 0, new ArrayList<>(), result);\n        return result;\n    }\n    void recurse(int[] nums, int i, List<Integer> cur, List<List<Integer>> res) {\n        if (i == nums.length) {\n            res.add(new ArrayList<>(cur));\n            return;\n        }\n        cur.add(nums[i]);\n        recurse(nums, i + 1, cur, res);\n        cur.remove(cur.size() - 1);\n        recurse(nums, i + 1, cur, res);\n    }\n}"
+          },
+          {
+              "name": "Better",
+              "label": "O(n × 2ⁿ) — Bitmask Enumeration",
+              "idea": "Iterate from 0 to 2ⁿ - 1. The j-th bit of integer mask determines if nums[j] is included in the current subset.",
+              "complexity": {
+                  "time": "O(n × 2ⁿ)",
+                  "space": "O(1) extra"
+              },
+              "code": "class Solution {\n    public List<List<Integer>> subsets(int[] nums) {\n        List<List<Integer>> result = new ArrayList<>();\n        int n = nums.length;\n        int total = 1 << n;\n        for (int mask = 0; mask < total; mask++) {\n            List<Integer> sub = new ArrayList<>();\n            for (int i = 0; i < n; i++) {\n                if ((mask & (1 << i)) != 0) {\n                    sub.add(nums[i]);\n                }\n            }\n            result.add(sub);\n        }\n        return result;\n    }\n}"
+          },
+          {
+              "name": "Optimal",
+              "label": "O(n × 2ⁿ) — Backtracking / Cascading",
+              "idea": "Loop from start to n-1. Add each partial subset to result immediately before recursing, achieving clean chronological generation.",
+              "complexity": {
+                  "time": "O(n × 2ⁿ)",
+                  "space": "O(n) recursion stack"
+              },
+              "code": "class Solution {\n    public List<List<Integer>> subsets(int[] nums) {\n        List<List<Integer>> result = new ArrayList<>();\n        backtrack(nums, 0, new ArrayList<>(), result);\n        return result;\n    }\n    void backtrack(int[] nums, int start, List<Integer> cur, List<List<Integer>> res) {\n        res.add(new ArrayList<>(cur));\n        for (int i = start; i < nums.length; i++) {\n            cur.add(nums[i]);\n            backtrack(nums, i + 1, cur, res);\n            cur.remove(cur.size() - 1);\n        }\n    }\n}"
+          }
+      ]
+  },
+  84: {
+      "approaches": [
+          {
+              "name": "Brute Force",
+              "label": "O(n²) — Check All (i, j) Pairs",
+              "idea": "For every pair of indices (i, j), find the minimum height between them and calculate area = minH * (j - i + 1).",
+              "complexity": {
+                  "time": "O(n²)",
+                  "space": "O(1)"
+              },
+              "code": "class Solution {\n    public int largestRectangleArea(int[] heights) {\n        int maxArea = 0;\n        int n = heights.length;\n        for (int i = 0; i < n; i++) {\n            int minH = heights[i];\n            for (int j = i; j < n; j++) {\n                minH = Math.min(minH, heights[j]);\n                maxArea = Math.max(maxArea, minH * (j - i + 1));\n            }\n        }\n        return maxArea;\n    }\n}"
+          },
+          {
+              "name": "Better",
+              "label": "O(n) Space — Left & Right Smaller Arrays",
+              "idea": "Precompute the first smaller element index to the left and right for every bar using monotonic stacks, then compute area in O(1) per bar.",
+              "complexity": {
+                  "time": "O(n)",
+                  "space": "O(n)"
+              },
+              "code": "class Solution {\n    public int largestRectangleArea(int[] heights) {\n        int n = heights.length;\n        int[] left = new int[n];\n        int[] right = new int[n];\n        Deque<Integer> stack = new ArrayDeque<>();\n        \n        for (int i = 0; i < n; i++) {\n            while (!stack.isEmpty() && heights[stack.peek()] >= heights[i]) stack.pop();\n            left[i] = stack.isEmpty() ? -1 : stack.peek();\n            stack.push(i);\n        }\n        stack.clear();\n        for (int i = n - 1; i >= 0; i--) {\n            while (!stack.isEmpty() && heights[stack.peek()] >= heights[i]) stack.pop();\n            right[i] = stack.isEmpty() ? n : stack.peek();\n            stack.push(i);\n        }\n        int maxArea = 0;\n        for (int i = 0; i < n; i++) {\n            maxArea = Math.max(maxArea, heights[i] * (right[i] - left[i] - 1));\n        }\n        return maxArea;\n    }\n}"
+          },
+          {
+              "name": "Optimal",
+              "label": "O(n) One-Pass — Monotonic Stack",
+              "idea": "Maintain an increasing stack of indices. When encountering a bar shorter than stack top, pop and compute rectangle with popped bar as minimum height.",
+              "complexity": {
+                  "time": "O(n) — Each index pushed and popped once",
+                  "space": "O(n)"
+              },
+              "code": "class Solution {\n    public int largestRectangleArea(int[] heights) {\n        int n = heights.length;\n        Deque<Integer> stack = new ArrayDeque<>();\n        int maxArea = 0;\n        for (int i = 0; i <= n; i++) {\n            int h = (i == n) ? 0 : heights[i];\n            while (!stack.isEmpty() && heights[stack.peek()] > h) {\n                int height = heights[stack.pop()];\n                int width = stack.isEmpty() ? i : (i - stack.peek() - 1);\n                maxArea = Math.max(maxArea, height * width);\n            }\n            stack.push(i);\n        }\n        return maxArea;\n    }\n}"
+          }
+      ]
+  },
+  91: {
+      "approaches": [
+          {
+              "name": "Brute Force",
+              "label": "O(2ⁿ) — Plain Recursion",
+              "idea": "From index i, recursively try 1-digit decoding (if s[i] != '0') and 2-digit decoding (if substring <= 26).",
+              "complexity": {
+                  "time": "O(2ⁿ)",
+                  "space": "O(n)"
+              },
+              "code": "class Solution {\n    public int numDecodings(String s) {\n        return dfs(s, 0);\n    }\n    int dfs(String s, int i) {\n        if (i == s.length()) return 1;\n        if (s.charAt(i) == '0') return 0;\n        int ways = dfs(s, i + 1);\n        if (i + 1 < s.length()) {\n            int twoDigit = Integer.parseInt(s.substring(i, i + 2));\n            if (twoDigit <= 26) ways += dfs(s, i + 2);\n        }\n        return ways;\n    }\n}"
+          },
+          {
+              "name": "Better",
+              "label": "O(n) — Top-Down DP with Memoization",
+              "idea": "Store the number of ways to decode starting at index i in a memo array to avoid solving subproblems repeatedly.",
+              "complexity": {
+                  "time": "O(n)",
+                  "space": "O(n)"
+              },
+              "code": "class Solution {\n    public int numDecodings(String s) {\n        int[] memo = new int[s.length()];\n        Arrays.fill(memo, -1);\n        return dfs(s, 0, memo);\n    }\n    int dfs(String s, int i, int[] memo) {\n        if (i == s.length()) return 1;\n        if (s.charAt(i) == '0') return 0;\n        if (memo[i] != -1) return memo[i];\n        \n        int ways = dfs(s, i + 1, memo);\n        if (i + 1 < s.length()) {\n            int twoDigit = Integer.parseInt(s.substring(i, i + 2));\n            if (twoDigit <= 26) ways += dfs(s, i + 2, memo);\n        }\n        return memo[i] = ways;\n    }\n}"
+          },
+          {
+              "name": "Optimal",
+              "label": "O(n) Time, O(1) Space — Bottom-Up State Rolling",
+              "idea": "Each step depends only on the previous two values: prev1 (i-1) and prev2 (i-2). Update them iteratively in constant space.",
+              "complexity": {
+                  "time": "O(n)",
+                  "space": "O(1)"
+              },
+              "code": "class Solution {\n    public int numDecodings(String s) {\n        if (s == null || s.length() == 0 || s.charAt(0) == '0') return 0;\n        int prev2 = 1, prev1 = 1;\n        for (int i = 1; i < s.length(); i++) {\n            int curr = 0;\n            char c1 = s.charAt(i);\n            char c0 = s.charAt(i - 1);\n            if (c1 != '0') curr += prev1;\n            int twoDigit = (c0 - '0') * 10 + (c1 - '0');\n            if (twoDigit >= 10 && twoDigit <= 26) curr += prev2;\n            prev2 = prev1;\n            prev1 = curr;\n        }\n        return prev1;\n    }\n}"
+          }
+      ]
+  },
+  98: {
+      "approaches": [
+          {
+              "name": "Brute Force",
+              "label": "O(n) — In-Order Traversal to List",
+              "idea": "Perform an in-order traversal of the tree, store node values in a list, then verify if the list is strictly increasing.",
+              "complexity": {
+                  "time": "O(n)",
+                  "space": "O(n)"
+              },
+              "code": "class Solution {\n    public boolean isValidBST(TreeNode root) {\n        List<Integer> values = new ArrayList<>();\n        inorder(root, values);\n        for (int i = 1; i < values.size(); i++) {\n            if (values.get(i) <= values.get(i - 1)) return false;\n        }\n        return true;\n    }\n    void inorder(TreeNode node, List<Integer> list) {\n        if (node == null) return;\n        inorder(node.left, list);\n        list.add(node.val);\n        inorder(node.right, list);\n    }\n}"
+          },
+          {
+              "name": "Better",
+              "label": "O(n) — Iterative In-Order with Stack",
+              "idea": "Iterative in-order traversal using a Stack. Keep track of the previously visited node value to ensure strict increasing order.",
+              "complexity": {
+                  "time": "O(n)",
+                  "space": "O(h)"
+              },
+              "code": "class Solution {\n    public boolean isValidBST(TreeNode root) {\n        Deque<TreeNode> stack = new ArrayDeque<>();\n        TreeNode curr = root;\n        Integer prev = null;\n        while (curr != null || !stack.isEmpty()) {\n            while (curr != null) {\n                stack.push(curr);\n                curr = curr.left;\n            }\n            curr = stack.pop();\n            if (prev != null && curr.val <= prev) return false;\n            prev = curr.val;\n            curr = curr.right;\n        }\n        return true;\n    }\n}"
+          },
+          {
+              "name": "Optimal",
+              "label": "O(n) — Range Validation (min, max)",
+              "idea": "Recursively enforce that all nodes in a subtree lie within a valid (low, high) range. Pass Long bounds to handle 32-bit integer limits.",
+              "complexity": {
+                  "time": "O(n)",
+                  "space": "O(h) call stack"
+              },
+              "code": "class Solution {\n    public boolean isValidBST(TreeNode root) {\n        return validate(root, Long.MIN_VALUE, Long.MAX_VALUE);\n    }\n    boolean validate(TreeNode node, long min, long max) {\n        if (node == null) return true;\n        if (node.val <= min || node.val >= max) return false;\n        return validate(node.left, min, node.val) && validate(node.right, node.val, max);\n    }\n}"
+          }
+      ]
+  },
+  102: {
+      "approaches": [
+          {
+              "name": "Brute Force",
+              "label": "O(n × h) — Height Query + Level Print",
+              "idea": "Compute tree height h, then for each level d from 1 to h, traverse the tree to collect nodes at depth d.",
+              "complexity": {
+                  "time": "O(n × h)",
+                  "space": "O(h)"
+              },
+              "code": "class Solution {\n    public List<List<Integer>> levelOrder(TreeNode root) {\n        List<List<Integer>> result = new ArrayList<>();\n        int h = getHeight(root);\n        for (int d = 1; d <= h; d++) {\n            List<Integer> level = new ArrayList<>();\n            collect(root, d, level);\n            result.add(level);\n        }\n        return result;\n    }\n    int getHeight(TreeNode node) {\n        if (node == null) return 0;\n        return 1 + Math.max(getHeight(node.left), getHeight(node.right));\n    }\n    void collect(TreeNode node, int d, List<Integer> list) {\n        if (node == null) return;\n        if (d == 1) list.add(node.val);\n        else {\n            collect(node.left, d - 1, list);\n            collect(node.right, d - 1, list);\n        }\n    }\n}"
+          },
+          {
+              "name": "Better",
+              "label": "O(n) — Pre-Order DFS with Level Index",
+              "idea": "Perform recursive DFS, passing the current level index. Add elements into the corresponding level list in result.",
+              "complexity": {
+                  "time": "O(n)",
+                  "space": "O(h) recursion stack"
+              },
+              "code": "class Solution {\n    public List<List<Integer>> levelOrder(TreeNode root) {\n        List<List<Integer>> result = new ArrayList<>();\n        dfs(root, 0, result);\n        return result;\n    }\n    void dfs(TreeNode node, int level, List<List<Integer>> res) {\n        if (node == null) return;\n        if (level == res.size()) res.add(new ArrayList<>());\n        res.get(level).add(node.val);\n        dfs(node.left, level + 1, res);\n        dfs(node.right, level + 1, res);\n    }\n}"
+          },
+          {
+              "name": "Optimal",
+              "label": "O(n) — Canonical BFS Queue",
+              "idea": "Use a Queue. In each iteration, measure queue.size() to process exactly all nodes of the current level together.",
+              "complexity": {
+                  "time": "O(n)",
+                  "space": "O(n) for queue"
+              },
+              "code": "class Solution {\n    public List<List<Integer>> levelOrder(TreeNode root) {\n        List<List<Integer>> result = new ArrayList<>();\n        if (root == null) return result;\n        Queue<TreeNode> queue = new LinkedList<>();\n        queue.offer(root);\n        \n        while (!queue.isEmpty()) {\n            int size = queue.size();\n            List<Integer> currentLevel = new ArrayList<>(size);\n            for (int i = 0; i < size; i++) {\n                TreeNode node = queue.poll();\n                currentLevel.add(node.val);\n                if (node.left != null) queue.offer(node.left);\n                if (node.right != null) queue.offer(node.right);\n            }\n            result.add(currentLevel);\n        }\n        return result;\n    }\n}"
+          }
+      ]
+  },
+  139: {
+      "approaches": [
+          {
+              "name": "Brute Force",
+              "label": "O(2ⁿ) — Plain Recursive Prefix Matching",
+              "idea": "For each prefix that matches a word in wordDict, recursively verify if the remaining substring can also be segmented.",
+              "complexity": {
+                  "time": "O(2ⁿ)",
+                  "space": "O(n) call stack"
+              },
+              "code": "class Solution {\n    public boolean wordBreak(String s, List<String> wordDict) {\n        Set<String> dict = new HashSet<>(wordDict);\n        return dfs(s, dict);\n    }\n    boolean dfs(String s, Set<String> dict) {\n        if (s.isEmpty()) return true;\n        for (int i = 1; i <= s.length(); i++) {\n            if (dict.contains(s.substring(0, i)) && dfs(s.substring(i), dict)) {\n                return true;\n            }\n        }\n        return false;\n    }\n}"
+          },
+          {
+              "name": "Better",
+              "label": "O(n²) — Top-Down DP with Boolean Memo",
+              "idea": "Store segmentation results in a Boolean memo[start] array so that identical remaining suffixes are evaluated only once.",
+              "complexity": {
+                  "time": "O(n²)",
+                  "space": "O(n)"
+              },
+              "code": "class Solution {\n    public boolean wordBreak(String s, List<String> wordDict) {\n        Set<String> dict = new HashSet<>(wordDict);\n        Boolean[] memo = new Boolean[s.length()];\n        return dfs(s, 0, dict, memo);\n    }\n    boolean dfs(String s, int start, Set<String> dict, Boolean[] memo) {\n        if (start == s.length()) return true;\n        if (memo[start] != null) return memo[start];\n        for (int end = start + 1; end <= s.length(); end++) {\n            if (dict.contains(s.substring(start, end)) && dfs(s, end, dict, memo)) {\n                return memo[start] = true;\n            }\n        }\n        return memo[start] = false;\n    }\n}"
+          },
+          {
+              "name": "Optimal",
+              "label": "O(n²) — Bottom-Up 1D DP",
+              "idea": "dp[i] represents if s[0..i-1] can be segmented. For each i, check all j < i: if dp[j] and s[j..i] is in dict, dp[i] = true.",
+              "complexity": {
+                  "time": "O(n²)",
+                  "space": "O(n)"
+              },
+              "code": "class Solution {\n    public boolean wordBreak(String s, List<String> wordDict) {\n        Set<String> dict = new HashSet<>(wordDict);\n        int n = s.length();\n        boolean[] dp = new boolean[n + 1];\n        dp[0] = true;\n        \n        for (int i = 1; i <= n; i++) {\n            for (int j = 0; j < i; j++) {\n                if (dp[j] && dict.contains(s.substring(j, i))) {\n                    dp[i] = true;\n                    break;\n                }\n            }\n        }\n        return dp[n];\n    }\n}"
+          }
+      ]
+  },
+  142: {
+      "approaches": [
+          {
+              "name": "Brute Force",
+              "label": "O(n) Space — HashSet of Visited Nodes",
+              "idea": "Traverse list adding each node to a Set. The first node already in the set is the beginning of the cycle.",
+              "complexity": {
+                  "time": "O(n)",
+                  "space": "O(n)"
+              },
+              "code": "public class Solution {\n    public ListNode detectCycle(ListNode head) {\n        Set<ListNode> visited = new HashSet<>();\n        ListNode curr = head;\n        while (curr != null) {\n            if (visited.contains(curr)) return curr;\n            visited.add(curr);\n            curr = curr.next;\n        }\n        return null;\n    }\n}"
+          },
+          {
+              "name": "Better",
+              "label": "O(n) Time, O(1) Space — Measure Cycle Length k",
+              "idea": "Once fast and slow meet, count the cycle length k. Then reset two pointers with gap k apart starting at head; they meet at the cycle start.",
+              "complexity": {
+                  "time": "O(n)",
+                  "space": "O(1)"
+              },
+              "code": "public class Solution {\n    public ListNode detectCycle(ListNode head) {\n        ListNode slow = head, fast = head;\n        while (fast != null && fast.next != null) {\n            slow = slow.next;\n            fast = fast.next.next;\n            if (slow == fast) {\n                // Find cycle length\n                int k = 1;\n                ListNode temp = slow.next;\n                while (temp != slow) {\n                    temp = temp.next;\n                    k++;\n                }\n                ListNode p1 = head, p2 = head;\n                for (int i = 0; i < k; i++) p2 = p2.next;\n                while (p1 != p2) {\n                    p1 = p1.next;\n                    p2 = p2.next;\n                }\n                return p1;\n            }\n        }\n        return null;\n    }\n}"
+          },
+          {
+              "name": "Optimal",
+              "label": "O(n) Time, O(1) Space — Floyd's Tortoise & Hare",
+              "idea": "When slow and fast meet, reset slow to head. Advance both slow and fast by 1 step simultaneously. They meet exactly at the cycle entry.",
+              "complexity": {
+                  "time": "O(n)",
+                  "space": "O(1)"
+              },
+              "code": "public class Solution {\n    public ListNode detectCycle(ListNode head) {\n        ListNode slow = head, fast = head;\n        while (fast != null && fast.next != null) {\n            slow = slow.next;\n            fast = fast.next.next;\n            if (slow == fast) {\n                ListNode entry = head;\n                while (entry != slow) {\n                    entry = entry.next;\n                    slow = slow.next;\n                }\n                return entry;\n            }\n        }\n        return null;\n    }\n}"
+          }
+      ]
+  },
+  207: {
+      "approaches": [
+          {
+              "name": "Brute Force",
+              "label": "O(V × (V + E)) — DFS from Every Node",
+              "idea": "Run DFS from each node to detect if any path loops back to itself without cross-search memoization.",
+              "complexity": {
+                  "time": "O(V × (V + E))",
+                  "space": "O(V)"
+              },
+              "code": "class Solution {\n    public boolean canFinish(int numCourses, int[][] prerequisites) {\n        List<List<Integer>> adj = new ArrayList<>();\n        for (int i = 0; i < numCourses; i++) adj.add(new ArrayList<>());\n        for (int[] p : prerequisites) adj.get(p[1]).add(p[0]);\n        \n        for (int i = 0; i < numCourses; i++) {\n            if (hasCycle(adj, new boolean[numCourses], i)) return false;\n        }\n        return true;\n    }\n    boolean hasCycle(List<List<Integer>> adj, boolean[] visited, int node) {\n        if (visited[node]) return true;\n        visited[node] = true;\n        for (int neighbor : adj.get(node)) {\n            if (hasCycle(adj, visited, neighbor)) return true;\n        }\n        visited[node] = false;\n        return false;\n    }\n}"
+          },
+          {
+              "name": "Better",
+              "label": "O(V + E) — 3-Color DFS Cycle Detection",
+              "idea": "0=unvisited, 1=visiting (on current recursion path), 2=visited. Encountering state 1 indicates a back-edge (cycle).",
+              "complexity": {
+                  "time": "O(V + E)",
+                  "space": "O(V + E)"
+              },
+              "code": "class Solution {\n    public boolean canFinish(int numCourses, int[][] prerequisites) {\n        List<List<Integer>> adj = new ArrayList<>();\n        for (int i = 0; i < numCourses; i++) adj.add(new ArrayList<>());\n        for (int[] p : prerequisites) adj.get(p[1]).add(p[0]);\n        \n        int[] state = new int[numCourses];\n        for (int i = 0; i < numCourses; i++) {\n            if (state[i] == 0 && hasCycle(adj, state, i)) return false;\n        }\n        return true;\n    }\n    boolean hasCycle(List<List<Integer>> adj, int[] state, int node) {\n        if (state[node] == 1) return true;  // cycle\n        if (state[node] == 2) return false; // already checked\n        state[node] = 1;\n        for (int next : adj.get(node)) {\n            if (hasCycle(adj, state, next)) return true;\n        }\n        state[node] = 2;\n        return false;\n    }\n}"
+          },
+          {
+              "name": "Optimal",
+              "label": "O(V + E) — Kahn's Algorithm (BFS Topological Sort)",
+              "idea": "Compute in-degrees for all courses. Add 0 in-degree courses to a queue. If total processed courses == numCourses, no cycle exists.",
+              "complexity": {
+                  "time": "O(V + E)",
+                  "space": "O(V + E)"
+              },
+              "code": "class Solution {\n    public boolean canFinish(int numCourses, int[][] prerequisites) {\n        List<List<Integer>> adj = new ArrayList<>();\n        for (int i = 0; i < numCourses; i++) adj.add(new ArrayList<>());\n        int[] inDegree = new int[numCourses];\n        \n        for (int[] p : prerequisites) {\n            adj.get(p[1]).add(p[0]);\n            inDegree[p[0]]++;\n        }\n        Queue<Integer> queue = new LinkedList<>();\n        for (int i = 0; i < numCourses; i++) {\n            if (inDegree[i] == 0) queue.offer(i);\n        }\n        int count = 0;\n        while (!queue.isEmpty()) {\n            int curr = queue.poll();\n            count++;\n            for (int next : adj.get(curr)) {\n                inDegree[next]--;\n                if (inDegree[next] == 0) queue.offer(next);\n            }\n        }\n        return count == numCourses;\n    }\n}"
+          }
+      ]
+  },
+  209: {
+      "approaches": [
+          {
+              "name": "Brute Force",
+              "label": "O(n²) — Check All Subarrays",
+              "idea": "For each starting index i, expand j and accumulate sum until sum >= target, tracking the minimum length (j - i + 1).",
+              "complexity": {
+                  "time": "O(n²)",
+                  "space": "O(1)"
+              },
+              "code": "class Solution {\n    public int minSubArrayLen(int target, int[] nums) {\n        int minLen = Integer.MAX_VALUE;\n        int n = nums.length;\n        for (int i = 0; i < n; i++) {\n            int sum = 0;\n            for (int j = i; j < n; j++) {\n                sum += nums[j];\n                if (sum >= target) {\n                    minLen = Math.min(minLen, j - i + 1);\n                    break;\n                }\n            }\n        }\n        return minLen == Integer.MAX_VALUE ? 0 : minLen;\n    }\n}"
+          },
+          {
+              "name": "Better",
+              "label": "O(n log n) — Prefix Sum + Binary Search",
+              "idea": "Build a monotonic prefix sum array. For each i, binary search for the smallest j where prefix[j] >= prefix[i-1] + target.",
+              "complexity": {
+                  "time": "O(n log n)",
+                  "space": "O(n)"
+              },
+              "code": "class Solution {\n    public int minSubArrayLen(int target, int[] nums) {\n        int n = nums.length;\n        int[] prefix = new int[n + 1];\n        for (int i = 0; i < n; i++) prefix[i + 1] = prefix[i] + nums[i];\n        \n        int minLen = Integer.MAX_VALUE;\n        for (int i = 1; i <= n; i++) {\n            int needed = prefix[i - 1] + target;\n            int idx = Arrays.binarySearch(prefix, needed);\n            if (idx < 0) idx = -idx - 1;\n            if (idx <= n) minLen = Math.min(minLen, idx - i + 1);\n        }\n        return minLen == Integer.MAX_VALUE ? 0 : minLen;\n    }\n}"
+          },
+          {
+              "name": "Optimal",
+              "label": "O(n) — Sliding Window / Two Pointers",
+              "idea": "Expand right to add elements to sum. While sum >= target, record window length and shrink from left by subtracting nums[left].",
+              "complexity": {
+                  "time": "O(n)",
+                  "space": "O(1)"
+              },
+              "code": "class Solution {\n    public int minSubArrayLen(int target, int[] nums) {\n        int left = 0, sum = 0;\n        int minLen = Integer.MAX_VALUE;\n        for (int right = 0; right < nums.length; right++) {\n            sum += nums[right];\n            while (sum >= target) {\n                minLen = Math.min(minLen, right - left + 1);\n                sum -= nums[left++];\n            }\n        }\n        return minLen == Integer.MAX_VALUE ? 0 : minLen;\n    }\n}"
+          }
+      ]
+  },
+  235: {
+      "approaches": [
+          {
+              "name": "Brute Force",
+              "label": "O(n) — Path Tracing to Lists",
+              "idea": "Trace the path from root to p and root to q into two lists. Traverse the lists simultaneously to find the last identical node.",
+              "complexity": {
+                  "time": "O(n)",
+                  "space": "O(n)"
+              },
+              "code": "class Solution {\n    public TreeNode lowestCommonAncestor(TreeNode root, TreeNode p, TreeNode q) {\n        List<TreeNode> pathP = new ArrayList<>();\n        List<TreeNode> pathQ = new ArrayList<>();\n        findPath(root, p, pathP);\n        findPath(root, q, pathQ);\n        \n        TreeNode lca = null;\n        int i = 0;\n        while (i < pathP.size() && i < pathQ.size() && pathP.get(i) == pathQ.get(i)) {\n            lca = pathP.get(i);\n            i++;\n        }\n        return lca;\n    }\n    boolean findPath(TreeNode root, TreeNode target, List<TreeNode> path) {\n        if (root == null) return false;\n        path.add(root);\n        if (root == target) return true;\n        if (target.val < root.val && findPath(root.left, target, path)) return true;\n        if (target.val > root.val && findPath(root.right, target, path)) return true;\n        path.remove(path.size() - 1);\n        return false;\n    }\n}"
+          },
+          {
+              "name": "Better",
+              "label": "O(h) — Recursive BST Descent",
+              "idea": "If both p and q have smaller values than root, descend left. If both are greater, descend right. Otherwise, root is the split point (LCA).",
+              "complexity": {
+                  "time": "O(h)",
+                  "space": "O(h) call stack"
+              },
+              "code": "class Solution {\n    public TreeNode lowestCommonAncestor(TreeNode root, TreeNode p, TreeNode q) {\n        if (p.val < root.val && q.val < root.val) {\n            return lowestCommonAncestor(root.left, p, q);\n        }\n        if (p.val > root.val && q.val > root.val) {\n            return lowestCommonAncestor(root.right, p, q);\n        }\n        return root;\n    }\n}"
+          },
+          {
+              "name": "Optimal",
+              "label": "O(h) Time, O(1) Space — Iterative BST Traversal",
+              "idea": "Iteratively traverse down the BST using a while loop. Since no recursion stack is used, space is strictly O(1).",
+              "complexity": {
+                  "time": "O(h)",
+                  "space": "O(1)"
+              },
+              "code": "class Solution {\n    public TreeNode lowestCommonAncestor(TreeNode root, TreeNode p, TreeNode q) {\n        TreeNode curr = root;\n        while (curr != null) {\n            if (p.val < curr.val && q.val < curr.val) {\n                curr = curr.left;\n            } else if (p.val > curr.val && q.val > curr.val) {\n                curr = curr.right;\n            } else {\n                return curr;\n            }\n        }\n        return null;\n    }\n}"
+          }
+      ]
+  },
+  416: {
+      "approaches": [
+          {
+              "name": "Brute Force",
+              "label": "O(2ⁿ) — Recursive Subset Sum",
+              "idea": "If total sum is odd, return false. Otherwise, explore every subset recursively to check if any sum equals total / 2.",
+              "complexity": {
+                  "time": "O(2ⁿ)",
+                  "space": "O(n)"
+              },
+              "code": "class Solution {\n    public boolean canPartition(int[] nums) {\n        int sum = 0;\n        for (int x : nums) sum += x;\n        if (sum % 2 != 0) return false;\n        return dfs(nums, 0, sum / 2);\n    }\n    boolean dfs(int[] nums, int i, int target) {\n        if (target == 0) return true;\n        if (i == nums.length || target < 0) return false;\n        return dfs(nums, i + 1, target - nums[i]) || dfs(nums, i + 1, target);\n    }\n}"
+          },
+          {
+              "name": "Better",
+              "label": "O(n × target) — 2D DP Table",
+              "idea": "dp[i][j] = true if a subset of the first i elements can sum to j. Classic 0/1 Knapsack table.",
+              "complexity": {
+                  "time": "O(n × target)",
+                  "space": "O(n × target)"
+              },
+              "code": "class Solution {\n    public boolean canPartition(int[] nums) {\n        int sum = 0;\n        for (int x : nums) sum += x;\n        if (sum % 2 != 0) return false;\n        int target = sum / 2;\n        int n = nums.length;\n        \n        boolean[][] dp = new boolean[n + 1][target + 1];\n        for (int i = 0; i <= n; i++) dp[i][0] = true;\n        \n        for (int i = 1; i <= n; i++) {\n            for (int j = 1; j <= target; j++) {\n                dp[i][j] = dp[i - 1][j];\n                if (j >= nums[i - 1]) {\n                    dp[i][j] = dp[i][j] || dp[i - 1][j - nums[i - 1]];\n                }\n            }\n        }\n        return dp[n][target];\n    }\n}"
+          },
+          {
+              "name": "Optimal",
+              "label": "O(n × target) Time, O(target) Space — 1D DP Array",
+              "idea": "Iterate backwards from target down to num for each element, updating dp[j] = dp[j] || dp[j - num]. Backwards iteration prevents reusing the same item.",
+              "complexity": {
+                  "time": "O(n × target)",
+                  "space": "O(target)"
+              },
+              "code": "class Solution {\n    public boolean canPartition(int[] nums) {\n        int sum = 0;\n        for (int x : nums) sum += x;\n        if (sum % 2 != 0) return false;\n        int target = sum / 2;\n        \n        boolean[] dp = new boolean[target + 1];\n        dp[0] = true;\n        for (int num : nums) {\n            for (int j = target; j >= num; j--) {\n                if (dp[j - num]) dp[j] = true;\n            }\n        }\n        return dp[target];\n    }\n}"
+          }
+      ]
+  },
+  547: {
+      "approaches": [
+          {
+              "name": "Brute Force",
+              "label": "O(n²) — BFS Connected Components",
+              "idea": "Maintain a visited array. For each unvisited city, initiate a BFS using a Queue to visit all reachable cities and increment province count.",
+              "complexity": {
+                  "time": "O(n²)",
+                  "space": "O(n)"
+              },
+              "code": "class Solution {\n    public int findCircleNum(int[][] isConnected) {\n        int n = isConnected.length;\n        boolean[] visited = new boolean[n];\n        int provinces = 0;\n        \n        for (int i = 0; i < n; i++) {\n            if (!visited[i]) {\n                provinces++;\n                Queue<Integer> queue = new LinkedList<>();\n                queue.offer(i);\n                visited[i] = true;\n                while (!queue.isEmpty()) {\n                    int city = queue.poll();\n                    for (int j = 0; j < n; j++) {\n                        if (isConnected[city][j] == 1 && !visited[j]) {\n                            visited[j] = true;\n                            queue.offer(j);\n                        }\n                    }\n                }\n            }\n        }\n        return provinces;\n    }\n}"
+          },
+          {
+              "name": "Better",
+              "label": "O(n²) — Recursive DFS",
+              "idea": "Iterate through cities. For each unvisited city, increment province counter and trigger DFS to mark its entire connected component.",
+              "complexity": {
+                  "time": "O(n²)",
+                  "space": "O(n) call stack"
+              },
+              "code": "class Solution {\n    public int findCircleNum(int[][] isConnected) {\n        int n = isConnected.length;\n        boolean[] visited = new boolean[n];\n        int provinces = 0;\n        for (int i = 0; i < n; i++) {\n            if (!visited[i]) {\n                provinces++;\n                dfs(isConnected, visited, i);\n            }\n        }\n        return provinces;\n    }\n    void dfs(int[][] graph, boolean[] visited, int i) {\n        visited[i] = true;\n        for (int j = 0; j < graph.length; j++) {\n            if (graph[i][j] == 1 && !visited[j]) {\n                dfs(graph, visited, j);\n            }\n        }\n    }\n}"
+          },
+          {
+              "name": "Optimal",
+              "label": "O(n² · α(n)) — Disjoint Set Union (Union-Find)",
+              "idea": "Initialize n sets. For each edge (i, j), perform union. Each successful union reduces the number of provinces by 1. Uses path compression.",
+              "complexity": {
+                  "time": "O(n² · α(n))",
+                  "space": "O(n)"
+              },
+              "code": "class Solution {\n    public int findCircleNum(int[][] isConnected) {\n        int n = isConnected.length;\n        int[] parent = new int[n];\n        for (int i = 0; i < n; i++) parent[i] = i;\n        int count = n;\n        \n        for (int i = 0; i < n; i++) {\n            for (int j = i + 1; j < n; j++) {\n                if (isConnected[i][j] == 1) {\n                    int rootI = find(parent, i);\n                    int rootJ = find(parent, j);\n                    if (rootI != rootJ) {\n                        parent[rootI] = rootJ;\n                        count--;\n                    }\n                }\n            }\n        }\n        return count;\n    }\n    int find(int[] parent, int i) {\n        if (parent[i] == i) return i;\n        return parent[i] = find(parent, parent[i]); // Path compression\n    }\n}"
+          }
+      ]
+  },
+  1143: {
+      "approaches": [
+          {
+              "name": "Brute Force",
+              "label": "O(2^(m+n)) — Pure Recursion",
+              "idea": "Compare text1[i] and text2[j]. If equal, return 1 + dfs(i+1, j+1). Else return max(dfs(i+1, j), dfs(i, j+1)).",
+              "complexity": {
+                  "time": "O(2^(m+n))",
+                  "space": "O(m + n)"
+              },
+              "code": "class Solution {\n    public int longestCommonSubsequence(String text1, String text2) {\n        return dfs(text1, text2, 0, 0);\n    }\n    int dfs(String s1, String s2, int i, int j) {\n        if (i == s1.length() || j == s2.length()) return 0;\n        if (s1.charAt(i) == s2.charAt(j)) {\n            return 1 + dfs(s1, s2, i + 1, j + 1);\n        }\n        return Math.max(dfs(s1, s2, i + 1, j), dfs(s1, s2, i, j + 1));\n    }\n}"
+          },
+          {
+              "name": "Better",
+              "label": "O(m × n) — 2D DP Table",
+              "idea": "dp[i][j] stores the LCS length of text1[0..i-1] and text2[0..j-1]. Filled iteratively row by row.",
+              "complexity": {
+                  "time": "O(m × n)",
+                  "space": "O(m × n)"
+              },
+              "code": "class Solution {\n    public int longestCommonSubsequence(String text1, String text2) {\n        int m = text1.length(), n = text2.length();\n        int[][] dp = new int[m + 1][n + 1];\n        \n        for (int i = 1; i <= m; i++) {\n            for (int j = 1; j <= n; j++) {\n                if (text1.charAt(i - 1) == text2.charAt(j - 1)) {\n                    dp[i][j] = dp[i - 1][j - 1] + 1;\n                } else {\n                    dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);\n                }\n            }\n        }\n        return dp[m][n];\n    }\n}"
+          },
+          {
+              "name": "Optimal",
+              "label": "O(m × n) Time, O(min(m,n)) Space — Two-Row DP",
+              "idea": "Each row in the DP grid only depends on the previous row. Keep only two rows (prev and curr) in memory to reduce space.",
+              "complexity": {
+                  "time": "O(m × n)",
+                  "space": "O(min(m, n))"
+              },
+              "code": "class Solution {\n    public int longestCommonSubsequence(String text1, String text2) {\n        if (text1.length() < text2.length()) {\n            String temp = text1; text1 = text2; text2 = temp;\n        }\n        int m = text1.length(), n = text2.length();\n        int[] prev = new int[n + 1];\n        int[] curr = new int[n + 1];\n        \n        for (int i = 1; i <= m; i++) {\n            for (int j = 1; j <= n; j++) {\n                if (text1.charAt(i - 1) == text2.charAt(j - 1)) {\n                    curr[j] = prev[j - 1] + 1;\n                } else {\n                    curr[j] = Math.max(prev[j], curr[j - 1]);\n                }\n            }\n            int[] temp = prev; prev = curr; curr = temp;\n        }\n        return prev[n];\n    }\n}"
+          }
+      ]
+  },
 };
 
 export function getProblemSolutions(id) {

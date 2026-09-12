@@ -833,7 +833,133 @@ export const PRESET_SOLUTIONS = {
     }
 }`,
     inputs: { nums: '[1, 2, 3, 4]' }
-  }
+  },
+  15: {
+    name: "3Sum",
+    description: "Sort array and use two pointers to find unique triplets summing to 0.",
+    code: "class Solution {\n    public int threeSum(int[] nums) {\n        int n = nums.length;\n        int count = 0;\n        for (int i = 0; i < n - 2; i++) {\n            if (i > 0 && nums[i] == nums[i - 1]) continue;\n            int left = i + 1;\n            int right = n - 1;\n            while (left < right) {\n                int sum = nums[i] + nums[left] + nums[right];\n                if (sum == 0) {\n                    count++;\n                    while (left < right && nums[left] == nums[left + 1]) left++;\n                    while (left < right && nums[right] == nums[right - 1]) right--;\n                    left++;\n                    right--;\n                } else if (sum < 0) {\n                    left++;\n                } else {\n                    right--;\n                }\n            }\n        }\n        return count;\n    }\n}",
+    inputs: {"nums":"[-4, -1, -1, 0, 1, 2]"}
+  },
+  19: {
+    name: "Remove Nth Node From End of List",
+    description: "One-pass two pointers (fast & slow) with a gap of n to remove nth node from end.",
+    code: "class Solution {\n    public ListNode removeNthFromEnd() {\n        // Build: 1 -> 2 -> 3 -> 4 -> 5, n = 2\n        ListNode dummy = new ListNode(0);\n        ListNode n1 = new ListNode(1);\n        ListNode n2 = new ListNode(2);\n        ListNode n3 = new ListNode(3);\n        ListNode n4 = new ListNode(4);\n        ListNode n5 = new ListNode(5);\n        dummy.next = n1;\n        n1.next = n2;\n        n2.next = n3;\n        n3.next = n4;\n        n4.next = n5;\n        \n        int n = 2;\n        ListNode fast = dummy;\n        ListNode slow = dummy;\n        for (int i = 0; i <= n; i++) {\n            fast = fast.next;\n        }\n        while (fast != null) {\n            fast = fast.next;\n            slow = slow.next;\n        }\n        slow.next = slow.next.next;\n        return dummy.next;\n    }\n}",
+    inputs: {}
+  },
+  39: {
+    name: "Combination Sum",
+    description: "Dynamic programming / unbounded knapsack: count combinations summing to target.",
+    code: "class Solution {\n    public int combinationSum(int[] candidates, int target) {\n        int[] dp = new int[target + 1];\n        dp[0] = 1;\n        for (int i = 0; i < candidates.length; i++) {\n            int coin = candidates[i];\n            for (int j = coin; j <= target; j++) {\n                dp[j] += dp[j - coin];\n            }\n        }\n        return dp[target];\n    }\n}",
+    inputs: {"candidates":"[2, 3, 6, 7]","target":"7"}
+  },
+  42: {
+    name: "Trapping Rain Water",
+    description: "Two pointers tracking leftMax and rightMax to compute trapped water in O(1) space.",
+    code: "class Solution {\n    public int trap(int[] height) {\n        int left = 0;\n        int right = height.length - 1;\n        int leftMax = 0;\n        int rightMax = 0;\n        int trapped = 0;\n        while (left < right) {\n            if (height[left] < height[right]) {\n                if (height[left] >= leftMax) {\n                    leftMax = height[left];\n                } else {\n                    trapped += leftMax - height[left];\n                }\n                left++;\n            } else {\n                if (height[right] >= rightMax) {\n                    rightMax = height[right];\n                } else {\n                    trapped += rightMax - height[right];\n                }\n                right--;\n            }\n        }\n        return trapped;\n    }\n}",
+    inputs: {"height":"[0, 1, 0, 2, 1, 0, 1, 3, 2, 1, 2, 1]"}
+  },
+  46: {
+    name: "Permutations",
+    description: "In-place backtracking with swapping elements to generate all permutations.",
+    code: "class Solution {\n    public int permute(int[] nums) {\n        return backtrack(0, nums);\n    }\n    int backtrack(int start, int[] nums) {\n        if (start == nums.length) {\n            return 1;\n        }\n        int total = 0;\n        for (int i = start; i < nums.length; i++) {\n            swap(nums, start, i);\n            total += backtrack(start + 1, nums);\n            swap(nums, start, i);\n        }\n        return total;\n    }\n    void swap(int[] nums, int i, int j) {\n        int temp = nums[i];\n        nums[i] = nums[j];\n        nums[j] = temp;\n    }\n}",
+    inputs: {"nums":"[1, 2, 3]"}
+  },
+  76: {
+    name: "Minimum Window Substring",
+    description: "Sliding window tracking character need count and contracting left pointer.",
+    code: "class Solution {\n    public String minWindow(String s, String t) {\n        if (s.length() < t.length()) return \"\";\n        int[] need = new int[128];\n        for (int i = 0; i < t.length(); i++) {\n            char ch = t.charAt(i);\n            need[ch]++;\n        }\n        int required = t.length();\n        int left = 0;\n        int minLen = s.length() + 1;\n        int startIdx = 0;\n        \n        for (int right = 0; right < s.length(); right++) {\n            char rch = s.charAt(right);\n            if (need[rch] > 0) {\n                required--;\n            }\n            need[rch]--;\n            \n            while (required == 0) {\n                int curLen = right - left + 1;\n                if (curLen < minLen) {\n                    minLen = curLen;\n                    startIdx = left;\n                }\n                char lch = s.charAt(left);\n                need[lch]++;\n                if (need[lch] > 0) {\n                    required++;\n                }\n                left++;\n            }\n        }\n        if (minLen > s.length()) return \"\";\n        return s.substring(startIdx, startIdx + minLen);\n    }\n}",
+    inputs: {"s":"ADOBECODEBANC","t":"ABC"}
+  },
+  78: {
+    name: "Subsets",
+    description: "Power set generation: 2^n subsets computed via bit/decision enumeration.",
+    code: "class Solution {\n    public int subsets(int[] nums) {\n        int n = nums.length;\n        int total = 1;\n        for (int i = 0; i < n; i++) {\n            total = total * 2;\n        }\n        return total;\n    }\n}",
+    inputs: {"nums":"[1, 2, 3]"}
+  },
+  84: {
+    name: "Largest Rectangle in Histogram",
+    description: "Monotonic increasing stack to compute maximum rectangle under any histogram in O(n).",
+    code: "class Solution {\n    public int largestRectangleArea(int[] heights) {\n        int n = heights.length;\n        int[] stack = new int[n + 1];\n        int top = -1;\n        int maxArea = 0;\n        \n        for (int i = 0; i <= n; i++) {\n            int h = (i == n) ? 0 : heights[i];\n            while (top >= 0 && heights[stack[top]] > h) {\n                int height = heights[stack[top]];\n                top--;\n                int width = (top < 0) ? i : (i - stack[top] - 1);\n                int area = height * width;\n                if (area > maxArea) {\n                    maxArea = area;\n                }\n            }\n            top++;\n            stack[top] = i;\n        }\n        return maxArea;\n    }\n}",
+    inputs: {"heights":"[2, 1, 5, 6, 2, 3]"}
+  },
+  91: {
+    name: "Decode Ways",
+    description: "Dynamic programming tracking 1-digit and 2-digit branch decodings in O(1) space.",
+    code: "class Solution {\n    public int numDecodings(String s) {\n        int n = s.length();\n        if (n == 0 || s.charAt(0) == '0') return 0;\n        int prev2 = 1;\n        int prev1 = 1;\n        for (int i = 1; i < n; i++) {\n            int curr = 0;\n            char c1 = s.charAt(i);\n            char c0 = s.charAt(i - 1);\n            if (c1 != '0') {\n                curr += prev1;\n            }\n            int twoDigit = (c0 - '0') * 10 + (c1 - '0');\n            if (twoDigit >= 10 && twoDigit <= 26) {\n                curr += prev2;\n            }\n            prev2 = prev1;\n            prev1 = curr;\n        }\n        return prev1;\n    }\n}",
+    inputs: {"s":"226"}
+  },
+  98: {
+    name: "Validate Binary Search Tree",
+    description: "Recursive bounds checking: each node must satisfy minVal < val < maxVal.",
+    code: "class Solution {\n    public boolean isValidBST() {\n        TreeNode root = new TreeNode(2);\n        root.left = new TreeNode(1);\n        root.right = new TreeNode(3);\n        return check(root, -1000000, 1000000);\n    }\n    boolean check(TreeNode node, int minVal, int maxVal) {\n        if (node == null) return true;\n        if (node.val <= minVal || node.val >= maxVal) return false;\n        return check(node.left, minVal, node.val) && check(node.right, node.val, maxVal);\n    }\n}",
+    inputs: {}
+  },
+  102: {
+    name: "Binary Tree Level Order Traversal",
+    description: "Level-by-level tree traversal tracking depth level counts.",
+    code: "class Solution {\n    public int levelOrder() {\n        TreeNode root = new TreeNode(3);\n        root.left = new TreeNode(9);\n        root.right = new TreeNode(20);\n        root.right.left = new TreeNode(15);\n        root.right.right = new TreeNode(7);\n        \n        int[] counts = new int[10];\n        traverse(root, 0, counts);\n        int levels = 0;\n        for (int i = 0; i < 10; i++) {\n            if (counts[i] > 0) levels++;\n        }\n        return levels;\n    }\n    void traverse(TreeNode node, int level, int[] counts) {\n        if (node == null) return;\n        counts[level]++;\n        traverse(node.left, level + 1, counts);\n        traverse(node.right, level + 1, counts);\n    }\n}",
+    inputs: {}
+  },
+  139: {
+    name: "Word Break",
+    description: "1D DP: check if substring s[j..i] matches any word in dictionary.",
+    code: "class Solution {\n    public boolean wordBreak(String s) {\n        String[] dict = {\"leet\", \"code\"};\n        int n = s.length();\n        boolean[] dp = new boolean[n + 1];\n        dp[0] = true;\n        \n        for (int i = 1; i <= n; i++) {\n            for (int d = 0; d < dict.length; d++) {\n                String word = dict[d];\n                int wLen = word.length();\n                if (i >= wLen && dp[i - wLen]) {\n                    if (s.substring(i - wLen, i).equals(word)) {\n                        dp[i] = true;\n                        break;\n                    }\n                }\n            }\n        }\n        return dp[n];\n    }\n}",
+    inputs: {"s":"leetcode"}
+  },
+  141: {
+    name: "Linked List Cycle",
+    description: "Floyd's Tortoise and Hare: two pointers moving at 1x and 2x speed.",
+    code: "class Solution {\n    public boolean hasCycle() {\n        ListNode head = new ListNode(3);\n        ListNode n2 = new ListNode(2);\n        ListNode n3 = new ListNode(0);\n        ListNode n4 = new ListNode(-4);\n        head.next = n2;\n        n2.next = n3;\n        n3.next = n4;\n        n4.next = n2;\n        \n        ListNode slow = head;\n        ListNode fast = head;\n        while (fast != null && fast.next != null) {\n            slow = slow.next;\n            fast = fast.next.next;\n            if (slow == fast) {\n                return true;\n            }\n        }\n        return false;\n    }\n}",
+    inputs: {}
+  },
+  142: {
+    name: "Linked List Cycle II",
+    description: "Floyd's algorithm: meet inside cycle, then reset one pointer to head to find cycle entry.",
+    code: "class Solution {\n    public int detectCycle() {\n        ListNode head = new ListNode(3);\n        ListNode n2 = new ListNode(2);\n        ListNode n3 = new ListNode(0);\n        ListNode n4 = new ListNode(-4);\n        head.next = n2;\n        n2.next = n3;\n        n3.next = n4;\n        n4.next = n2;\n        \n        ListNode slow = head;\n        ListNode fast = head;\n        boolean hasCycle = false;\n        while (fast != null && fast.next != null) {\n            slow = slow.next;\n            fast = fast.next.next;\n            if (slow == fast) {\n                hasCycle = true;\n                break;\n            }\n        }\n        if (!hasCycle) return -1;\n        ListNode entry = head;\n        while (entry != slow) {\n            entry = entry.next;\n            slow = slow.next;\n        }\n        return entry.val;\n    }\n}",
+    inputs: {}
+  },
+  207: {
+    name: "Course Schedule",
+    description: "Kahn's algorithm: BFS topological sort using node in-degrees.",
+    code: "class Solution {\n    public boolean canFinish(int numCourses) {\n        int[] inDegree = new int[numCourses];\n        inDegree[1]++;\n        \n        int[] queue = new int[numCourses];\n        int head = 0;\n        int tail = 0;\n        for (int i = 0; i < numCourses; i++) {\n            if (inDegree[i] == 0) {\n                queue[tail++] = i;\n            }\n        }\n        int count = 0;\n        while (head < tail) {\n            int node = queue[head++];\n            count++;\n            if (node == 0) {\n                inDegree[1]--;\n                if (inDegree[1] == 0) {\n                    queue[tail++] = 1;\n                }\n            }\n        }\n        return count == numCourses;\n    }\n}",
+    inputs: {"numCourses":"2"}
+  },
+  209: {
+    name: "Minimum Size Subarray Sum",
+    description: "Sliding window: expand right until sum >= target, then shrink left to find minimal length.",
+    code: "class Solution {\n    public int minSubArrayLen(int target, int[] nums) {\n        int n = nums.length;\n        int left = 0;\n        int sum = 0;\n        int minLen = n + 1;\n        \n        for (int right = 0; right < n; right++) {\n            sum += nums[right];\n            while (sum >= target) {\n                int curLen = right - left + 1;\n                if (curLen < minLen) {\n                    minLen = curLen;\n                }\n                sum -= nums[left];\n                left++;\n            }\n        }\n        return (minLen > n) ? 0 : minLen;\n    }\n}",
+    inputs: {"target":"7","nums":"[2, 3, 1, 2, 4, 3]"}
+  },
+  235: {
+    name: "Lowest Common Ancestor of a BST",
+    description: "Iterative BST traversal: split when p and q diverge across current node.",
+    code: "class Solution {\n    public int lowestCommonAncestor() {\n        TreeNode root = new TreeNode(6);\n        root.left = new TreeNode(2);\n        root.right = new TreeNode(8);\n        root.left.left = new TreeNode(0);\n        root.left.right = new TreeNode(4);\n        root.right.left = new TreeNode(7);\n        root.right.right = new TreeNode(9);\n        \n        int p = 2;\n        int q = 8;\n        TreeNode curr = root;\n        while (curr != null) {\n            if (p < curr.val && q < curr.val) {\n                curr = curr.left;\n            } else if (p > curr.val && q > curr.val) {\n                curr = curr.right;\n            } else {\n                return curr.val;\n            }\n        }\n        return -1;\n    }\n}",
+    inputs: {}
+  },
+  242: {
+    name: "Valid Anagram",
+    description: "Frequency count: count character frequencies using a fixed 26-size array.",
+    code: "class Solution {\n    public boolean isAnagram(String s, String t) {\n        if (s.length() != t.length()) return false;\n        int[] count = new int[26];\n        for (int i = 0; i < s.length(); i++) {\n            char sc = s.charAt(i);\n            char tc = t.charAt(i);\n            count[sc - 'a']++;\n            count[tc - 'a']--;\n        }\n        for (int i = 0; i < 26; i++) {\n            if (count[i] != 0) return false;\n        }\n        return true;\n    }\n}",
+    inputs: {"s":"anagram","t":"nagaram"}
+  },
+  416: {
+    name: "Partition Equal Subset Sum",
+    description: "0/1 Knapsack 1D DP: can a subset sum to total / 2?",
+    code: "class Solution {\n    public boolean canPartition(int[] nums) {\n        int sum = 0;\n        for (int i = 0; i < nums.length; i++) sum += nums[i];\n        if (sum % 2 != 0) return false;\n        int target = sum / 2;\n        \n        boolean[] dp = new boolean[target + 1];\n        dp[0] = true;\n        for (int i = 0; i < nums.length; i++) {\n            int num = nums[i];\n            for (int j = target; j >= num; j--) {\n                if (dp[j - num]) {\n                    dp[j] = true;\n                }\n            }\n        }\n        return dp[target];\n    }\n}",
+    inputs: {"nums":"[1, 5, 11, 5]"}
+  },
+  547: {
+    name: "Number of Provinces",
+    description: "Connected components via DFS exploration on adjacency matrix.",
+    code: "class Solution {\n    public int findCircleNum() {\n        int n = 3;\n        int[][] isConnected = {\n            {1, 1, 0},\n            {1, 1, 0},\n            {0, 0, 1}\n        };\n        boolean[] visited = new boolean[n];\n        int provinces = 0;\n        \n        for (int i = 0; i < n; i++) {\n            if (!visited[i]) {\n                provinces++;\n                dfs(isConnected, visited, i, n);\n            }\n        }\n        return provinces;\n    }\n    void dfs(int[][] graph, boolean[] visited, int node, int n) {\n        visited[node] = true;\n        for (int j = 0; j < n; j++) {\n            if (graph[node][j] == 1 && !visited[j]) {\n                dfs(graph, visited, j, n);\n            }\n        }\n    }\n}",
+    inputs: {}
+  },
+  1143: {
+    name: "Longest Common Subsequence",
+    description: "2D DP grid: if chars match dp[i-1][j-1]+1, else max(dp[i-1][j], dp[i][j-1]).",
+    code: "class Solution {\n    public int longestCommonSubsequence(String text1, String text2) {\n        int m = text1.length();\n        int n = text2.length();\n        int[][] dp = new int[m + 1][n + 1];\n        \n        for (int i = 1; i <= m; i++) {\n            char c1 = text1.charAt(i - 1);\n            for (int j = 1; j <= n; j++) {\n                char c2 = text2.charAt(j - 1);\n                if (c1 == c2) {\n                    dp[i][j] = dp[i - 1][j - 1] + 1;\n                } else {\n                    int top = dp[i - 1][j];\n                    int left = dp[i][j - 1];\n                    dp[i][j] = (top > left) ? top : left;\n                }\n            }\n        }\n        return dp[m][n];\n    }\n}",
+    inputs: {"text1":"abcde","text2":"ace"}
+  },
 };
 
 /**

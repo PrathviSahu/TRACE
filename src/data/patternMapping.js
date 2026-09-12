@@ -294,6 +294,8 @@ export const CURATED_PROBLEM_PATTERNS = {
   "48":  { topic: "Matrix", patterns: ["Matrix In-place Transpose"] },
   "54":  { topic: "Matrix", patterns: ["Boundary Traversal"] },
 
+  "91":  { topic: "Dynamic Programming", patterns: ["1D State DP"] },
+  "547":  { topic: "Graph", patterns: ["DFS", "BFS", "Union Find"] },
   // ── Bitwise
   "136": { topic: "Math & Bitwise", patterns: ["Bit Manipulation (XOR)"] },
 };

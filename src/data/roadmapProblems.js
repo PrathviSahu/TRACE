@@ -52,6 +52,7 @@ export const ROADMAP_PROBLEMS = {
     { id: 692, name: "Top K Frequent Words",                       difficulty: "medium", url: "https://leetcode.com/problems/top-k-frequent-words/" },
   ],
   "Two Pointers": [
+    { id: 42, name: "Trapping Rain Water", difficulty: "hard", url: "https://leetcode.com/problems/trapping-rain-water/" },
     { id: 11,  name: "Container With Most Water",                  difficulty: "medium", url: "https://leetcode.com/problems/container-with-most-water/" },
     { id: 15,  name: "3Sum",                                       difficulty: "medium", url: "https://leetcode.com/problems/3sum/" },
     { id: 16,  name: "3Sum Closest",                               difficulty: "medium", url: "https://leetcode.com/problems/3sum-closest/" },
@@ -266,6 +267,9 @@ export const ROADMAP_PROBLEMS = {
     { id: 1584, name: "Min Cost to Connect All Points",            difficulty: "medium", url: "https://leetcode.com/problems/min-cost-to-connect-all-points/" },
   ],
   "Dynamic Programming": [
+    { id: 139, name: "Word Break", difficulty: "medium", url: "https://leetcode.com/problems/word-break/" },
+    { id: 416, name: "Partition Equal Subset Sum", difficulty: "medium", url: "https://leetcode.com/problems/partition-equal-subset-sum/" },
+    { id: 1143, name: "Longest Common Subsequence", difficulty: "medium", url: "https://leetcode.com/problems/longest-common-subsequence/" },
     { id: 62,  name: "Unique Paths",                               difficulty: "medium", url: "https://leetcode.com/problems/unique-paths/" },
     { id: 63,  name: "Unique Paths II",                            difficulty: "medium", url: "https://leetcode.com/problems/unique-paths-ii/" },
     { id: 64,  name: "Minimum Path Sum",                           difficulty: "medium", url: "https://leetcode.com/problems/minimum-path-sum/" },
