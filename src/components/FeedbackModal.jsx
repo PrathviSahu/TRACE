@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useTraceStore } from '../store/traceStore.js';
 
+const WEB3FORMS_ACCESS_KEY = "fa33ed03-b3a8-43b6-af8d-d988de13a232";
+
 export default function FeedbackModal({ isOpen, onClose }) {
   const loc = useLocation();
   const activeTab = useTraceStore(s => s.activeTab);
@@ -13,6 +15,9 @@ export default function FeedbackModal({ isOpen, onClose }) {
   const [message, setMessage] = useState('');
   const [userContact, setUserContact] = useState('');
   const [includeDiag, setIncludeDiag] = useState(true);
+  
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState(null); // 'success' | 'error' | null
   const [toastMsg, setToastMsg] = useState('');
 
   // Close on Escape key
@@ -26,29 +31,37 @@ export default function FeedbackModal({ isOpen, onClose }) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
+  // Reset status when opened
+  useEffect(() => {
+    if (isOpen) {
+      setSubmitStatus(null);
+      setIsSubmitting(false);
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   // Gather system diagnostics
   const diagnostics = `
 ---
-**System & Environment Diagnostics:**
-- **URL**: ${window.location.href}
-- **Route**: ${loc.pathname}
-- **Active Problem / Tab**: ${activeTab || 'N/A'}
-- **Language**: ${language || 'java'}
-- **Recent Error**: ${error ? `\`${error}\`` : 'None'}
-- **Screen**: ${window.innerWidth}x${window.innerHeight}
-- **User Agent**: ${navigator.userAgent}
-- **Timestamp**: ${new Date().toISOString()}
+System & Environment Diagnostics:
+- URL: ${window.location.href}
+- Route: ${loc.pathname}
+- Active Problem: ${activeTab || 'N/A'}
+- Language: ${language || 'java'}
+- Recent Error: ${error ? error : 'None'}
+- Viewport: ${window.innerWidth}x${window.innerHeight}
+- User Agent: ${navigator.userAgent}
+- Timestamp: ${new Date().toISOString()}
 `.trim();
 
   const fullReport = `
-**Type**: ${feedbackType.toUpperCase()}
-**From**: ${userContact || 'Anonymous'}
-**Subject**: ${subject || 'TRACE Feedback'}
+Type: ${feedbackType.toUpperCase()}
+Sender: ${userContact || 'Anonymous'}
+Subject: ${subject || 'TRACE Feedback'}
 
-**Message**:
-${message || '(No detailed description provided)'}
+Message:
+${message || '(No description provided)'}
 
 ${includeDiag ? `\n${diagnostics}` : ''}
 `.trim();
@@ -58,17 +71,58 @@ ${includeDiag ? `\n${diagnostics}` : ''}
     setTimeout(() => setToastMsg(''), 2500);
   }
 
-  // Open email client via mailto
-  function handleSendEmail() {
-    const targetEmail = 'prathvisahu2004@gmail.com'; // Developer contact
-    const mailSubject = encodeURIComponent(`[TRACE ${feedbackType.toUpperCase()}] ${subject || 'Feedback'}`);
-    const mailBody = encodeURIComponent(fullReport);
-    const mailtoUrl = `mailto:${targetEmail}?subject=${mailSubject}&body=${mailBody}`;
-    window.location.href = mailtoUrl;
-    showToast('Opening default email client...');
+  // ── 1. Direct In-App Submission via Web3Forms ──────────────────
+  async function handleSubmit(e) {
+    if (e) e.preventDefault();
+    if (!message.trim() && !subject.trim()) {
+      showToast('Please enter a short message or subject');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setSubmitStatus(null);
+
+    try {
+      const formData = new FormData();
+      formData.append("access_key", WEB3FORMS_ACCESS_KEY);
+      formData.append("from_name", "TRACE — Visual DSA Debugger");
+      formData.append("subject", `[TRACE ${feedbackType.toUpperCase()}] ${subject || 'New Feedback'}`);
+      formData.append("name", userContact.trim() || "TRACE User");
+      formData.append("email", userContact.includes('@') ? userContact.trim() : "feedback@trace-debugger.dev");
+      formData.append("category", feedbackType);
+      formData.append("message", fullReport);
+
+      const response = await fetch("https://api.web3forms.com/submit", {
+        method: "POST",
+        body: formData
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setSubmitStatus('success');
+        showToast('Email sent directly to developer!');
+        // Reset fields
+        setMessage('');
+        setSubject('');
+        // Auto close after 2.5 seconds
+        setTimeout(() => {
+          onClose();
+        }, 2500);
+      } else {
+        setSubmitStatus('error');
+        showToast(data.message || 'Failed to submit form');
+      }
+    } catch (err) {
+      console.error("Web3Forms submission error:", err);
+      setSubmitStatus('error');
+      showToast('Network error. You can also send via email.');
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
-  // Open GitHub Issue
+  // ── 2. Auxiliary: Open GitHub Issue ───────────────────────────
   function handleOpenGitHubIssue() {
     const repoUrl = 'https://github.com/PrathviSahu/TRACE/issues/new';
     const issueTitle = encodeURIComponent(`[${feedbackType.toUpperCase()}] ${subject || 'Issue report'}`);
@@ -77,7 +131,7 @@ ${includeDiag ? `\n${diagnostics}` : ''}
     showToast('Opened GitHub Issues in new tab');
   }
 
-  // Copy report to clipboard
+  // ── 3. Auxiliary: Copy to Clipboard ───────────────────────────
   async function handleCopyReport() {
     try {
       await navigator.clipboard.writeText(fullReport);
@@ -97,8 +151,8 @@ ${includeDiag ? `\n${diagnostics}` : ''}
         position: 'fixed',
         inset: 0,
         zIndex: 9999,
-        background: 'rgba(0, 0, 0, 0.75)',
-        backdropFilter: 'blur(6px)',
+        background: 'rgba(0, 0, 0, 0.78)',
+        backdropFilter: 'blur(8px)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -110,10 +164,10 @@ ${includeDiag ? `\n${diagnostics}` : ''}
         style={{
           background: 'var(--bg-raised, #161b22)',
           border: '1px solid var(--border-card, #30363d)',
-          borderRadius: 12,
+          borderRadius: 14,
           width: '100%',
           maxWidth: 540,
-          boxShadow: '0 20px 50px rgba(0,0,0,0.6)',
+          boxShadow: '0 25px 60px rgba(0,0,0,0.7)',
           overflow: 'hidden',
           display: 'flex',
           flexDirection: 'column',
@@ -148,7 +202,7 @@ ${includeDiag ? `\n${diagnostics}` : ''}
                 Send Feedback & Report Bugs
               </h3>
               <p style={{ margin: 0, fontSize: 11, color: 'var(--txt-dim, #6e7681)' }}>
-                Connect directly with the developer
+                Directly reaches Prathvi Sahu's inbox
               </p>
             </div>
           </div>
@@ -170,272 +224,372 @@ ${includeDiag ? `\n${diagnostics}` : ''}
           </button>
         </div>
 
-        {/* Modal Body */}
-        <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: 14, maxHeight: 'calc(85vh - 120px)', overflowY: 'auto' }}>
-          {/* Feedback Type Selector */}
-          <div>
-            <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--txt-main, #c9d1d9)', marginBottom: 6 }}>
-              What kind of feedback is this?
-            </label>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
-              {[
-                { id: 'bug', icon: '🐛', label: 'Bug Report' },
-                { id: 'feature', icon: '💡', label: 'Feature Request' },
-                { id: 'general', icon: '✨', label: 'General Feedback' }
-              ].map(t => (
-                <button
-                  key={t.id}
-                  type="button"
-                  onClick={() => setFeedbackType(t.id)}
-                  style={{
-                    padding: '8px 10px',
-                    fontSize: 11.5,
-                    fontFamily: 'inherit',
-                    fontWeight: feedbackType === t.id ? 700 : 500,
-                    borderRadius: 6,
-                    border: feedbackType === t.id
-                      ? '1.5px solid var(--accent-amber, #ff9f43)'
-                      : '1px solid var(--border-subtle, #21262d)',
-                    background: feedbackType === t.id
-                      ? 'rgba(255, 159, 67, 0.12)'
-                      : 'rgba(255, 255, 255, 0.02)',
-                    color: feedbackType === t.id
-                      ? 'var(--accent-amber, #ff9f43)'
-                      : 'var(--txt-main, #c9d1d9)',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 6,
-                    transition: 'all 0.15s ease'
-                  }}
-                >
-                  <span>{t.icon}</span>
-                  <span>{t.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Subject */}
-          <div>
-            <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--txt-main, #c9d1d9)', marginBottom: 6 }}>
-              Subject
-            </label>
-            <input
-              type="text"
-              className="input-field"
-              value={subject}
-              onChange={e => setSubject(e.target.value)}
-              placeholder={
-                feedbackType === 'bug'
-                  ? 'e.g., Array visualizer index off by 1 in 3Sum'
-                  : feedbackType === 'feature'
-                  ? 'e.g., Add Dijkstra shortest path visualizer'
-                  : 'e.g., Loving the step-by-step debugger!'
-              }
-              style={{
-                width: '100%',
-                padding: '8px 12px',
-                fontSize: 12,
-                borderRadius: 6,
-                background: 'var(--bg-canvas, #0d1117)',
-                border: '1px solid var(--border-subtle, #21262d)',
-                color: 'var(--txt-bright, #f0f6fc)',
-                fontFamily: 'inherit'
-              }}
-            />
-          </div>
-
-          {/* Message / Description */}
-          <div>
-            <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--txt-main, #c9d1d9)', marginBottom: 6 }}>
-              Description
-            </label>
-            <textarea
-              rows={4}
-              value={message}
-              onChange={e => setMessage(e.target.value)}
-              placeholder={
-                feedbackType === 'bug'
-                  ? 'Describe what happened and how to reproduce it...'
-                  : 'Describe your idea, use cases, or feedback...'
-              }
-              style={{
-                width: '100%',
-                padding: '8px 12px',
-                fontSize: 12,
-                borderRadius: 6,
-                background: 'var(--bg-canvas, #0d1117)',
-                border: '1px solid var(--border-subtle, #21262d)',
-                color: 'var(--txt-bright, #f0f6fc)',
-                fontFamily: 'inherit',
-                resize: 'vertical',
-                minHeight: 80
-              }}
-            />
-          </div>
-
-          {/* User Contact */}
-          <div>
-            <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--txt-main, #c9d1d9)', marginBottom: 6 }}>
-              Your Email / Discord / Twitter (optional)
-            </label>
-            <input
-              type="text"
-              value={userContact}
-              onChange={e => setUserContact(e.target.value)}
-              placeholder="e.g. alex@example.com or @alex on GitHub"
-              style={{
-                width: '100%',
-                padding: '8px 12px',
-                fontSize: 12,
-                borderRadius: 6,
-                background: 'var(--bg-canvas, #0d1117)',
-                border: '1px solid var(--border-subtle, #21262d)',
-                color: 'var(--txt-bright, #f0f6fc)',
-                fontFamily: 'inherit'
-              }}
-            />
-          </div>
-
-          {/* Include Diagnostics Toggle */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <input
-              type="checkbox"
-              id="include-diag"
-              checked={includeDiag}
-              onChange={e => setIncludeDiag(e.target.checked)}
-              style={{ cursor: 'pointer' }}
-            />
-            <label htmlFor="include-diag" style={{ fontSize: 11, color: 'var(--txt-dim, #6e7681)', cursor: 'pointer' }}>
-              Include system diagnostics (browser, active problem, error trace)
-            </label>
-          </div>
-
-          {/* Direct Developer Profiles Card */}
+        {/* Success Banner */}
+        {submitStatus === 'success' ? (
           <div style={{
-            padding: '10px 14px',
-            background: 'rgba(255, 255, 255, 0.03)',
-            border: '1px solid var(--border-subtle, #21262d)',
-            borderRadius: 8,
+            padding: '36px 24px',
+            textAlign: 'center',
             display: 'flex',
+            flexDirection: 'column',
             alignItems: 'center',
-            justifyContent: 'space-between',
-            fontSize: 11
+            gap: 12
           }}>
-            <div>
-              <span style={{ color: 'var(--txt-dim, #6e7681)' }}>Built by </span>
-              <strong style={{ color: 'var(--txt-bright, #f0f6fc)' }}>Prathvi Sahu</strong>
+            <div style={{
+              width: 52,
+              height: 52,
+              borderRadius: '50%',
+              background: 'rgba(74, 222, 128, 0.15)',
+              border: '1.5px solid rgba(74, 222, 128, 0.4)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: 24,
+              color: '#4ade80'
+            }}>
+              ✓
             </div>
-            <div style={{ display: 'flex', gap: 10 }}>
-              <a
-                href="https://prathvisahu.vercel.app/"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ color: 'var(--accent-amber, #ff9f43)', textDecoration: 'none', fontWeight: 600 }}
-              >
-                Portfolio ↗
-              </a>
-              <a
-                href="https://github.com/PrathviSahu/TRACE"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ color: 'var(--accent-cyan, #38d9c5)', textDecoration: 'none', fontWeight: 600 }}
-              >
-                GitHub Repo ↗
-              </a>
-            </div>
-          </div>
-        </div>
-
-        {/* Modal Footer */}
-        <div style={{
-          padding: '14px 20px',
-          borderTop: '1px solid var(--border-subtle, #21262d)',
-          background: 'var(--bg-canvas, #0d1117)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between'
-        }}>
-          <div>
-            {toastMsg && (
-              <span style={{
-                fontSize: 11,
-                fontFamily: 'var(--font-mono, monospace)',
-                color: 'var(--accent-cyan, #38d9c5)',
-                fontWeight: 600
-              }}>
-                ✓ {toastMsg}
-              </span>
-            )}
-          </div>
-
-          <div style={{ display: 'flex', gap: 8 }}>
+            <h4 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: 'var(--txt-bright, #f0f6fc)' }}>
+              Feedback Delivered!
+            </h4>
+            <p style={{ margin: 0, fontSize: 13, color: 'var(--txt-dim, #6e7681)', maxWidth: 360, lineHeight: 1.5 }}>
+              Thank you! Your message has been sent directly to the developer's inbox. We'll look into it right away.
+            </p>
             <button
               type="button"
-              onClick={handleCopyReport}
+              onClick={onClose}
               style={{
-                padding: '6px 12px',
-                fontSize: 11.5,
-                fontFamily: 'inherit',
-                background: 'transparent',
+                marginTop: 8,
+                padding: '7px 20px',
+                fontSize: 12,
+                fontWeight: 600,
+                background: 'rgba(255, 255, 255, 0.08)',
                 border: '1px solid var(--border-subtle, #21262d)',
-                color: 'var(--txt-main, #c9d1d9)',
+                color: 'var(--txt-bright, #f0f6fc)',
                 borderRadius: 6,
                 cursor: 'pointer'
               }}
-              title="Copy markdown report to clipboard"
             >
-              Copy Report
-            </button>
-
-            <button
-              type="button"
-              onClick={handleOpenGitHubIssue}
-              style={{
-                padding: '6px 12px',
-                fontSize: 11.5,
-                fontFamily: 'inherit',
-                background: 'rgba(255, 255, 255, 0.06)',
-                border: '1px solid var(--border-card, #30363d)',
-                color: 'var(--txt-bright, #f0f6fc)',
-                borderRadius: 6,
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 5
-              }}
-              title="Create issue on GitHub"
-            >
-              <span>GitHub Issue</span>
-              <span>↗</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={handleSendEmail}
-              style={{
-                padding: '6px 14px',
-                fontSize: 11.5,
-                fontWeight: 600,
-                fontFamily: 'inherit',
-                background: 'linear-gradient(135deg, #ff9f43, #ff7e1b)',
-                border: 'none',
-                color: '#090b0e',
-                borderRadius: 6,
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 5
-              }}
-              title="Send directly to developer via email"
-            >
-              <span>Send Email</span>
-              <span>✉</span>
+              Done
             </button>
           </div>
-        </div>
+        ) : (
+          /* Modal Form Body */
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', margin: 0 }}>
+            <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: 14, maxHeight: 'calc(85vh - 140px)', overflowY: 'auto' }}>
+              {/* Category Selector */}
+              <div>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--txt-main, #c9d1d9)', marginBottom: 6 }}>
+                  Category
+                </label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+                  {[
+                    { id: 'bug', icon: '🐛', label: 'Bug Report' },
+                    { id: 'feature', icon: '💡', label: 'Feature Request' },
+                    { id: 'general', icon: '✨', label: 'Feedback' }
+                  ].map(t => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => setFeedbackType(t.id)}
+                      style={{
+                        padding: '8px 10px',
+                        fontSize: 11.5,
+                        fontFamily: 'inherit',
+                        fontWeight: feedbackType === t.id ? 700 : 500,
+                        borderRadius: 6,
+                        border: feedbackType === t.id
+                          ? '1.5px solid var(--accent-amber, #ff9f43)'
+                          : '1px solid var(--border-subtle, #21262d)',
+                        background: feedbackType === t.id
+                          ? 'rgba(255, 159, 67, 0.12)'
+                          : 'rgba(255, 255, 255, 0.02)',
+                        color: feedbackType === t.id
+                          ? 'var(--accent-amber, #ff9f43)'
+                          : 'var(--txt-main, #c9d1d9)',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 6,
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      <span>{t.icon}</span>
+                      <span>{t.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Subject */}
+              <div>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--txt-main, #c9d1d9)', marginBottom: 6 }}>
+                  Subject / Summary
+                </label>
+                <input
+                  type="text"
+                  name="subject"
+                  value={subject}
+                  onChange={e => setSubject(e.target.value)}
+                  placeholder={
+                    feedbackType === 'bug'
+                      ? 'e.g., Array pointer off by 1 in 3Sum'
+                      : feedbackType === 'feature'
+                      ? 'e.g., Add Dijkstra algorithm visualizer'
+                      : 'e.g., Love the visual step-by-step debugger!'
+                  }
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    fontSize: 12,
+                    borderRadius: 6,
+                    background: 'var(--bg-canvas, #0d1117)',
+                    border: '1px solid var(--border-subtle, #21262d)',
+                    color: 'var(--txt-bright, #f0f6fc)',
+                    fontFamily: 'inherit'
+                  }}
+                />
+              </div>
+
+              {/* Message / Description */}
+              <div>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--txt-main, #c9d1d9)', marginBottom: 6 }}>
+                  Details / Steps to reproduce <span style={{ color: 'var(--accent-amber)' }}>*</span>
+                </label>
+                <textarea
+                  rows={4}
+                  required
+                  name="message"
+                  value={message}
+                  onChange={e => setMessage(e.target.value)}
+                  placeholder={
+                    feedbackType === 'bug'
+                      ? 'Please describe what happened, what code was running, or how to reproduce it...'
+                      : 'Tell us more about what you would like to see or your thoughts...'
+                  }
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    fontSize: 12,
+                    borderRadius: 6,
+                    background: 'var(--bg-canvas, #0d1117)',
+                    border: '1px solid var(--border-subtle, #21262d)',
+                    color: 'var(--txt-bright, #f0f6fc)',
+                    fontFamily: 'inherit',
+                    resize: 'vertical',
+                    minHeight: 85
+                  }}
+                />
+              </div>
+
+              {/* Contact info */}
+              <div>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--txt-main, #c9d1d9)', marginBottom: 6 }}>
+                  Your Email / Handle <span style={{ fontSize: 10, opacity: 0.6 }}>(for reply if needed)</span>
+                </label>
+                <input
+                  type="text"
+                  name="email"
+                  value={userContact}
+                  onChange={e => setUserContact(e.target.value)}
+                  placeholder="e.g., yourname@gmail.com or @handle"
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    fontSize: 12,
+                    borderRadius: 6,
+                    background: 'var(--bg-canvas, #0d1117)',
+                    border: '1px solid var(--border-subtle, #21262d)',
+                    color: 'var(--txt-bright, #f0f6fc)',
+                    fontFamily: 'inherit'
+                  }}
+                />
+              </div>
+
+              {/* Diagnostics checkbox */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <input
+                  type="checkbox"
+                  id="include-diag"
+                  checked={includeDiag}
+                  onChange={e => setIncludeDiag(e.target.checked)}
+                  style={{ cursor: 'pointer' }}
+                />
+                <label htmlFor="include-diag" style={{ fontSize: 11, color: 'var(--txt-dim, #6e7681)', cursor: 'pointer' }}>
+                  Auto-attach browser, route, and problem diagnostics
+                </label>
+              </div>
+
+              {/* Error fallback banner */}
+              {submitStatus === 'error' && (
+                <div style={{
+                  padding: '10px 12px',
+                  background: 'rgba(239, 68, 68, 0.1)',
+                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                  borderRadius: 8,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 10,
+                  fontSize: 11.5
+                }}>
+                  <span style={{ color: '#f87171' }}>
+                    Network issue? Send directly to inbox:
+                  </span>
+                  <a
+                    href={`mailto:prathvisahu2004@gmail.com?subject=${encodeURIComponent(`[TRACE ${feedbackType.toUpperCase()}] ${subject || 'Feedback'}`)}&body=${encodeURIComponent(fullReport)}`}
+                    style={{
+                      padding: '5px 11px',
+                      background: '#ef4444',
+                      color: '#ffffff',
+                      borderRadius: 5,
+                      textDecoration: 'none',
+                      fontWeight: 600,
+                      fontSize: 11,
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    Open Mail App ✉
+                  </a>
+                </div>
+              )}
+
+              {/* Author badge */}
+              <div style={{
+                padding: '9px 12px',
+                background: 'rgba(255, 255, 255, 0.02)',
+                border: '1px solid var(--border-subtle, #21262d)',
+                borderRadius: 8,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                fontSize: 11
+              }}>
+                <div>
+                  <span style={{ color: 'var(--txt-dim, #6e7681)' }}>Developer: </span>
+                  <strong style={{ color: 'var(--txt-bright, #f0f6fc)' }}>Prathvi Sahu</strong>
+                </div>
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <a
+                    href="https://prathvisahu.vercel.app/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: 'var(--accent-amber, #ff9f43)', textDecoration: 'none', fontWeight: 600 }}
+                  >
+                    Portfolio ↗
+                  </a>
+                  <a
+                    href="https://github.com/PrathviSahu/TRACE"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: 'var(--accent-cyan, #38d9c5)', textDecoration: 'none', fontWeight: 600 }}
+                  >
+                    GitHub ↗
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div style={{
+              padding: '14px 20px',
+              borderTop: '1px solid var(--border-subtle, #21262d)',
+              background: 'var(--bg-canvas, #0d1117)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              <div>
+                {toastMsg && (
+                  <span style={{
+                    fontSize: 11,
+                    fontFamily: 'var(--font-mono, monospace)',
+                    color: submitStatus === 'error' ? '#ef4444' : 'var(--accent-cyan, #38d9c5)',
+                    fontWeight: 600
+                  }}>
+                    {submitStatus === 'error' ? '⚠️ ' : '✓ '} {toastMsg}
+                  </span>
+                )}
+              </div>
+
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button
+                  type="button"
+                  onClick={handleCopyReport}
+                  style={{
+                    padding: '7px 11px',
+                    fontSize: 11.5,
+                    fontFamily: 'inherit',
+                    background: 'transparent',
+                    border: '1px solid var(--border-subtle, #21262d)',
+                    color: 'var(--txt-main, #c9d1d9)',
+                    borderRadius: 6,
+                    cursor: 'pointer'
+                  }}
+                  title="Copy markdown report to clipboard"
+                >
+                  Copy
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleOpenGitHubIssue}
+                  style={{
+                    padding: '7px 11px',
+                    fontSize: 11.5,
+                    fontFamily: 'inherit',
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    border: '1px solid var(--border-card, #30363d)',
+                    color: 'var(--txt-bright, #f0f6fc)',
+                    borderRadius: 6,
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 4
+                  }}
+                  title="Create public issue on GitHub"
+                >
+                  <span>GitHub</span>
+                  <span>↗</span>
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  style={{
+                    padding: '7px 18px',
+                    fontSize: 12,
+                    fontWeight: 700,
+                    fontFamily: 'inherit',
+                    background: isSubmitting
+                      ? 'rgba(255, 159, 67, 0.5)'
+                      : 'linear-gradient(135deg, #ff9f43, #ff7e1b)',
+                    border: 'none',
+                    color: '#090b0e',
+                    borderRadius: 6,
+                    cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    boxShadow: '0 2px 8px rgba(255, 159, 67, 0.35)',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <span>Sending...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Send to Developer</span>
+                      <span>✉</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   );
