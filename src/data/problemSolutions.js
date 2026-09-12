@@ -2088,6 +2088,162 @@ export const PROBLEM_SOLUTIONS = {
     ]
   },
 
+  55: {
+    approaches: [
+      {
+        name: "Brute Force",
+        label: "O(2ⁿ) — Recursive DFS",
+        idea: "Try every possible jump at each position. Return true if any path reaches the end.",
+        complexity: {"time":"O(2ⁿ)","space":"O(n)"},
+        code: "class Solution {\n    public boolean canJump(int[] nums) {\n        return dfs(nums, 0);\n    }\n    boolean dfs(int[] nums, int pos) {\n        if (pos >= nums.length - 1) return true;\n        int maxJump = nums[pos];\n        for (int jump = 1; jump <= maxJump; jump++) {\n            if (dfs(nums, pos + jump)) return true;\n        }\n        return false;\n    }\n}"
+      },
+      {
+        name: "Better",
+        label: "O(n²) — DP with Memoization",
+        idea: "Track for each position whether it can reach the end. Work backwards: position i is good if any reachable position j is also good.",
+        complexity: {"time":"O(n²)","space":"O(n)"},
+        code: "class Solution {\n    public boolean canJump(int[] nums) {\n        int n = nums.length;\n        boolean[] good = new boolean[n];\n        good[n - 1] = true;\n        for (int i = n - 2; i >= 0; i--) {\n            int furthest = Math.min(i + nums[i], n - 1);\n            for (int j = i + 1; j <= furthest; j++) {\n                if (good[j]) {\n                    good[i] = true;\n                    break;\n                }\n            }\n        }\n        return good[0];\n    }\n}"
+      },
+      {
+        name: "Optimal",
+        label: "O(n) — Greedy Maximum Reach",
+        idea: "Single pass: maintain the furthest reachable index. If i > maxReach, we're stuck. Otherwise update maxReach.",
+        complexity: {"time":"O(n)","space":"O(1)"},
+        code: "class Solution {\n    public boolean canJump(int[] nums) {\n        int maxReach = 0;\n        for (int i = 0; i < nums.length; i++) {\n            if (i > maxReach) return false;\n            int reach = i + nums[i];\n            if (reach > maxReach) maxReach = reach;\n        }\n        return true;\n    }\n}"
+      }
+    ]
+  },
+
+  62: {
+    approaches: [
+      {
+        name: "Brute Force",
+        label: "O(2^(m+n)) — Recursive DFS",
+        idea: "Try every path (right or down) from (0,0) to (m-1,n-1) and count them.",
+        complexity: {"time":"O(2^(m+n))","space":"O(m+n)"},
+        code: "class Solution {\n    public int uniquePaths(int m, int n) {\n        return countPaths(m, n, 0, 0);\n    }\n    int countPaths(int m, int n, int r, int c) {\n        if (r == m - 1 && c == n - 1) return 1;\n        if (r >= m || c >= n) return 0;\n        return countPaths(m, n, r + 1, c) + countPaths(m, n, r, c + 1);\n    }\n}"
+      },
+      {
+        name: "Better",
+        label: "O(m×n) — 2D DP Grid",
+        idea: "dp[i][j] = paths to cell (i,j) = dp[i-1][j] + dp[i][j-1]. First row and column are all 1s.",
+        complexity: {"time":"O(m×n)","space":"O(m×n)"},
+        code: "class Solution {\n    public int uniquePaths(int m, int n) {\n        int[] dp = new int[n * m];\n        for (int i = 0; i < m; i++) {\n            for (int j = 0; j < n; j++) {\n                int idx = i * n + j;\n                if (i == 0 || j == 0) dp[idx] = 1;\n                else dp[idx] = dp[(i-1)*n+j] + dp[i*n+(j-1)];\n            }\n        }\n        return dp[(m-1)*n+(n-1)];\n    }\n}"
+      },
+      {
+        name: "Optimal",
+        label: "O(m×n) — Space-Optimized 1D DP",
+        idea: "Only one row of DP is needed at a time. Update dp[j] += dp[j-1] going row by row.",
+        complexity: {"time":"O(m×n)","space":"O(n)"},
+        code: "class Solution {\n    public int uniquePaths(int m, int n) {\n        int[] dp = new int[n];\n        for (int i = 0; i < n; i++) dp[i] = 1;\n        for (int i = 1; i < m; i++) {\n            for (int j = 1; j < n; j++) {\n                dp[j] = dp[j] + dp[j - 1];\n            }\n        }\n        return dp[n - 1];\n    }\n}"
+      }
+    ]
+  },
+
+  74: {
+    approaches: [
+      {
+        name: "Brute Force",
+        label: "O(m + n) — Row Binary Search then Column",
+        idea: "Binary search in the first column to find the correct row, then binary search within that row.",
+        complexity: {"time":"O(m + n)","space":"O(1)"},
+        code: "class Solution {\n    public boolean searchMatrix(int[] matrix, int rows, int cols, int target) {\n        // Start from top-right corner\n        int r = 0;\n        int c = cols - 1;\n        while (r < rows && c >= 0) {\n            int val = matrix[r * cols + c];\n            if (val == target) return true;\n            if (val > target) c--;\n            else r++;\n        }\n        return false;\n    }\n}"
+      },
+      {
+        name: "Better",
+        label: "O(log m + log n) — Two Binary Searches",
+        idea: "First binary search the first column for correct row, then binary search within that row.",
+        complexity: {"time":"O(log m + log n)","space":"O(1)"},
+        code: "class Solution {\n    public boolean searchMatrix(int[] matrix, int rows, int cols, int target) {\n        int lo = 0;\n        int hi = rows - 1;\n        while (lo < hi) {\n            int mid = lo + (hi - lo + 1) / 2;\n            if (matrix[mid * cols] <= target) lo = mid;\n            else hi = mid - 1;\n        }\n        int row = lo;\n        int left = 0;\n        int right = cols - 1;\n        while (left <= right) {\n            int mid = left + (right - left) / 2;\n            int val = matrix[row * cols + mid];\n            if (val == target) return true;\n            if (val < target) left = mid + 1;\n            else right = mid - 1;\n        }\n        return false;\n    }\n}"
+      },
+      {
+        name: "Optimal",
+        label: "O(log(m × n)) — Single Binary Search on Flattened Matrix",
+        idea: "Treat the matrix as a sorted 1D array of m×n elements. Binary search on indices 0 to m*n-1.",
+        complexity: {"time":"O(log(m × n))","space":"O(1)"},
+        code: "class Solution {\n    public boolean searchMatrix(int[] matrix, int rows, int cols, int target) {\n        int lo = 0;\n        int hi = rows * cols - 1;\n        while (lo <= hi) {\n            int mid = lo + (hi - lo) / 2;\n            int row = mid / cols;\n            int col = mid % cols;\n            int val = matrix[row * cols + col];\n            if (val == target) return true;\n            if (val < target) lo = mid + 1;\n            else hi = mid - 1;\n        }\n        return false;\n    }\n}"
+      }
+    ]
+  },
+
+  215: {
+    approaches: [
+      {
+        name: "Brute Force",
+        label: "O(n log n) — Sort Then Index",
+        idea: "Sort the array in descending order. The kth largest is at index k-1.",
+        complexity: {"time":"O(n log n)","space":"O(1)"},
+        code: "class Solution {\n    public int findKthLargest(int[] nums, int k) {\n        int n = nums.length;\n        for (int i = 0; i < n - 1; i++) {\n            for (int j = 0; j < n - i - 1; j++) {\n                if (nums[j] < nums[j + 1]) {\n                    int tmp = nums[j];\n                    nums[j] = nums[j + 1];\n                    nums[j + 1] = tmp;\n                }\n            }\n        }\n        return nums[k - 1];\n    }\n}"
+      },
+      {
+        name: "Better",
+        label: "O(n log k) — Min-Heap of Size k",
+        idea: "Maintain a min-heap of size k. If heap grows beyond k, remove the minimum. At the end, the top is the kth largest.",
+        complexity: {"time":"O(n log k)","space":"O(k)"},
+        code: "class Solution {\n    public int findKthLargest(int[] nums, int k) {\n        // Simulate min-heap using sorted window of size k\n        int[] minHeap = new int[k];\n        int size = 0;\n        for (int i = 0; i < nums.length; i++) {\n            if (size < k) {\n                minHeap[size++] = nums[i];\n                // sift up (insertion sort style)\n                for (int j = size - 1; j > 0 && minHeap[j] < minHeap[j-1]; j--) {\n                    int tmp = minHeap[j]; minHeap[j] = minHeap[j-1]; minHeap[j-1] = tmp;\n                }\n            } else if (nums[i] > minHeap[0]) {\n                minHeap[0] = nums[i];\n                // sift down\n                for (int j = 0; j * 2 + 1 < k; ) {\n                    int child = j * 2 + 1;\n                    if (child + 1 < k && minHeap[child + 1] < minHeap[child]) child++;\n                    if (minHeap[j] <= minHeap[child]) break;\n                    int tmp = minHeap[j]; minHeap[j] = minHeap[child]; minHeap[child] = tmp;\n                    j = child;\n                }\n            }\n        }\n        return minHeap[0];\n    }\n}"
+      },
+      {
+        name: "Optimal",
+        label: "O(n) average — QuickSelect",
+        idea: "Partition around a pivot. If pivot ends up at index n-k, return it. Otherwise recurse on the relevant side.",
+        complexity: {"time":"O(n) average, O(n²) worst","space":"O(1)"},
+        code: "class Solution {\n    public int findKthLargest(int[] nums, int k) {\n        int target = nums.length - k;\n        int lo = 0;\n        int hi = nums.length - 1;\n        while (lo <= hi) {\n            int pivot = partition(nums, lo, hi);\n            if (pivot == target) return nums[pivot];\n            if (pivot < target) lo = pivot + 1;\n            else hi = pivot - 1;\n        }\n        return nums[lo];\n    }\n    int partition(int[] nums, int lo, int hi) {\n        int pivot = nums[hi];\n        int i = lo;\n        for (int j = lo; j < hi; j++) {\n            if (nums[j] <= pivot) {\n                int tmp = nums[i]; nums[i] = nums[j]; nums[j] = tmp;\n                i++;\n            }\n        }\n        int tmp = nums[i]; nums[i] = nums[hi]; nums[hi] = tmp;\n        return i;\n    }\n}"
+      }
+    ]
+  },
+
+  300: {
+    approaches: [
+      {
+        name: "Brute Force",
+        label: "O(2ⁿ) — Recursive All Subsequences",
+        idea: "Try including or excluding each element. Track length of valid increasing subsequences.",
+        complexity: {"time":"O(2ⁿ)","space":"O(n)"},
+        code: "class Solution {\n    public int lengthOfLIS(int[] nums) {\n        return dfs(nums, 0, Integer.MIN_VALUE);\n    }\n    int dfs(int[] nums, int i, int prev) {\n        if (i == nums.length) return 0;\n        int take = 0;\n        if (nums[i] > prev) take = 1 + dfs(nums, i + 1, nums[i]);\n        int skip = dfs(nums, i + 1, prev);\n        return take > skip ? take : skip;\n    }\n}"
+      },
+      {
+        name: "Better",
+        label: "O(n²) — Bottom-Up DP",
+        idea: "dp[i] = LIS ending at index i. For each i, check all j < i where nums[j] < nums[i] and take the max.",
+        complexity: {"time":"O(n²)","space":"O(n)"},
+        code: "class Solution {\n    public int lengthOfLIS(int[] nums) {\n        int n = nums.length;\n        int[] dp = new int[n];\n        for (int i = 0; i < n; i++) dp[i] = 1;\n        int maxLen = 1;\n        for (int i = 1; i < n; i++) {\n            for (int j = 0; j < i; j++) {\n                if (nums[j] < nums[i]) {\n                    if (dp[j] + 1 > dp[i]) dp[i] = dp[j] + 1;\n                }\n            }\n            if (dp[i] > maxLen) maxLen = dp[i];\n        }\n        return maxLen;\n    }\n}"
+      },
+      {
+        name: "Optimal",
+        label: "O(n log n) — Patience Sorting / Binary Search",
+        idea: "Maintain a tails array where tails[i] = smallest tail of IS with length i+1. Binary search to replace/extend.",
+        complexity: {"time":"O(n log n)","space":"O(n)"},
+        code: "class Solution {\n    public int lengthOfLIS(int[] nums) {\n        int[] tails = new int[nums.length];\n        int len = 0;\n        for (int i = 0; i < nums.length; i++) {\n            int lo = 0;\n            int hi = len;\n            while (lo < hi) {\n                int mid = lo + (hi - lo) / 2;\n                if (tails[mid] < nums[i]) lo = mid + 1;\n                else hi = mid;\n            }\n            tails[lo] = nums[i];\n            if (lo == len) len++;\n        }\n        return len;\n    }\n}"
+      }
+    ]
+  },
+
+  739: {
+    approaches: [
+      {
+        name: "Brute Force",
+        label: "O(n²) — Nested Loop",
+        idea: "For each day i, scan all future days j > i to find the first warmer day.",
+        complexity: {"time":"O(n²)","space":"O(1)"},
+        code: "class Solution {\n    public int[] dailyTemperatures(int[] temperatures) {\n        int n = temperatures.length;\n        int[] result = new int[n];\n        for (int i = 0; i < n; i++) {\n            for (int j = i + 1; j < n; j++) {\n                if (temperatures[j] > temperatures[i]) {\n                    result[i] = j - i;\n                    break;\n                }\n            }\n        }\n        return result;\n    }\n}"
+      },
+      {
+        name: "Better",
+        label: "O(n) — Monotonic Stack of Indices",
+        idea: "Maintain a stack of indices with decreasing temperatures. When current temp is warmer, pop and compute waiting days.",
+        complexity: {"time":"O(n)","space":"O(n)"},
+        code: "class Solution {\n    public int[] dailyTemperatures(int[] temperatures) {\n        int n = temperatures.length;\n        int[] result = new int[n];\n        int[] stack = new int[n];\n        int top = 0;\n        for (int i = 0; i < n; i++) {\n            while (top > 0 && temperatures[stack[top - 1]] < temperatures[i]) {\n                top--;\n                int idx = stack[top];\n                result[idx] = i - idx;\n            }\n            stack[top] = i;\n            top++;\n        }\n        return result;\n    }\n}"
+      },
+      {
+        name: "Optimal",
+        label: "O(n) — Right-to-Left with Jump Pointers",
+        idea: "Process from right to left. For each day i, use the already-computed result array to skip through to the next warmer day efficiently.",
+        complexity: {"time":"O(n) amortized","space":"O(1) extra"},
+        code: "class Solution {\n    public int[] dailyTemperatures(int[] temperatures) {\n        int n = temperatures.length;\n        int[] result = new int[n];\n        for (int i = n - 2; i >= 0; i--) {\n            int j = i + 1;\n            while (j < n && temperatures[j] <= temperatures[i]) {\n                if (result[j] == 0) {\n                    j = n;\n                    break;\n                }\n                j = j + result[j];\n            }\n            if (j < n) result[i] = j - i;\n        }\n        return result;\n    }\n}"
+      }
+    ]
+  },
+
   567: {
     approaches: [
       {

@@ -606,6 +606,324 @@ export const PROBLEM_DESCRIPTIONS = {
     companies: ["Amazon", "Google", "Facebook", "Microsoft", "Uber"]
   },
 
+  55: {
+    "title": "Jump Game",
+    "difficulty": "medium",
+    "category": "Greedy / Array",
+    "acceptance": "38.5%",
+    "description": "You are given an integer array <code>nums</code>. You are initially positioned at the array's <strong>first index</strong>, and each element in the array represents your maximum jump length at that position. Return <code>true</code> if you can reach the last index, or <code>false</code> otherwise.",
+    "examples": [
+      {
+        "input": "nums = [2,3,1,1,4]",
+        "output": "true",
+        "explanation": "Jump 1 step from index 0 to 1, then 3 steps to the last index."
+      },
+      {
+        "input": "nums = [3,2,1,0,4]",
+        "output": "false",
+        "explanation": "You will always arrive at index 3. Its maximum jump length is 0, which makes it impossible to reach the last index."
+      }
+    ],
+    "constraints": [
+      "1 ≤ nums.length ≤ 10⁴",
+      "0 ≤ nums[i] ≤ 10⁵"
+    ],
+    "hints": [
+      "Greedy: track the maximum reachable index so far.",
+      "For each position i, update maxReach = max(maxReach, i + nums[i]).",
+      "If at any point i > maxReach, you're stuck — return false."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(1)"
+    },
+    "topics": [
+      "Array",
+      "Dynamic Programming",
+      "Greedy"
+    ],
+    "companies": [
+      "Amazon",
+      "Microsoft",
+      "Apple",
+      "Uber"
+    ]
+  },
+
+  62: {
+    "title": "Unique Paths",
+    "difficulty": "medium",
+    "category": "Dynamic Programming",
+    "acceptance": "64.4%",
+    "description": "There is a robot on an <code>m x n</code> grid. The robot is initially located at the <strong>top-left corner</strong> (i.e., <code>grid[0][0]</code>). The robot tries to move to the <strong>bottom-right corner</strong> (i.e., <code>grid[m - 1][n - 1]</code>). The robot can only move either down or right at any point in time. Given the two integers <code>m</code> and <code>n</code>, return the number of possible unique paths that the robot can take to reach the bottom-right corner.",
+    "examples": [
+      {
+        "input": "m = 3, n = 7",
+        "output": "28"
+      },
+      {
+        "input": "m = 3, n = 2",
+        "output": "3",
+        "explanation": "From the top-left corner, there are a total of 3 ways to reach the bottom-right corner."
+      }
+    ],
+    "constraints": [
+      "1 ≤ m, n ≤ 100"
+    ],
+    "hints": [
+      "Think of it as filling a grid: dp[i][j] = dp[i-1][j] + dp[i][j-1].",
+      "Space-optimize: use a 1D dp array of size n, updating left to right.",
+      "Mathematical solution: C(m+n-2, m-1) paths (combinatorics)."
+    ],
+    "complexity": {
+      "time": "O(m × n)",
+      "space": "O(n) with space optimization"
+    },
+    "topics": [
+      "Math",
+      "Dynamic Programming",
+      "Combinatorics"
+    ],
+    "companies": [
+      "Amazon",
+      "Microsoft",
+      "Google",
+      "Databricks"
+    ]
+  },
+
+  74: {
+    "title": "Search a 2D Matrix",
+    "difficulty": "medium",
+    "category": "Binary Search / Matrix",
+    "acceptance": "50.9%",
+    "description": "You are given an <code>m x n</code> integer matrix <code>matrix</code> with the following properties: each row is sorted in non-decreasing order, and the first integer of each row is greater than the last integer of the previous row. Given an integer <code>target</code>, return <code>true</code> if <code>target</code> is in <code>matrix</code> or <code>false</code> otherwise.",
+    "examples": [
+      {
+        "input": "matrix = [[1,3,5,7],[10,11,16,20],[23,30,34,60]], target = 3",
+        "output": "true"
+      },
+      {
+        "input": "matrix = [[1,3,5,7],[10,11,16,20],[23,30,34,60]], target = 13",
+        "output": "false"
+      }
+    ],
+    "constraints": [
+      "m == matrix.length",
+      "n == matrix[i].length",
+      "1 ≤ m, n ≤ 100",
+      "-10⁴ ≤ matrix[i][j], target ≤ 10⁴"
+    ],
+    "hints": [
+      "The matrix can be treated as a sorted 1D array of m × n elements.",
+      "Binary search on index 0 to m*n-1. Convert mid to (row, col) as mid/n and mid%n.",
+      "Time complexity: O(log(m × n)) = O(log m + log n)."
+    ],
+    "complexity": {
+      "time": "O(log(m × n))",
+      "space": "O(1)"
+    },
+    "topics": [
+      "Array",
+      "Binary Search",
+      "Matrix"
+    ],
+    "companies": [
+      "Amazon",
+      "Microsoft",
+      "Bloomberg",
+      "Apple"
+    ]
+  },
+
+  153: {
+    "title": "Find Minimum in Rotated Sorted Array",
+    "difficulty": "medium",
+    "category": "Binary Search",
+    "acceptance": "49.3%",
+    "description": "Suppose an array of length <code>n</code> sorted in ascending order is <strong>rotated</strong> between <code>1</code> and <code>n</code> times. Given the sorted rotated array <code>nums</code> of <strong>unique</strong> elements, return the <em>minimum element of this array</em>.",
+    "examples": [
+      {
+        "input": "nums = [3,4,5,1,2]",
+        "output": "1"
+      },
+      {
+        "input": "nums = [4,5,6,7,0,1,2]",
+        "output": "0"
+      },
+      {
+        "input": "nums = [11,13,15,17]",
+        "output": "11"
+      }
+    ],
+    "constraints": [
+      "n == nums.length",
+      "1 ≤ n ≤ 5000",
+      "-5000 ≤ nums[i] ≤ 5000",
+      "All the integers of nums are unique.",
+      "nums is sorted and rotated between 1 and n times."
+    ],
+    "hints": [
+      "Binary search: the minimum is in the unsorted half.",
+      "If nums[mid] > nums[right], minimum is in right half (left = mid + 1).",
+      "Otherwise minimum is in left half including mid (right = mid)."
+    ],
+    "complexity": {
+      "time": "O(log n)",
+      "space": "O(1)"
+    },
+    "topics": [
+      "Array",
+      "Binary Search"
+    ],
+    "companies": [
+      "Amazon",
+      "Microsoft",
+      "Apple",
+      "LinkedIn"
+    ]
+  },
+
+  215: {
+    "title": "Kth Largest Element in an Array",
+    "difficulty": "medium",
+    "category": "Heap / QuickSelect",
+    "acceptance": "67.6%",
+    "description": "Given an integer array <code>nums</code> and an integer <code>k</code>, return the <code>k<sup>th</sup></code> <strong>largest element in the array</strong>. Note that it is the <code>k<sup>th</sup></code> largest element in the sorted order, not the <code>k<sup>th</sup></code> distinct element.",
+    "examples": [
+      {
+        "input": "nums = [3,2,1,5,6,4], k = 2",
+        "output": "5"
+      },
+      {
+        "input": "nums = [3,2,3,1,2,4,5,5,6], k = 4",
+        "output": "4"
+      }
+    ],
+    "constraints": [
+      "1 ≤ k ≤ nums.length ≤ 10⁵",
+      "-10⁴ ≤ nums[i] ≤ 10⁴"
+    ],
+    "hints": [
+      "Min-heap of size k: maintain the k largest elements seen so far.",
+      "QuickSelect: partition around a pivot. If pivot is at kth position from end, done!",
+      "target index = n - k. Partition until pivot lands there."
+    ],
+    "complexity": {
+      "time": "O(n) average QuickSelect, O(n log k) min-heap",
+      "space": "O(1) QuickSelect"
+    },
+    "topics": [
+      "Array",
+      "Divide and Conquer",
+      "Sorting",
+      "Heap (Priority Queue)",
+      "Quickselect"
+    ],
+    "companies": [
+      "Facebook",
+      "Amazon",
+      "Microsoft",
+      "Apple",
+      "LinkedIn"
+    ]
+  },
+
+  300: {
+    "title": "Longest Increasing Subsequence",
+    "difficulty": "medium",
+    "category": "Dynamic Programming",
+    "acceptance": "56.9%",
+    "description": "Given an integer array <code>nums</code>, return <em>the length of the longest strictly increasing subsequence</em>.",
+    "examples": [
+      {
+        "input": "nums = [10,9,2,5,3,7,101,18]",
+        "output": "4",
+        "explanation": "The longest increasing subsequence is [2,3,7,101], therefore the length is 4."
+      },
+      {
+        "input": "nums = [0,1,0,3,2,3]",
+        "output": "4"
+      },
+      {
+        "input": "nums = [7,7,7,7,7,7,7]",
+        "output": "1"
+      }
+    ],
+    "constraints": [
+      "1 ≤ nums.length ≤ 2500",
+      "-10⁴ ≤ nums[i] ≤ 10⁴"
+    ],
+    "hints": [
+      "dp[i] = length of LIS ending at index i. dp[i] = max(dp[j]+1) for all j < i where nums[j] < nums[i].",
+      "O(n²) DP is acceptable. O(n log n) uses patience sorting / binary search.",
+      "Initialize all dp[i] = 1 (each element alone is an LIS of length 1)."
+    ],
+    "complexity": {
+      "time": "O(n²) DP, O(n log n) Patience Sorting",
+      "space": "O(n)"
+    },
+    "topics": [
+      "Array",
+      "Binary Search",
+      "Dynamic Programming"
+    ],
+    "companies": [
+      "Amazon",
+      "Google",
+      "Microsoft",
+      "Apple",
+      "Airbnb"
+    ]
+  },
+
+  739: {
+    "title": "Daily Temperatures",
+    "difficulty": "medium",
+    "category": "Stack / Array",
+    "acceptance": "66.9%",
+    "description": "Given an array of integers <code>temperatures</code> represents the daily temperatures, return an array <code>answer</code> such that <code>answer[i]</code> is the number of days you have to wait after the <code>i<sup>th</sup></code> day to get a warmer temperature. If there is no future day for which this is possible, keep <code>answer[i] == 0</code>.",
+    "examples": [
+      {
+        "input": "temperatures = [73,74,75,71,69,72,76,73]",
+        "output": "[1,1,4,2,1,1,0,0]"
+      },
+      {
+        "input": "temperatures = [30,40,50,60]",
+        "output": "[1,1,1,0]"
+      },
+      {
+        "input": "temperatures = [30,60,90]",
+        "output": "[1,1,0]"
+      }
+    ],
+    "constraints": [
+      "1 ≤ temperatures.length ≤ 10⁵",
+      "30 ≤ temperatures[i] ≤ 100"
+    ],
+    "hints": [
+      "Use a monotonic decreasing stack of indices.",
+      "When you find a warmer temperature, pop the stack and compute the difference in indices.",
+      "Elements remaining in the stack at the end have answer[i] = 0."
+    ],
+    "complexity": {
+      "time": "O(n)",
+      "space": "O(n)"
+    },
+    "topics": [
+      "Array",
+      "Stack",
+      "Monotonic Stack"
+    ],
+    "companies": [
+      "Amazon",
+      "Facebook",
+      "Google",
+      "Bloomberg",
+      "Uber"
+    ]
+  },
+
   567: {
     title: "Permutation in String",
     difficulty: "medium",
