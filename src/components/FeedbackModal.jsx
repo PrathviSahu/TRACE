@@ -83,18 +83,23 @@ ${includeDiag ? `\n${diagnostics}` : ''}
     setSubmitStatus(null);
 
     try {
-      const formData = new FormData();
-      formData.append("access_key", WEB3FORMS_ACCESS_KEY);
-      formData.append("from_name", "TRACE — Visual DSA Debugger");
-      formData.append("subject", `[TRACE ${feedbackType.toUpperCase()}] ${subject || 'New Feedback'}`);
-      formData.append("name", userContact.trim() || "TRACE User");
-      formData.append("email", userContact.includes('@') ? userContact.trim() : "feedback@trace-debugger.dev");
-      formData.append("category", feedbackType);
-      formData.append("message", fullReport);
+      const payload = {
+        access_key: WEB3FORMS_ACCESS_KEY,
+        from_name: "TRACE — Visual DSA Debugger",
+        subject: `[TRACE ${feedbackType.toUpperCase()}] ${subject || 'New Feedback'}`,
+        name: userContact.trim() || "TRACE User",
+        email: userContact.includes('@') ? userContact.trim() : "prathvisahu31@gmail.com",
+        category: feedbackType,
+        message: fullReport
+      };
 
       const response = await fetch("https://api.web3forms.com/submit", {
         method: "POST",
-        body: formData
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        body: JSON.stringify(payload)
       });
 
       const data = await response.json();
