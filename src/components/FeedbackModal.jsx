@@ -437,7 +437,7 @@ ${includeDiag ? `\n${diagnostics}` : ''}
                     Network issue? Send directly to inbox:
                   </span>
                   <a
-                    href={`mailto:prathvisahu2004@gmail.com?subject=${encodeURIComponent(`[TRACE ${feedbackType.toUpperCase()}] ${subject || 'Feedback'}`)}&body=${encodeURIComponent(fullReport)}`}
+                    href={`mailto:prathvisahu31@gmail.com?subject=${encodeURIComponent(`[TRACE ${feedbackType.toUpperCase()}] ${subject || 'Feedback'}`)}&body=${encodeURIComponent(fullReport)}`}
                     style={{
                       padding: '5px 11px',
                       background: '#ef4444',
