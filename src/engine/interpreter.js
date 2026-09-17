@@ -771,7 +771,24 @@ class Interpreter {
     // Arrays.sort, Arrays.fill
     if (node.object?.kind==='Identifier' && node.object.name==='Arrays') {
       const args = node.args.map(a=>this.evalExpr(a,env));
-      if (node.method==='sort' && Array.isArray(args[0])) { args[0].sort((a,b)=>a-b); return null; }
+      if (node.method==='sort' && Array.isArray(args[0])) {
+        const arr = args[0];
+        const comparatorArg = args[1]; // may be a function (lambda) or undefined
+        if (typeof comparatorArg === 'function') {
+          // User passed a lambda comparator e.g. Arrays.sort(arr, (a, b) -> ...)
+          arr.sort((a, b) => {
+            const result = comparatorArg(a, b);
+            return typeof result === 'number' ? result : (result > 0 ? 1 : result < 0 ? -1 : 0);
+          });
+        } else {
+          // Default sort: handle 2D arrays by first element, or plain numbers
+          arr.sort((a, b) => {
+            if (Array.isArray(a) && Array.isArray(b)) return a[0] - b[0];
+            return a - b;
+          });
+        }
+        return null;
+      }
       if (node.method==='fill' && Array.isArray(args[0])) { args[0].fill(args[1]); return null; }
       if (node.method==='copyOf') return [...(args[0]||[])].slice(0, args[1]);
     }
