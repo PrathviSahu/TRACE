@@ -14,7 +14,9 @@ function geminiProxyPlugin() {
         ...loadEnv(process.env.NODE_ENV || "development", process.cwd(), "")
       };
       const apiKey = env.GEMINI_API_KEY || process.env.GEMINI_API_KEY;
-      handleGeminiProxy(req, res, () => apiKey);
+      server.middlewares.use("/api/gemini", (req, res) => {
+        handleGeminiProxy(req, res, () => apiKey);
+      });
     },
     configurePreviewServer(server) {
       server.middlewares.use("/api/gemini", (req, res) => {
