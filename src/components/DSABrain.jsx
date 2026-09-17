@@ -63,10 +63,14 @@ export default function DSABrain() {
       const history = (snapshot || []).slice(1);
       const recent = history.slice(Math.max(0, history.length - HISTORY_LIMIT));
 
-      const contents = recent.map(msg => ({
+      const rawContents = recent.map(msg => ({
         role: msg.role === 'assistant' ? 'model' : 'user',
         parts: [{ text: msg.content }]
       }));
+      // Gemini requires at least one user turn in contents
+      const contents = rawContents.length > 0
+        ? rawContents
+        : [{ role: 'user', parts: [{ text: userText }] }];
 
       const sysInstruction = `${SYSTEM_TUTOR_PROMPT}\nThe user's currently active debugger language is: ${activeLanguage.toUpperCase()}. When code examples are requested without specifying a language, prefer ${activeLanguage.toUpperCase()} or provide clean comparisons.`;
 
