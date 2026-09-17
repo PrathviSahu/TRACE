@@ -14,7 +14,9 @@ import {
   DiagrammaticBarHeights,
   DiagrammaticHashSet,
   DiagrammaticHashMap,
-  DiagrammaticSlidingWindow
+  DiagrammaticSlidingWindow,
+  DiagrammaticDailyTemperatures,
+  DiagrammaticCoveredIntervals
 } from "./DiagrammaticVisualizers.jsx";
 
 export default function VisualizerStudio() {
@@ -60,7 +62,7 @@ export default function VisualizerStudio() {
     () => normalizeStepData(stepData, prevStepData),
     [stepData, prevStepData]
   );
-  const { hasData, slidingWindow, arrays, collections, objects, variables, callStack, explanation } = normalized;
+  const { hasData, slidingWindow, dailyTemperatures, coveredIntervals, arrays, collections, objects, variables, callStack, explanation } = normalized;
 
   // Global keyboard navigation (only when NOT focused in any code editor or input field)
   useEffect(() => {
@@ -269,6 +271,29 @@ export default function VisualizerStudio() {
                   maxLen={slidingWindow.maxLenVal}
                   isValid={slidingWindow.isValid}
                   statusText={slidingWindow.statusText}
+                />
+              )}
+
+              {/* 0b. Daily Temperatures Monotonic Stack Visualizer (LeetCode 739) */}
+              {dailyTemperatures && (
+                <DiagrammaticDailyTemperatures
+                  temperatures={dailyTemperatures.temperatures}
+                  stackItems={dailyTemperatures.stackItems}
+                  result={dailyTemperatures.result}
+                  currentDay={dailyTemperatures.currentDay}
+                  prevDay={dailyTemperatures.prevDay}
+                  variables={stepData?.variables || {}}
+                />
+              )}
+
+              {/* 0c. Remove Covered Intervals Visualizer (LeetCode 1288) */}
+              {coveredIntervals && (
+                <DiagrammaticCoveredIntervals
+                  intervals={coveredIntervals.intervals}
+                  currentIndex={coveredIntervals.currentIndex}
+                  maxRight={coveredIntervals.maxRight}
+                  count={coveredIntervals.count}
+                  currentInterval={coveredIntervals.currentInterval}
                 />
               )}
 

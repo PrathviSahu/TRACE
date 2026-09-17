@@ -2232,7 +2232,7 @@ export const PROBLEM_SOLUTIONS = {
         label: "O(n) — Monotonic Stack of Indices",
         idea: "Maintain a stack of indices with decreasing temperatures. When current temp is warmer, pop and compute waiting days.",
         complexity: {"time":"O(n)","space":"O(n)"},
-        code: "class Solution {\n    public int[] dailyTemperatures(int[] temperatures) {\n        int n = temperatures.length;\n        int[] result = new int[n];\n        int[] stack = new int[n];\n        int top = 0;\n        for (int i = 0; i < n; i++) {\n            while (top > 0 && temperatures[stack[top - 1]] < temperatures[i]) {\n                top--;\n                int idx = stack[top];\n                result[idx] = i - idx;\n            }\n            stack[top] = i;\n            top++;\n        }\n        return result;\n    }\n}"
+        code: "class Solution {\n    public int[] dailyTemperatures(int[] temperatures) {\n        int n = temperatures.length;\n        int[] result = new int[n];\n        Stack<Integer> stack = new Stack<>();\n        for (int i = 0; i < n; i++) {\n            while (!stack.isEmpty() && temperatures[stack.peek()] < temperatures[i]) {\n                int prev = stack.pop();\n                result[prev] = i - prev;\n            }\n            stack.push(i);\n        }\n        return result;\n    }\n}"
       },
       {
         name: "Optimal",
@@ -2928,6 +2928,30 @@ export const PROBLEM_SOLUTIONS = {
           }
       ]
   },
+  1288: {
+      "approaches": [
+          {
+              "name": "Brute Force",
+              "label": "O(n²) — Compare All Pairs",
+              "idea": "Compare each interval with every other interval. If interval i is covered by any interval j, mark it as removed.",
+              "complexity": {
+                  "time": "O(n²)",
+                  "space": "O(n)"
+              },
+              "code": "class Solution {\n    public int removeCoveredIntervals(int[][] intervals) {\n        int n = intervals.length;\n        boolean[] covered = new boolean[n];\n        int count = n;\n        for (int i = 0; i < n; i++) {\n            for (int j = 0; j < n; j++) {\n                if (i != j && !covered[i]) {\n                    if (intervals[j][0] <= intervals[i][0] && intervals[i][1] <= intervals[j][1]) {\n                        covered[i] = true;\n                        count--;\n                        break;\n                    }\n                }\n            }\n        }\n        return count;\n    }\n}"
+          },
+          {
+              "name": "Optimal",
+              "label": "O(n log n) — Sort by Start Ascending, End Descending",
+              "idea": "Sort intervals by start ascending (and end descending on tie so longer intervals come first). Maintain maxRight: any interval with end <= maxRight is covered.",
+              "complexity": {
+                  "time": "O(n log n)",
+                  "space": "O(1)"
+              },
+              "code": "class Solution {\n    public int removeCoveredIntervals(int[][] intervals) {\n        int n = intervals.length;\n        for (int i = 0; i < n - 1; i++) {\n            for (int j = 0; j < n - i - 1; j++) {\n                if (intervals[j][0] > intervals[j + 1][0] || \n                   (intervals[j][0] == intervals[j + 1][0] && intervals[j][1] < intervals[j + 1][1])) {\n                    int[] temp = intervals[j];\n                    intervals[j] = intervals[j + 1];\n                    intervals[j + 1] = temp;\n                }\n            }\n        }\n        int count = 0;\n        int maxRight = 0;\n        for (int i = 0; i < n; i++) {\n            int start = intervals[i][0];\n            int end = intervals[i][1];\n            if (end > maxRight) {\n                count++;\n                maxRight = end;\n            }\n        }\n        return count;\n    }\n}"
+          }
+      ]
+  }
 };
 
 export function getProblemSolutions(id) {

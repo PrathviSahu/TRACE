@@ -197,6 +197,7 @@ export const CURATED_PROBLEM_PATTERNS = {
   "252": { topic: "Array", patterns: ["Interval Merging", "Sorting"] },
   "253": { topic: "Intervals", patterns: ["Min Heap", "Sweep Line"] },
   "435": { topic: "Array", patterns: ["Interval Merging", "Greedy"] },
+  "1288":{ topic: "Intervals", patterns: ["Interval Sorting", "Greedy Elimination"] },
 
   // ── Hash Table & Design
   "49":  { topic: "Hash Table", patterns: ["Anagram Grouping", "Frequency Counting"] },

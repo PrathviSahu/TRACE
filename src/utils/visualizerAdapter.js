@@ -223,11 +223,15 @@ export function normalizeStepData(stepData, prevStepData = null) {
   }
 
   const slidingWindow = detectSlidingWindow(stepData, arrays);
-  const hasData = arrays.length > 0 || collections.length > 0 || objects.length > 0 || !!slidingWindow;
+  const dailyTemperatures = detectDailyTemperatures(stepData, arrays, collections, prevStepData);
+  const coveredIntervals = detectCoveredIntervals(stepData, arrays, prevStepData);
+  const hasData = arrays.length > 0 || collections.length > 0 || objects.length > 0 || !!slidingWindow || !!dailyTemperatures || !!coveredIntervals;
 
   return {
     hasData,
     slidingWindow,
+    dailyTemperatures,
+    coveredIntervals,
     arrays,
     collections,
     objects,
@@ -439,5 +443,89 @@ export function detectSlidingWindow(stepData, arrays = []) {
     maxLenVal,
     isValid,
     statusText
+  };
+}
+
+/**
+ * Detects whether current execution state corresponds to Daily Temperatures (LeetCode 739).
+ */
+function detectDailyTemperatures(stepData, arrays, collections, prevStepData = null) {
+  if (!stepData) return null;
+  let tempArr = arrays.find(a => a.name.toLowerCase() === "temperatures");
+  let resArr = arrays.find(a => a.name.toLowerCase() === "result" || a.name.toLowerCase() === "ans" || a.name.toLowerCase() === "answer");
+  let stackCol = collections.find(c => c.name.toLowerCase() === "stack");
+  let rawStackArr = arrays.find(a => a.name.toLowerCase() === "stack");
+  let vars = stepData.variables || {};
+
+  // If at done step, fall back to previous step's arrays so final state remains visible
+  if ((!tempArr || !tempArr.values || tempArr.values.length === 0) && prevStepData) {
+    if (prevStepData.arrays?.temperatures) {
+      tempArr = { name: "temperatures", values: prevStepData.arrays.temperatures.values };
+    }
+    if (prevStepData.arrays?.result) {
+      resArr = { name: "result", values: prevStepData.arrays.result.values };
+    }
+    if (prevStepData.collections?.stack) {
+      stackCol = prevStepData.collections.stack;
+    }
+    vars = prevStepData.variables || vars;
+  }
+
+  if (!tempArr || !Array.isArray(tempArr.values) || tempArr.values.length === 0) return null;
+
+  let stackItems = [];
+  if (stackCol && Array.isArray(stackCol.items)) {
+    stackItems = [...stackCol.items];
+  } else if (rawStackArr && Array.isArray(rawStackArr.values)) {
+    const topVal = vars.top?.value !== undefined ? vars.top.value : rawStackArr.values.length;
+    stackItems = rawStackArr.values.slice(0, Math.max(0, topVal));
+  }
+
+  const currentDay = vars.i?.value !== undefined && typeof vars.i.value === "number" ? vars.i.value : null;
+  const prevDay = vars.prev?.value !== undefined && typeof vars.prev.value === "number" ? vars.prev.value : (vars.idx?.value ?? null);
+
+  return {
+    temperatures: [...tempArr.values],
+    stackItems,
+    result: resArr ? [...resArr.values] : [],
+    currentDay,
+    prevDay
+  };
+}
+
+/**
+ * Detects whether current execution state corresponds to Remove Covered Intervals (LeetCode 1288).
+ */
+function detectCoveredIntervals(stepData, arrays, prevStepData = null) {
+  if (!stepData) return null;
+  let intervalsArr = arrays.find(a => a.name.toLowerCase() === "intervals");
+  let vars = stepData.variables || {};
+
+  // If at done step, fall back to previous step's arrays so final state remains visible
+  if ((!intervalsArr || !intervalsArr.values || intervalsArr.values.length === 0) && prevStepData) {
+    if (prevStepData.arrays?.intervals) {
+      intervalsArr = { name: "intervals", values: prevStepData.arrays.intervals.values };
+    }
+    vars = prevStepData.variables || vars;
+  }
+
+  if (!intervalsArr || !Array.isArray(intervalsArr.values) || intervalsArr.values.length === 0) return null;
+
+  const firstElem = intervalsArr.values[0];
+  if (!Array.isArray(firstElem) || firstElem.length < 2) return null;
+
+  const currentIndex = vars.i?.value !== undefined && typeof vars.i.value === "number" ? vars.i.value : null;
+  const maxRight = vars.maxRight?.value !== undefined && typeof vars.maxRight.value === "number" ? vars.maxRight.value : 0;
+  const count = vars.count?.value !== undefined && typeof vars.count.value === "number" ? vars.count.value : 0;
+  const currentInterval = (vars.start?.value !== undefined && vars.end?.value !== undefined)
+    ? [vars.start.value, vars.end.value]
+    : (currentIndex !== null && intervalsArr.values[currentIndex] ? intervalsArr.values[currentIndex] : null);
+
+  return {
+    intervals: intervalsArr.values.map(iv => Array.isArray(iv) ? [...iv] : iv),
+    currentIndex,
+    maxRight,
+    count,
+    currentInterval
   };
 }

@@ -885,16 +885,29 @@ export const PROBLEM_DESCRIPTIONS = {
     "description": "Given an array of integers <code>temperatures</code> represents the daily temperatures, return an array <code>answer</code> such that <code>answer[i]</code> is the number of days you have to wait after the <code>i<sup>th</sup></code> day to get a warmer temperature. If there is no future day for which this is possible, keep <code>answer[i] == 0</code>.",
     "examples": [
       {
-        "input": "temperatures = [73,74,75,71,69,72,76,73]",
-        "output": "[1,1,4,2,1,1,0,0]"
+        "input": "temperatures = [73, 74, 75, 71, 69, 72, 76, 73]",
+        "output": "[1, 1, 4, 2, 1, 1, 0, 0]",
+        "explanation": "Day 0 (73) waits 1 day for 74. Day 1 (74) waits 1 day for 75. Day 2 (75) waits 4 days for 76. Day 3 (71) waits 2 days for 72. Day 4 (69) waits 1 day for 72. Day 5 (72) waits 1 day for 76. Days 6 and 7 have no warmer future day."
       },
       {
-        "input": "temperatures = [30,40,50,60]",
-        "output": "[1,1,1,0]"
+        "input": "temperatures = [30, 40, 50, 60]",
+        "output": "[1, 1, 1, 0]",
+        "explanation": "Every day gets warmer the very next day, except the last day which has no future days."
       },
       {
-        "input": "temperatures = [30,60,90]",
-        "output": "[1,1,0]"
+        "input": "temperatures = [30, 60, 90]",
+        "output": "[1, 1, 0]",
+        "explanation": "Day 0 (30) waits 1 day for 60. Day 1 (60) waits 1 day for 90."
+      },
+      {
+        "input": "temperatures = [89, 62, 70, 58, 47, 47, 46, 76, 100, 70]",
+        "output": "[8, 1, 5, 4, 3, 2, 1, 1, 0, 0]",
+        "explanation": "Complex case with plateau values (47, 47) and late spike to 100."
+      },
+      {
+        "input": "temperatures = [90, 80, 70, 60]",
+        "output": "[0, 0, 0, 0]",
+        "explanation": "Strictly decreasing temperatures: no day ever sees a warmer future temperature."
       }
     ],
     "constraints": [
@@ -1674,6 +1687,70 @@ export const PROBLEM_DESCRIPTIONS = {
           "Uber"
       ]
   },
+
+  1288: {
+    "title": "Remove Covered Intervals",
+    "difficulty": "medium",
+    "category": "Intervals / Greedy",
+    "acceptance": "57.3%",
+    "description": "Given an array of <code>intervals</code> where <code>intervals[i] = [l<sub>i</sub>, r<sub>i</sub>]</code>, remove all intervals that are covered by another interval in the list.<br/><br/>The interval <code>[a, b)</code> is covered by the interval <code>[c, d)</code> if and only if <code>c &le; a</code> and <code>b &le; d</code>.<br/><br/>Return <em>the number of remaining intervals</em>.",
+    "examples": [
+      {
+        "input": "intervals = [[1, 4], [3, 6], [2, 8]]",
+        "output": "2",
+        "explanation": "Interval [3, 6] is covered by [2, 8] since 2 <= 3 and 6 <= 8. Remaining intervals are [1, 4] and [2, 8]."
+      },
+      {
+        "input": "intervals = [[1, 4], [2, 3]]",
+        "output": "1",
+        "explanation": "Interval [2, 3] is covered by [1, 4] (1 <= 2 and 3 <= 4). Only [1, 4] remains."
+      },
+      {
+        "input": "intervals = [[0, 10], [5, 12]]",
+        "output": "2",
+        "explanation": "Neither interval covers the other. Both [0, 10] and [5, 12] remain."
+      },
+      {
+        "input": "intervals = [[3, 10], [4, 10], [5, 11]]",
+        "output": "2",
+        "explanation": "Interval [4, 10] is covered by [3, 10] (3 <= 4 and 10 <= 10). [3, 10] and [5, 11] remain."
+      },
+      {
+        "input": "intervals = [[1, 2], [1, 4], [3, 4]]",
+        "output": "1",
+        "explanation": "Both [1, 2] and [3, 4] are covered by [1, 4]. Only [1, 4] remains."
+      }
+    ],
+    "constraints": [
+      "1 ≤ intervals.length ≤ 1000",
+      "intervals[i].length == 2",
+      "0 ≤ l_i < r_i ≤ 10⁵",
+      "All intervals in the input array are unique."
+    ],
+    "hints": [
+      "How would you solve this if the intervals were sorted?",
+      "Sort intervals primarily by start ascending. For equal starts, sort by end descending so larger intervals come first.",
+      "Track the maximum right endpoint seen so far (maxRight). Any interval whose end <= maxRight is covered."
+    ],
+    "complexity": {
+      "time": "O(n log n)",
+      "space": "O(1)"
+    },
+    "topics": [
+      "Array",
+      "Two Pointers",
+      "Sorting",
+      "Greedy",
+      "Intervals"
+    ],
+    "companies": [
+      "Amazon",
+      "Microsoft",
+      "Google",
+      "Facebook",
+      "Bloomberg"
+    ]
+  }
 };
 
 export function getProblemDescription(id) {

@@ -1571,3 +1571,578 @@ export function DiagrammaticSlidingWindow({
     </div>
   );
 }
+
+// ─────────────────────────────────────────────────────────────
+//  TRACE — LeetCode 739: Daily Temperatures Monotonic Stack Visualizer
+// ─────────────────────────────────────────────────────────────
+
+export function DiagrammaticDailyTemperatures({
+  temperatures = [],
+  stackItems = [],
+  result = [],
+  currentDay = null,
+  prevDay = null,
+  variables = {}
+}) {
+  const n = temperatures.length;
+  if (n === 0) return null;
+
+  function getTempColor(t) {
+    if (t <= 40) return { text: "#38BDF8", bg: "rgba(56, 189, 248, 0.15)", border: "rgba(56, 189, 248, 0.45)" };
+    if (t <= 60) return { text: "#2DD4BF", bg: "rgba(45, 212, 191, 0.15)", border: "rgba(45, 212, 191, 0.45)" };
+    if (t <= 75) return { text: "#F59E0B", bg: "rgba(245, 158, 11, 0.15)", border: "rgba(245, 158, 11, 0.45)" };
+    return { text: "#EF4444", bg: "rgba(239, 68, 68, 0.18)", border: "rgba(239, 68, 68, 0.5)" };
+  }
+
+  const hasStack = stackItems.length > 0;
+  const topIdx = hasStack ? stackItems[stackItems.length - 1] : null;
+  const topTemp = topIdx !== null ? temperatures[topIdx] : null;
+  const currTemp = currentDay !== null && currentDay < n ? temperatures[currentDay] : null;
+
+  let comparisonStatus = null;
+  if (currentDay !== null && currentDay < n) {
+    if (topIdx !== null && topTemp !== null && currTemp !== null) {
+      if (currTemp > topTemp) {
+        comparisonStatus = {
+          type: "warmer",
+          text: `🔥 Warmer day found! Day ${currentDay} (${currTemp}°) > Day ${topIdx} (${topTemp}°) → Pop Day ${topIdx} & wait = ${currentDay - topIdx} day${currentDay - topIdx === 1 ? "" : "s"}!`
+        };
+      } else {
+        comparisonStatus = {
+          type: "colder",
+          text: `❄️ Colder/Equal: Day ${currentDay} (${currTemp}°) ≤ Day ${topIdx} (${topTemp}°) → Push Day ${currentDay} onto stack to wait.`
+        };
+      }
+    } else if (stackItems.length === 0) {
+      comparisonStatus = {
+        type: "push",
+        text: `Stack is empty → Push Day ${currentDay} (${currTemp}°) onto stack.`
+      };
+    }
+  }
+
+  return (
+    <div className="ds-block" style={{ marginBottom: 24, border: "1px solid var(--border-subtle, #21262D)", borderRadius: 10, padding: 14, background: "var(--bg-raised, #1C2128)" }}>
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8, marginBottom: 14 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ fontSize: 13, fontWeight: 700, color: "var(--txt-bright, #F0F6FC)" }}>
+            Monotonic Stack: Daily Temperatures <span style={{ color: "#F59E0B" }}>#739</span>
+          </span>
+          <span style={{ fontSize: 10, padding: "2px 8px", background: "rgba(245, 158, 11, 0.15)", color: "#F59E0B", borderRadius: 4, fontWeight: 600 }}>
+            Decreasing Temp Invariant
+          </span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={{ fontSize: 10, fontFamily: "var(--font-mono)", padding: "2px 8px", background: "var(--bg-canvas, #0D1117)", borderRadius: 4, border: "1px solid var(--border-subtle, #21262D)", color: "var(--txt-dim, #8B949E)" }}>
+            Current Day: <strong style={{ color: "#38D9C5" }}>{currentDay !== null ? `Day ${currentDay}` : "Done"}</strong>
+          </span>
+          <span style={{ fontSize: 10, fontFamily: "var(--font-mono)", padding: "2px 8px", background: "var(--bg-canvas, #0D1117)", borderRadius: 4, border: "1px solid var(--border-subtle, #21262D)", color: "var(--txt-dim, #8B949E)" }}>
+            Waiting in Stack: <strong style={{ color: "#F59E0B" }}>{stackItems.length}</strong>
+          </span>
+        </div>
+      </div>
+
+      {/* Live Action Banner */}
+      {comparisonStatus && (
+        <div
+          style={{
+            padding: "8px 12px",
+            marginBottom: 14,
+            borderRadius: 6,
+            fontSize: 12,
+            fontFamily: "var(--font-mono)",
+            fontWeight: 600,
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            background: comparisonStatus.type === "warmer"
+              ? "rgba(239, 68, 68, 0.15)"
+              : comparisonStatus.type === "colder"
+                ? "rgba(56, 189, 248, 0.12)"
+                : "rgba(56, 217, 197, 0.12)",
+            border: comparisonStatus.type === "warmer"
+              ? "1px solid rgba(239, 68, 68, 0.4)"
+              : comparisonStatus.type === "colder"
+                ? "1px solid rgba(56, 189, 248, 0.35)"
+                : "1px solid rgba(56, 217, 197, 0.35)",
+            color: comparisonStatus.type === "warmer"
+              ? "#FCA5A5"
+              : comparisonStatus.type === "colder"
+                ? "#7DD3FC"
+                : "#5EEAD4"
+          }}
+        >
+          {comparisonStatus.text}
+        </div>
+      )}
+
+      {/* Row 1: Thermal Day Cards */}
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ fontSize: 11, fontWeight: 600, color: "var(--txt-dim, #8B949E)", marginBottom: 6 }}>
+          Daily Temperatures Timeline:
+        </div>
+        <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 6 }}>
+          {temperatures.map((t, idx) => {
+            const isCurrent = idx === currentDay;
+            const inStack = stackItems.includes(idx);
+            const isPopped = idx === prevDay;
+            const isResolved = result && result[idx] > 0;
+            const tColor = getTempColor(t);
+
+            return (
+              <div
+                key={idx}
+                style={{
+                  minWidth: 64,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  padding: "8px 6px",
+                  borderRadius: 8,
+                  background: isCurrent
+                    ? "rgba(56, 217, 197, 0.12)"
+                    : inStack
+                      ? "rgba(245, 158, 11, 0.12)"
+                      : "var(--bg-canvas, #0D1117)",
+                  border: isCurrent
+                    ? "2px solid #38D9C5"
+                    : isPopped
+                      ? "2px solid #EF4444"
+                      : inStack
+                        ? "1.5px solid #F59E0B"
+                        : "1px solid var(--border-subtle, #21262D)",
+                  boxShadow: isCurrent
+                    ? "0 0 10px rgba(56, 217, 197, 0.3)"
+                    : inStack
+                      ? "0 0 8px rgba(245, 158, 11, 0.2)"
+                      : "none",
+                  transition: "all 0.2s ease"
+                }}
+              >
+                <span style={{ fontSize: 9, fontFamily: "var(--font-mono)", color: "var(--txt-dim, #8B949E)", marginBottom: 2 }}>
+                  Day {idx}
+                </span>
+                <span
+                  style={{
+                    fontSize: 16,
+                    fontWeight: 700,
+                    fontFamily: "var(--font-mono)",
+                    color: tColor.text,
+                    margin: "2px 0"
+                  }}
+                >
+                  {t}°
+                </span>
+                {/* Status tag */}
+                <div style={{ marginTop: 4, textAlign: "center" }}>
+                  {isCurrent ? (
+                    <span style={{ fontSize: 8, fontWeight: 700, padding: "1px 4px", borderRadius: 3, background: "#38D9C5", color: "#090B0E" }}>
+                      CURRENT
+                    </span>
+                  ) : inStack ? (
+                    <span style={{ fontSize: 8, fontWeight: 700, padding: "1px 4px", borderRadius: 3, background: "rgba(245, 158, 11, 0.3)", color: "#F59E0B" }}>
+                      WAITING
+                    </span>
+                  ) : isResolved ? (
+                    <span style={{ fontSize: 8, fontWeight: 600, padding: "1px 4px", borderRadius: 3, background: "rgba(16, 185, 129, 0.2)", color: "#34D399" }}>
+                      +{result[idx]}d
+                    </span>
+                  ) : (
+                    <span style={{ fontSize: 8, color: "var(--txt-dim, #8B949E)" }}>
+                      —
+                    </span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Row 2: Stack & Wait Days Split */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 14 }}>
+        {/* Monotonic Decreasing Stack */}
+        <div style={{ background: "var(--bg-canvas, #0D1117)", borderRadius: 8, padding: 10, border: "1px solid var(--border-subtle, #21262D)" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+            <span style={{ fontSize: 11, fontWeight: 600, color: "#F59E0B" }}>
+              Monotonic Stack (Indices & Temps):
+            </span>
+            <span style={{ fontSize: 9, fontFamily: "var(--font-mono)", color: "var(--txt-dim, #8B949E)" }}>
+              Top ↓ Bottom
+            </span>
+          </div>
+          {stackItems.length === 0 ? (
+            <div style={{ fontSize: 11, color: "var(--txt-dim, #8B949E)", fontStyle: "italic", textAlign: "center", padding: "12px 0" }}>
+              (Empty stack)
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              {[...stackItems].reverse().map((idx, sIdx) => {
+                const isTop = sIdx === 0;
+                const t = temperatures[idx];
+                const tColor = getTempColor(t);
+
+                return (
+                  <div
+                    key={idx}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "4px 8px",
+                      borderRadius: 4,
+                      background: isTop ? "rgba(245, 158, 11, 0.15)" : "rgba(255, 255, 255, 0.03)",
+                      border: isTop ? "1px solid rgba(245, 158, 11, 0.4)" : "1px solid rgba(255, 255, 255, 0.05)"
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      {isTop && (
+                        <span style={{ fontSize: 9, fontWeight: 700, color: "#F59E0B" }}>
+                          TOP ▶
+                        </span>
+                      )}
+                      <span style={{ fontSize: 11, fontFamily: "var(--font-mono)", color: "var(--txt-bright, #F0F6FC)" }}>
+                        Day {idx}
+                      </span>
+                    </div>
+                    <span style={{ fontSize: 12, fontFamily: "var(--font-mono)", fontWeight: 700, color: tColor.text }}>
+                      {t}°
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Wait Days Result Array */}
+        <div style={{ background: "var(--bg-canvas, #0D1117)", borderRadius: 8, padding: 10, border: "1px solid var(--border-subtle, #21262D)" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+            <span style={{ fontSize: 11, fontWeight: 600, color: "#34D399" }}>
+              Answer / Wait Days [ ]:
+            </span>
+            <span style={{ fontSize: 9, fontFamily: "var(--font-mono)", color: "var(--txt-dim, #8B949E)" }}>
+              {result.length} entries
+            </span>
+          </div>
+          <div style={{ display: "flex", gap: 4, overflowX: "auto", paddingBottom: 4 }}>
+            {temperatures.map((_, idx) => {
+              const val = result && result[idx] !== undefined ? result[idx] : 0;
+              const hasVal = val > 0;
+              return (
+                <div
+                  key={idx}
+                  style={{
+                    minWidth: 32,
+                    textAlign: "center",
+                    padding: "4px 2px",
+                    borderRadius: 4,
+                    background: hasVal ? "rgba(16, 185, 129, 0.15)" : "transparent",
+                    border: hasVal ? "1px solid rgba(16, 185, 129, 0.4)" : "1px solid rgba(255, 255, 255, 0.07)"
+                  }}
+                >
+                  <div style={{ fontSize: 8, color: "var(--txt-dim, #8B949E)" }}>{idx}</div>
+                  <div style={{ fontSize: 12, fontFamily: "var(--font-mono)", fontWeight: 700, color: hasVal ? "#34D399" : "var(--txt-dim, #6E7681)" }}>
+                    {val}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+//  TRACE — LeetCode 1288: Remove Covered Intervals Visualizer
+// ─────────────────────────────────────────────────────────────
+
+export function DiagrammaticCoveredIntervals({
+  intervals = [],
+  currentIndex = null,
+  maxRight = 0,
+  count = 0,
+  currentInterval = null
+}) {
+  if (!Array.isArray(intervals) || intervals.length === 0) return null;
+
+  // Flatten coordinates to calculate number line domain
+  const allCoords = [];
+  intervals.forEach(iv => {
+    if (Array.isArray(iv) && iv.length >= 2) {
+      allCoords.push(Number(iv[0]), Number(iv[1]));
+    }
+  });
+  if (allCoords.length === 0) return null;
+
+  const minX = Math.min(0, ...allCoords);
+  const maxX = Math.max(10, ...allCoords, maxRight) + 1;
+  const range = Math.max(1, maxX - minX);
+
+  // Classify each interval as KEPT, COVERED, CURRENT, or PENDING
+  let rollingMaxRight = 0;
+  const processed = intervals.map((iv, idx) => {
+    if (!Array.isArray(iv) || iv.length < 2) return null;
+    const [start, end] = iv;
+    const isCurrent = idx === currentIndex;
+    const isPast = currentIndex !== null ? idx < currentIndex : true;
+    const isFuture = currentIndex !== null ? idx > currentIndex : false;
+
+    // In optimal greedy sort (start asc, end desc):
+    // If end <= rollingMaxRight, it is covered
+    const isCovered = isPast && end <= rollingMaxRight;
+    const isKept = isPast && !isCovered;
+
+    if (isPast && end > rollingMaxRight) {
+      rollingMaxRight = end;
+    }
+
+    return {
+      index: idx,
+      start,
+      end,
+      isCurrent,
+      isPast,
+      isFuture,
+      isCovered,
+      isKept
+    };
+  }).filter(Boolean);
+
+  const coveredCount = processed.filter(p => p.isCovered).length;
+  const keptCount = count || processed.filter(p => p.isKept).length;
+
+  // Active decision explanation
+  let decisionInfo = null;
+  if (currentIndex !== null && currentIndex < processed.length) {
+    const cur = processed[currentIndex];
+    const isCoveredNow = cur.end <= maxRight;
+    if (isCoveredNow) {
+      decisionInfo = {
+        covered: true,
+        text: `Interval [${cur.start}, ${cur.end}] is COVERED! Since start (${cur.start}) >= previous starts and end (${cur.end}) <= maxRight (${maxRight}), a prior interval completely encloses it.`
+      };
+    } else {
+      decisionInfo = {
+        covered: false,
+        text: `Interval [${cur.start}, ${cur.end}] is KEPT! End (${cur.end}) > maxRight (${maxRight}) extends the boundary. count becomes ${count || keptCount + 1}, new maxRight will be ${cur.end}.`
+      };
+    }
+  }
+
+  // Generate tick markers
+  const tickStep = range > 20 ? 5 : range > 10 ? 2 : 1;
+  const ticks = [];
+  for (let x = minX; x <= maxX; x += tickStep) {
+    ticks.push(x);
+  }
+
+  return (
+    <div className="ds-block" style={{ marginBottom: 24, border: "1px solid var(--border-subtle, #21262D)", borderRadius: 10, padding: 14, background: "var(--bg-raised, #1C2128)" }}>
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8, marginBottom: 14 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ fontSize: 13, fontWeight: 700, color: "var(--txt-bright, #F0F6FC)" }}>
+            Interval Elimination: Remove Covered Intervals <span style={{ color: "#38D9C5" }}>#1288</span>
+          </span>
+          <span style={{ fontSize: 10, padding: "2px 8px", background: "rgba(56, 217, 197, 0.15)", color: "#38D9C5", borderRadius: 4, fontWeight: 600 }}>
+            Greedy Boundary Tracking
+          </span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+          <span style={{ fontSize: 10, fontFamily: "var(--font-mono)", padding: "2px 8px", background: "var(--bg-canvas, #0D1117)", borderRadius: 4, border: "1px solid var(--border-subtle, #21262D)", color: "var(--txt-dim, #8B949E)" }}>
+            Total: <strong style={{ color: "var(--txt-bright, #F0F6FC)" }}>{intervals.length}</strong>
+          </span>
+          <span style={{ fontSize: 10, fontFamily: "var(--font-mono)", padding: "2px 8px", background: "rgba(16, 185, 129, 0.15)", borderRadius: 4, border: "1px solid rgba(16, 185, 129, 0.4)", color: "#34D399" }}>
+            Remaining: <strong>{keptCount}</strong>
+          </span>
+          <span style={{ fontSize: 10, fontFamily: "var(--font-mono)", padding: "2px 8px", background: "rgba(239, 68, 68, 0.15)", borderRadius: 4, border: "1px solid rgba(239, 68, 68, 0.4)", color: "#F87171" }}>
+            Covered: <strong>{coveredCount}</strong>
+          </span>
+          <span style={{ fontSize: 10, fontFamily: "var(--font-mono)", padding: "2px 8px", background: "rgba(56, 217, 197, 0.15)", borderRadius: 4, border: "1px solid rgba(56, 217, 197, 0.4)", color: "#38D9C5" }}>
+            maxRight: <strong>{maxRight}</strong>
+          </span>
+        </div>
+      </div>
+
+      {/* Decision Banner */}
+      {decisionInfo && (
+        <div
+          style={{
+            padding: "8px 12px",
+            marginBottom: 14,
+            borderRadius: 6,
+            fontSize: 12,
+            fontFamily: "var(--font-mono)",
+            fontWeight: 600,
+            background: decisionInfo.covered ? "rgba(239, 68, 68, 0.15)" : "rgba(16, 185, 129, 0.15)",
+            border: decisionInfo.covered ? "1px solid rgba(239, 68, 68, 0.4)" : "1px solid rgba(16, 185, 129, 0.4)",
+            color: decisionInfo.covered ? "#FCA5A5" : "#6EE7B7"
+          }}
+        >
+          {decisionInfo.text}
+        </div>
+      )}
+
+      {/* Number Line Track */}
+      <div style={{ position: "relative", padding: "10px 0 20px 0", background: "var(--bg-canvas, #0D1117)", borderRadius: 8, border: "1px solid var(--border-subtle, #21262D)" }}>
+        {/* Ticks Row */}
+        <div style={{ position: "relative", height: 20, margin: "0 20px 10px 20px", borderBottom: "1px solid rgba(255, 255, 255, 0.15)" }}>
+          {ticks.map(t => {
+            const leftPct = ((t - minX) / range) * 100;
+            return (
+              <div
+                key={t}
+                style={{
+                  position: "absolute",
+                  left: `${leftPct}%`,
+                  bottom: 0,
+                  transform: "translateX(-50%)",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center"
+                }}
+              >
+                <span style={{ fontSize: 9, fontFamily: "var(--font-mono)", color: "var(--txt-dim, #8B949E)", marginBottom: 2 }}>
+                  {t}
+                </span>
+                <div style={{ width: 1, height: 4, background: "rgba(255, 255, 255, 0.3)" }} />
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Intervals Container with maxRight vertical line */}
+        <div style={{ position: "relative", margin: "0 20px", minHeight: processed.length * 36 }}>
+          {/* maxRight vertical guideline */}
+          {maxRight > minX && (
+            <div
+              style={{
+                position: "absolute",
+                top: 0,
+                bottom: 0,
+                left: `${((maxRight - minX) / range) * 100}%`,
+                width: 2,
+                background: "#38D9C5",
+                boxShadow: "0 0 8px #38D9C5",
+                zIndex: 10,
+                pointerEvents: "none"
+              }}
+            >
+              <div
+                style={{
+                  position: "absolute",
+                  top: -18,
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  fontSize: 9,
+                  fontFamily: "var(--font-mono)",
+                  fontWeight: 700,
+                  color: "#38D9C5",
+                  background: "rgba(9, 11, 14, 0.9)",
+                  padding: "1px 4px",
+                  borderRadius: 3,
+                  border: "1px solid #38D9C5",
+                  whiteSpace: "nowrap"
+                }}
+              >
+                maxRight: {maxRight}
+              </div>
+            </div>
+          )}
+
+          {/* Interval Bars */}
+          {processed.map(p => {
+            const leftPct = ((p.start - minX) / range) * 100;
+            const widthPct = Math.max(3, ((p.end - p.start) / range) * 100);
+
+            return (
+              <div
+                key={p.index}
+                style={{
+                  position: "relative",
+                  height: 30,
+                  marginBottom: 6,
+                  display: "flex",
+                  alignItems: "center"
+                }}
+              >
+                {/* Interval Bar */}
+                <div
+                  style={{
+                    position: "absolute",
+                    left: `${leftPct}%`,
+                    width: `${widthPct}%`,
+                    height: 24,
+                    borderRadius: 6,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "0 8px",
+                    fontFamily: "var(--font-mono)",
+                    fontSize: 11,
+                    fontWeight: 700,
+                    boxSizing: "border-box",
+                    transition: "all 0.2s ease",
+                    background: p.isCurrent
+                      ? "rgba(56, 217, 197, 0.25)"
+                      : p.isCovered
+                        ? "rgba(239, 68, 68, 0.18)"
+                        : p.isKept
+                          ? "rgba(16, 185, 129, 0.2)"
+                          : "rgba(255, 255, 255, 0.05)",
+                    border: p.isCurrent
+                      ? "2px solid #38D9C5"
+                      : p.isCovered
+                        ? "1.5px dashed #EF4444"
+                        : p.isKept
+                          ? "1.5px solid #10B981"
+                          : "1px solid rgba(255, 255, 255, 0.1)",
+                    color: p.isCurrent
+                      ? "#38D9C5"
+                      : p.isCovered
+                        ? "#F87171"
+                        : p.isKept
+                          ? "#34D399"
+                          : "var(--txt-dim, #8B949E)",
+                    textDecoration: p.isCovered ? "line-through" : "none",
+                    boxShadow: p.isCurrent ? "0 0 10px rgba(56, 217, 197, 0.35)" : "none"
+                  }}
+                  title={`[${p.start}, ${p.end}] - ${p.isCurrent ? "Current" : p.isCovered ? "Covered" : p.isKept ? "Kept" : "Pending"}`}
+                >
+                  <span style={{ fontSize: 9 }}>{p.start}</span>
+                  <span style={{ fontSize: 10 }}>[{p.start}, {p.end}]</span>
+                  <span style={{ fontSize: 9 }}>{p.end}</span>
+                </div>
+
+                {/* Right Badge */}
+                <div style={{ position: "absolute", right: 0, fontSize: 10, fontFamily: "var(--font-mono)", fontWeight: 600 }}>
+                  {p.isCurrent ? (
+                    <span style={{ color: "#38D9C5", padding: "1px 6px", background: "rgba(56, 217, 197, 0.15)", borderRadius: 3 }}>
+                      EVALUATING
+                    </span>
+                  ) : p.isCovered ? (
+                    <span style={{ color: "#F87171", padding: "1px 6px", background: "rgba(239, 68, 68, 0.15)", borderRadius: 3 }}>
+                      ✗ COVERED
+                    </span>
+                  ) : p.isKept ? (
+                    <span style={{ color: "#34D399", padding: "1px 6px", background: "rgba(16, 185, 129, 0.15)", borderRadius: 3 }}>
+                      ✓ KEPT
+                    </span>
+                  ) : (
+                    <span style={{ color: "var(--txt-dim, #8B949E)" }}>
+                      QUEUED
+                    </span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}

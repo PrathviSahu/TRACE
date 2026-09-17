@@ -781,8 +781,55 @@ export const PRESET_SOLUTIONS = {
   739: {
     name: "Daily Temperatures",
     description: "Monotonic decreasing stack of indices. Pop when warmer day found.",
-    code: "class Solution {\n    public int[] dailyTemperatures(int[] temperatures) {\n        int n = temperatures.length;\n        int[] result = new int[n];\n        int[] stack = new int[n];\n        int top = 0;\n        for (int i = 0; i < n; i++) {\n            while (top > 0 && temperatures[stack[top - 1]] < temperatures[i]) {\n                top--;\n                int idx = stack[top];\n                result[idx] = i - idx;\n            }\n            stack[top] = i;\n            top++;\n        }\n        return result;\n    }\n}",
-    inputs: {"temperatures":"[73,74,75,71,69,72,76,73]"}
+    code: `class Solution {
+    public int[] dailyTemperatures(int[] temperatures) {
+        int n = temperatures.length;
+        int[] result = new int[n];
+        Stack<Integer> stack = new Stack<>();
+        for (int i = 0; i < n; i++) {
+            while (!stack.isEmpty() && temperatures[stack.peek()] < temperatures[i]) {
+                int prev = stack.pop();
+                result[prev] = i - prev;
+            }
+            stack.push(i);
+        }
+        return result;
+    }
+}`,
+    inputs: { temperatures: "[73, 74, 75, 71, 69, 72, 76, 73]" }
+  },
+
+  1288: {
+    name: "Remove Covered Intervals",
+    description: "Sort intervals by start ascending (end descending on tie). Count intervals with end > maxRight.",
+    code: `class Solution {
+    public int removeCoveredIntervals(int[][] intervals) {
+        int n = intervals.length;
+        // Sort intervals: start ascending, end descending for ties
+        for (int i = 0; i < n - 1; i++) {
+            for (int j = 0; j < n - i - 1; j++) {
+                if (intervals[j][0] > intervals[j + 1][0] || 
+                   (intervals[j][0] == intervals[j + 1][0] && intervals[j][1] < intervals[j + 1][1])) {
+                    int[] temp = intervals[j];
+                    intervals[j] = intervals[j + 1];
+                    intervals[j + 1] = temp;
+                }
+            }
+        }
+        int count = 0;
+        int maxRight = 0;
+        for (int i = 0; i < n; i++) {
+            int start = intervals[i][0];
+            int end = intervals[i][1];
+            if (end > maxRight) {
+                count++;
+                maxRight = end;
+            }
+        }
+        return count;
+    }
+}`,
+    inputs: { intervals: "[[1, 4], [3, 6], [2, 8]]" }
   },
 
   567: {
