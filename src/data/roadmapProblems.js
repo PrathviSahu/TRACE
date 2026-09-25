@@ -24,6 +24,9 @@ export const ROADMAP_PROBLEMS = {
     { id: 240, name: "Search a 2D Matrix II",                         difficulty: "medium", url: "https://leetcode.com/problems/search-a-2d-matrix-ii/" },
     { id: 287, name: "Find the Duplicate Number",                     difficulty: "medium", url: "https://leetcode.com/problems/find-the-duplicate-number/" },
     { id: 560, name: "Subarray Sum Equals K",                         difficulty: "medium", url: "https://leetcode.com/problems/subarray-sum-equals-k/" },
+{ id: 80,  name: "Remove Duplicates from Sorted Array II",        difficulty: "medium", url: "https://leetcode.com/problems/remove-duplicates-from-sorted-array-ii/" },
+    { id: 274, name: "H-Index",                                       difficulty: "medium", url: "https://leetcode.com/problems/h-index/" },
+
   ],
   "Strings": [
     { id: 3,   name: "Longest Substring Without Repeating Characters", difficulty: "medium", url: "https://leetcode.com/problems/longest-substring-without-repeating-characters/" },
@@ -40,6 +43,16 @@ export const ROADMAP_PROBLEMS = {
     { id: 49,  name: "Group Anagrams",                             difficulty: "medium", url: "https://leetcode.com/problems/group-anagrams/" },
     { id: 459, name: "Repeated Substring Pattern",                  difficulty: "easy",   url: "https://leetcode.com/problems/repeated-substring-pattern/" },
 { id: 647, name: "Palindromic Substrings",                      difficulty: "medium", url: "https://leetcode.com/problems/palindromic-substrings/" },
+
+{ id: 6,   name: "Zigzag Conversion",                            difficulty: "medium", url: "https://leetcode.com/problems/zigzag-conversion/" },
+    { id: 12,  name: "Integer to Roman",                              difficulty: "medium", url: "https://leetcode.com/problems/integer-to-roman/" },
+    { id: 13,  name: "Roman to Integer",                              difficulty: "easy",   url: "https://leetcode.com/problems/roman-to-integer/" },
+    { id: 28,  name: "Find the Index of the First Occurrence in a String", difficulty: "easy", url: "https://leetcode.com/problems/find-the-index-of-the-first-occurrence-in-a-string/" },
+    { id: 58,  name: "Length of Last Word",                           difficulty: "easy",   url: "https://leetcode.com/problems/length-of-last-word/" },
+    { id: 67,  name: "Add Binary",                                    difficulty: "easy",   url: "https://leetcode.com/problems/add-binary/" },
+    { id: 68,  name: "Text Justification",                            difficulty: "hard",   url: "https://leetcode.com/problems/text-justification/" },
+    { id: 290, name: "Word Pattern",                                   difficulty: "easy",   url: "https://leetcode.com/problems/word-pattern/" },
+    { id: 383, name: "Ransom Note",                                    difficulty: "easy",   url: "https://leetcode.com/problems/ransom-note/" },
 
   ],
   "HashMap / HashSet": [
@@ -59,6 +72,10 @@ export const ROADMAP_PROBLEMS = {
     { id: 523, name: "Continuous Subarray Sum",                    difficulty: "medium", url: "https://leetcode.com/problems/continuous-subarray-sum/" },
     { id: 560, name: "Subarray Sum Equals K",                      difficulty: "medium", url: "https://leetcode.com/problems/subarray-sum-equals-k/" },
     { id: 692, name: "Top K Frequent Words",                       difficulty: "medium", url: "https://leetcode.com/problems/top-k-frequent-words/" },
+{ id: 383, name: "Ransom Note",                                    difficulty: "easy",   url: "https://leetcode.com/problems/ransom-note/" },
+    { id: 290, name: "Word Pattern",                                   difficulty: "easy",   url: "https://leetcode.com/problems/word-pattern/" },
+    { id: 228, name: "Summary Ranges",                                 difficulty: "easy",   url: "https://leetcode.com/problems/summary-ranges/" },
+
   ],
   "Two Pointers": [
     { id: 42, name: "Trapping Rain Water", difficulty: "hard", url: "https://leetcode.com/problems/trapping-rain-water/" },
@@ -157,6 +174,9 @@ export const ROADMAP_PROBLEMS = {
     { id: 206, name: "Reverse Linked List",                        difficulty: "easy",   url: "https://leetcode.com/problems/reverse-linked-list/" },
     { id: 234, name: "Palindrome Linked List",                     difficulty: "easy",   url: "https://leetcode.com/problems/palindrome-linked-list/" },
     { id: 876, name: "Middle of the Linked List",                  difficulty: "easy",   url: "https://leetcode.com/problems/middle-of-the-linked-list/" },
+{ id: 86,  name: "Partition List",                               difficulty: "medium", url: "https://leetcode.com/problems/partition-list/" },
+    { id: 109, name: "Convert Sorted List to Binary Search Tree",     difficulty: "medium", url: "https://leetcode.com/problems/convert-sorted-list-to-binary-search-tree/" },
+
   ],
   "Stack": [
     { id: 20,  name: "Valid Parentheses",                          difficulty: "easy",   url: "https://leetcode.com/problems/valid-parentheses/" },
@@ -171,6 +191,10 @@ export const ROADMAP_PROBLEMS = {
     { id: 739, name: "Daily Temperatures",                         difficulty: "medium", url: "https://leetcode.com/problems/daily-temperatures/" },
     { id: 853, name: "Car Fleet",                                  difficulty: "medium", url: "https://leetcode.com/problems/car-fleet/" },
     { id: 901, name: "Online Stock Span",                          difficulty: "medium", url: "https://leetcode.com/problems/online-stock-span/" },
+{ id: 71,  name: "Simplify Path",                                difficulty: "medium", url: "https://leetcode.com/problems/simplify-path/" },
+    { id: 224, name: "Basic Calculator",                              difficulty: "hard",   url: "https://leetcode.com/problems/basic-calculator/" },
+    { id: 394, name: "Decode String",                                 difficulty: "medium", url: "https://leetcode.com/problems/decode-string/" },
+
   ],
   "Queue / Deque": [
     { id: 225, name: "Implement Stack using Queues",               difficulty: "easy",   url: "https://leetcode.com/problems/implement-stack-using-queues/" },
@@ -211,6 +235,14 @@ export const ROADMAP_PROBLEMS = {
 { id: 297,  name: "Serialize and Deserialize Binary Tree",       difficulty: "hard",   url: "https://leetcode.com/problems/serialize-and-deserialize-binary-tree/" },
     { id: 1448, name: "Count Good Nodes in Binary Tree",             difficulty: "medium", url: "https://leetcode.com/problems/count-good-nodes-in-binary-tree/" },
 
+    { id: 103, name: "Binary Tree Zigzag Level Order Traversal",      difficulty: "medium", url: "https://leetcode.com/problems/binary-tree-zigzag-level-order-traversal/" },
+    { id: 114, name: "Flatten Binary Tree to Linked List",            difficulty: "medium", url: "https://leetcode.com/problems/flatten-binary-tree-to-linked-list/" },
+    { id: 117, name: "Populating Next Right Pointers in Each Node II",difficulty: "medium", url: "https://leetcode.com/problems/populating-next-right-pointers-in-each-node-ii/" },
+    { id: 129, name: "Sum Root to Leaf Numbers",                      difficulty: "medium", url: "https://leetcode.com/problems/sum-root-to-leaf-numbers/" },
+    { id: 173, name: "Binary Tree Iterator",                          difficulty: "medium", url: "https://leetcode.com/problems/binary-search-tree-iterator/" },
+    { id: 222, name: "Count Complete Tree Nodes",                     difficulty: "easy",   url: "https://leetcode.com/problems/count-complete-tree-nodes/" },
+    { id: 637, name: "Average of Levels in Binary Tree",              difficulty: "easy",   url: "https://leetcode.com/problems/average-of-levels-in-binary-tree/" },
+
   ],
   "Binary Search Tree": [
     { id: 98,  name: "Validate Binary Search Tree",                difficulty: "medium", url: "https://leetcode.com/problems/validate-binary-search-tree/" },
@@ -222,6 +254,8 @@ export const ROADMAP_PROBLEMS = {
     { id: 938, name: "Range Sum of BST",                           difficulty: "easy",   url: "https://leetcode.com/problems/range-sum-of-bst/" },
     { id: 1008, name: "Construct Binary Search Tree from Preorder Traversal", difficulty: "medium", url: "https://leetcode.com/problems/construct-binary-search-tree-from-preorder-traversal/" },
     { id: 108, name: "Convert Sorted Array to Binary Search Tree",    difficulty: "easy",   url: "https://leetcode.com/problems/convert-sorted-array-to-binary-search-tree/" },
+
+{ id: 530, name: "Minimum Absolute Difference in BST",           difficulty: "easy",   url: "https://leetcode.com/problems/minimum-absolute-difference-in-bst/" },
 
   ],
   "Heap / Priority Queue": [
@@ -236,6 +270,9 @@ export const ROADMAP_PROBLEMS = {
     { id: 973, name: "K Closest Points to Origin",                 difficulty: "medium", url: "https://leetcode.com/problems/k-closest-points-to-origin/" },
     { id: 1046, name: "Last Stone Weight",                         difficulty: "easy",   url: "https://leetcode.com/problems/last-stone-weight/" },
 { id: 355, name: "Design Twitter",                              difficulty: "medium", url: "https://leetcode.com/problems/design-twitter/" },
+
+{ id: 218, name: "The Skyline Problem",                           difficulty: "hard",   url: "https://leetcode.com/problems/the-skyline-problem/" },
+    { id: 373, name: "Find K Pairs with Smallest Sums",               difficulty: "medium", url: "https://leetcode.com/problems/find-k-pairs-with-smallest-sums/" },
 
   ],
   "Greedy": [
@@ -275,6 +312,9 @@ export const ROADMAP_PROBLEMS = {
 { id: 269, name: "Alien Dictionary",                            difficulty: "hard",   url: "https://leetcode.com/problems/alien-dictionary/" },
     { id: 323, name: "Number of Connected Components in an Undirected Graph", difficulty: "medium", url: "https://leetcode.com/problems/number-of-connected-components-in-an-undirected-graph/" },
     { id: 329, name: "Longest Increasing Path in a Matrix",          difficulty: "hard",   url: "https://leetcode.com/problems/longest-increasing-path-in-a-matrix/" },
+
+{ id: 399, name: "Evaluate Division",                            difficulty: "medium", url: "https://leetcode.com/problems/evaluate-division/" },
+    { id: 909, name: "Snakes and Ladders",                            difficulty: "medium", url: "https://leetcode.com/problems/snakes-and-ladders/" },
 
   ],
   "Topological Sort": [
@@ -329,6 +369,13 @@ export const ROADMAP_PROBLEMS = {
     { id: 115, name: "Distinct Subsequences",                        difficulty: "hard",   url: "https://leetcode.com/problems/distinct-subsequences/" },
     { id: 312, name: "Burst Balloons",                               difficulty: "hard",   url: "https://leetcode.com/problems/burst-balloons/" },
     { id: 518, name: "Coin Change II",                               difficulty: "medium", url: "https://leetcode.com/problems/coin-change-ii/" },
+
+{ id: 123, name: "Best Time to Buy and Sell Stock III",           difficulty: "hard",   url: "https://leetcode.com/problems/best-time-to-buy-and-sell-stock-iii/" },
+    { id: 188, name: "Best Time to Buy and Sell Stock IV",            difficulty: "hard",   url: "https://leetcode.com/problems/best-time-to-buy-and-sell-stock-iv/" },
+    { id: 221, name: "Maximal Square",                                difficulty: "medium", url: "https://leetcode.com/problems/maximal-square/" },
+    { id: 299, name: "Bulls and Cows",                                difficulty: "medium", url: "https://leetcode.com/problems/bulls-and-cows/" },
+    { id: 330, name: "Patching Array",                                difficulty: "hard",   url: "https://leetcode.com/problems/patching-array/" },
+    { id: 918, name: "Maximum Sum Circular Subarray",                 difficulty: "medium", url: "https://leetcode.com/problems/maximum-sum-circular-subarray/" },
 
   ],
   "Bit Manipulation": [
@@ -409,6 +456,9 @@ export const ROADMAP_PROBLEMS = {
     { id: 698, name: "Partition to K Equal Sum Subsets",           difficulty: "medium", url: "https://leetcode.com/problems/partition-to-k-equal-sum-subsets/" },
     { id: 784, name: "Letter Case Permutation",                    difficulty: "medium", url: "https://leetcode.com/problems/letter-case-permutation/" },
     { id: 980, name: "Unique Paths III",                           difficulty: "hard",   url: "https://leetcode.com/problems/unique-paths-iii/" },
+    { id: 427, name: "Construct Quad Tree",                           difficulty: "medium", url: "https://leetcode.com/problems/construct-quad-tree/" },
+    { id: 433, name: "Minimum Genetic Mutation",                      difficulty: "medium", url: "https://leetcode.com/problems/minimum-genetic-mutation/" },
+
   ],
 };
 
@@ -478,4 +528,23 @@ export const STRIVER_SHEET_IDS = new Set([
   62, 64, 70, 91, 120, 139, 152, 198, 213, 300, 309, 322, 416, 494, 1143,
   // Other Striver
   160, 232, 225, 901, 540, 662, 987,
+]);
+
+export const LEETCODE_150_IDS = new Set([
+  1, 2, 3, 4, 5, 6, 11, 12, 13, 14,
+  15, 17, 19, 20, 21, 22, 23, 25, 26, 27,
+  28, 30, 33, 34, 35, 36, 39, 42, 45, 46,
+  48, 49, 53, 54, 55, 56, 57, 58, 61, 62,
+  63, 64, 67, 68, 70, 71, 72, 73, 74, 75,
+  76, 78, 79, 80, 82, 84, 86, 88, 92, 97,
+  98, 100, 101, 102, 103, 104, 105, 106, 108, 109,
+  112, 114, 117, 120, 121, 122, 123, 124, 125, 127,
+  128, 129, 130, 133, 134, 135, 136, 137, 138, 139,
+  146, 148, 150, 151, 153, 162, 167, 169, 173, 188,
+  189, 190, 191, 199, 200, 202, 205, 207, 208, 209,
+  210, 211, 212, 215, 218, 219, 221, 222, 224, 228,
+  230, 236, 238, 239, 242, 260, 274, 289, 290, 295,
+  297, 299, 300, 309, 312, 322, 330, 373, 383, 392,
+  394, 399, 402, 427, 433, 452, 502, 518, 530, 637,
+  684, 704, 909, 918
 ]);

@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTraceStore } from '../store/traceStore.js';
-import { ALL_PROBLEMS, TOPICS, TOPIC_ORDER, ROADMAP_PROBLEMS, BLIND_75_IDS, NEETCODE_150_IDS, STRIVER_SHEET_IDS } from '../data/roadmapProblems.js';
+import { ALL_PROBLEMS, TOPICS, TOPIC_ORDER, ROADMAP_PROBLEMS, BLIND_75_IDS, NEETCODE_150_IDS, STRIVER_SHEET_IDS, LEETCODE_150_IDS } from '../data/roadmapProblems.js';
 import { getProblemTemplate, PRESET_SOLUTIONS } from '../data/problemTemplates.js';
 import { getProblemDescription } from '../data/problemDescriptions.js';
 import ProblemModal from '../components/ProblemModal.jsx';
@@ -119,6 +119,7 @@ export default function ProblemsPage() {
       if (studyList === "blind75" && !BLIND_75_IDS.has(p.id)) return false;
       if (studyList === "neetcode150" && !NEETCODE_150_IDS.has(p.id)) return false;
       if (studyList === "striver" && !STRIVER_SHEET_IDS.has(p.id)) return false;
+      if (studyList === "lc150" && !LEETCODE_150_IDS.has(p.id)) return false;
 
       return true;
     });
@@ -130,6 +131,7 @@ export default function ProblemsPage() {
     if (studyList === "blind75") targetSet = BLIND_75_IDS;
     else if (studyList === "neetcode150") targetSet = NEETCODE_150_IDS;
     else if (studyList === "striver") targetSet = STRIVER_SHEET_IDS;
+    else if (studyList === "lc150") targetSet = LEETCODE_150_IDS;
     if (!targetSet) return null;
 
     let totalInApp = 0;
@@ -279,7 +281,8 @@ export default function ProblemsPage() {
           { id: "All", label: "All Curated" },
           { id: "blind75", label: "🔥 Blind 75" },
           { id: "neetcode150", label: "⚡ NeetCode 150" },
-          { id: "striver", label: "🎯 Striver SDE" }
+          { id: "striver", label: "🎯 Striver SDE" },
+          { id: "lc150", label: "📘 LeetCode 150" }
         ].map(sl => (
           <button
             key={sl.id}

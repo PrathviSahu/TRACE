@@ -305,8 +305,10 @@ export function detectSlidingWindow(stepData, arrays = []) {
   const vars = stepData.variables;
 
   // 1. Find left and right window pointers first to determine search space bounds
-  const leftNames = ['left', 'l', 'start', 'windowStart', 'i', 'p1', 'low'];
-  const rightNames = ['right', 'r', 'end', 'windowEnd', 'j', 'p2', 'high'];
+  // Only unambiguous two-pointer/sliding-window variable names.
+  // 'i', 'j', 'l', 'r' removed — they are generic loop counters used everywhere.
+  const leftNames = ['left', 'start', 'windowStart', 'lo', 'p1', 'low', 'lo'];
+  const rightNames = ['right', 'end', 'windowEnd', 'hi', 'p2', 'high', 'hi'];
 
   let leftPtr = null;
   for (const name of leftNames) {
