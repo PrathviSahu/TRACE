@@ -39,6 +39,8 @@ export const ROADMAP_PROBLEMS = {
     { id: 409, name: "Longest Palindrome",                         difficulty: "easy",   url: "https://leetcode.com/problems/longest-palindrome/" },
     { id: 49,  name: "Group Anagrams",                             difficulty: "medium", url: "https://leetcode.com/problems/group-anagrams/" },
     { id: 459, name: "Repeated Substring Pattern",                  difficulty: "easy",   url: "https://leetcode.com/problems/repeated-substring-pattern/" },
+{ id: 647, name: "Palindromic Substrings",                      difficulty: "medium", url: "https://leetcode.com/problems/palindromic-substrings/" },
+
   ],
   "HashMap / HashSet": [
     { id: 1,   name: "Two Sum",                                    difficulty: "easy",   url: "https://leetcode.com/problems/two-sum/" },
@@ -100,6 +102,8 @@ export const ROADMAP_PROBLEMS = {
     { id: 930, name: "Binary Subarrays With Sum",                  difficulty: "medium", url: "https://leetcode.com/problems/binary-subarrays-with-sum/" },
     { id: 1248, name: "Count Number of Nice Subarrays",            difficulty: "medium", url: "https://leetcode.com/problems/count-number-of-nice-subarrays/" },
     { id: 2270, name: "Number of Ways to Split Array",             difficulty: "medium", url: "https://leetcode.com/problems/number-of-ways-to-split-array/" },
+{ id: 1480, name: "Running Sum of 1d Array",                    difficulty: "easy",   url: "https://leetcode.com/problems/running-sum-of-1d-array/" },
+
   ],
   "Sorting": [
     { id: 56,  name: "Merge Intervals",                            difficulty: "medium", url: "https://leetcode.com/problems/merge-intervals/" },
@@ -129,6 +133,9 @@ export const ROADMAP_PROBLEMS = {
     { id: 1011, name: "Capacity To Ship Packages Within D Days",   difficulty: "medium", url: "https://leetcode.com/problems/capacity-to-ship-packages-within-d-days/" },
     { id: 1482, name: "Minimum Number of Days to Make m Bouquets", difficulty: "medium", url: "https://leetcode.com/problems/minimum-number-of-days-to-make-m-bouquets/" },
     { id: 2517, name: "Maximum Tastiness of Candy Basket",         difficulty: "medium", url: "https://leetcode.com/problems/maximum-tastiness-of-candy-basket/" },
+{ id: 4,   name: "Median of Two Sorted Arrays",                 difficulty: "hard",   url: "https://leetcode.com/problems/median-of-two-sorted-arrays/" },
+    { id: 981, name: "Time Based Key-Value Store",                   difficulty: "medium", url: "https://leetcode.com/problems/time-based-key-value-store/" },
+
   ],
   "Linked List": [
     { id: 2,   name: "Add Two Numbers",                            difficulty: "medium", url: "https://leetcode.com/problems/add-two-numbers/" },
@@ -201,6 +208,9 @@ export const ROADMAP_PROBLEMS = {
     { id: 236, name: "Lowest Common Ancestor of a Binary Tree",    difficulty: "medium", url: "https://leetcode.com/problems/lowest-common-ancestor-of-a-binary-tree/" },
     { id: 543, name: "Diameter of Binary Tree",                    difficulty: "easy",   url: "https://leetcode.com/problems/diameter-of-binary-tree/" },
     { id: 1026, name: "Maximum Difference Between Node and Ancestor", difficulty: "medium", url: "https://leetcode.com/problems/maximum-difference-between-node-and-ancestor/" },
+{ id: 297,  name: "Serialize and Deserialize Binary Tree",       difficulty: "hard",   url: "https://leetcode.com/problems/serialize-and-deserialize-binary-tree/" },
+    { id: 1448, name: "Count Good Nodes in Binary Tree",             difficulty: "medium", url: "https://leetcode.com/problems/count-good-nodes-in-binary-tree/" },
+
   ],
   "Binary Search Tree": [
     { id: 98,  name: "Validate Binary Search Tree",                difficulty: "medium", url: "https://leetcode.com/problems/validate-binary-search-tree/" },
@@ -225,6 +235,8 @@ export const ROADMAP_PROBLEMS = {
     { id: 703, name: "Kth Largest Element in a Stream",            difficulty: "easy",   url: "https://leetcode.com/problems/kth-largest-element-in-a-stream/" },
     { id: 973, name: "K Closest Points to Origin",                 difficulty: "medium", url: "https://leetcode.com/problems/k-closest-points-to-origin/" },
     { id: 1046, name: "Last Stone Weight",                         difficulty: "easy",   url: "https://leetcode.com/problems/last-stone-weight/" },
+{ id: 355, name: "Design Twitter",                              difficulty: "medium", url: "https://leetcode.com/problems/design-twitter/" },
+
   ],
   "Greedy": [
     { id: 45,  name: "Jump Game II",                               difficulty: "medium", url: "https://leetcode.com/problems/jump-game-ii/" },
@@ -241,6 +253,8 @@ export const ROADMAP_PROBLEMS = {
     { id: 846, name: "Hand of Straights",                          difficulty: "medium", url: "https://leetcode.com/problems/hand-of-straights/" },
     { id: 1029, name: "Two City Scheduling",                       difficulty: "medium", url: "https://leetcode.com/problems/two-city-scheduling/" },
     { id: 2870, name: "Minimum Number of Operations to Make Array Empty", difficulty: "medium", url: "https://leetcode.com/problems/minimum-number-of-operations-to-make-array-empty/" },
+{ id: 1899, name: "Merge Triplets to Form Target Triplet",       difficulty: "medium", url: "https://leetcode.com/problems/merge-triplets-to-form-target-triplet/" },
+
   ],
   "Graph BFS / DFS": [
     { id: 130, name: "Surrounded Regions",                         difficulty: "medium", url: "https://leetcode.com/problems/surrounded-regions/" },
@@ -257,6 +271,10 @@ export const ROADMAP_PROBLEMS = {
     { id: 417, name: "Pacific Atlantic Water Flow",                 difficulty: "medium", url: "https://leetcode.com/problems/pacific-atlantic-water-flow/" },
     { id: 572, name: "Subtree of Another Tree",                    difficulty: "easy",   url: "https://leetcode.com/problems/subtree-of-another-tree/" },
     { id: 1020, name: "Number of Enclaves",                        difficulty: "medium", url: "https://leetcode.com/problems/number-of-enclaves/" },
+
+{ id: 269, name: "Alien Dictionary",                            difficulty: "hard",   url: "https://leetcode.com/problems/alien-dictionary/" },
+    { id: 323, name: "Number of Connected Components in an Undirected Graph", difficulty: "medium", url: "https://leetcode.com/problems/number-of-connected-components-in-an-undirected-graph/" },
+    { id: 329, name: "Longest Increasing Path in a Matrix",          difficulty: "hard",   url: "https://leetcode.com/problems/longest-increasing-path-in-a-matrix/" },
 
   ],
   "Topological Sort": [
@@ -305,6 +323,13 @@ export const ROADMAP_PROBLEMS = {
     { id: 740, name: "Delete and Earn",                            difficulty: "medium", url: "https://leetcode.com/problems/delete-and-earn/" },
     { id: 746, name: "Min Cost Climbing Stairs",                   difficulty: "easy",   url: "https://leetcode.com/problems/min-cost-climbing-stairs/" },
     { id: 931, name: "Minimum Falling Path Sum",                   difficulty: "medium", url: "https://leetcode.com/problems/minimum-falling-path-sum/" },
+{ id: 10,  name: "Regular Expression Matching",                  difficulty: "hard",   url: "https://leetcode.com/problems/regular-expression-matching/" },
+    { id: 72,  name: "Edit Distance",                                difficulty: "medium", url: "https://leetcode.com/problems/edit-distance/" },
+    { id: 97,  name: "Interleaving String",                          difficulty: "medium", url: "https://leetcode.com/problems/interleaving-string/" },
+    { id: 115, name: "Distinct Subsequences",                        difficulty: "hard",   url: "https://leetcode.com/problems/distinct-subsequences/" },
+    { id: 312, name: "Burst Balloons",                               difficulty: "hard",   url: "https://leetcode.com/problems/burst-balloons/" },
+    { id: 518, name: "Coin Change II",                               difficulty: "medium", url: "https://leetcode.com/problems/coin-change-ii/" },
+
   ],
   "Bit Manipulation": [
     { id: 136, name: "Single Number",                              difficulty: "easy",   url: "https://leetcode.com/problems/single-number/" },
@@ -330,6 +355,8 @@ export const ROADMAP_PROBLEMS = {
     { id: 498, name: "Diagonal Traverse",                          difficulty: "medium", url: "https://leetcode.com/problems/diagonal-traverse/" },
     { id: 695, name: "Max Area of Island",                         difficulty: "medium", url: "https://leetcode.com/problems/max-area-of-island/" },
     { id: 994, name: "Rotting Oranges",                            difficulty: "medium", url: "https://leetcode.com/problems/rotting-oranges/" },
+{ id: 36,  name: "Valid Sudoku",                                difficulty: "medium", url: "https://leetcode.com/problems/valid-sudoku/" },
+
   ],
   "Intervals": [
     { id: 56,  name: "Merge Intervals",                            difficulty: "medium", url: "https://leetcode.com/problems/merge-intervals/" },
@@ -341,6 +368,8 @@ export const ROADMAP_PROBLEMS = {
     { id: 763, name: "Partition Labels",                           difficulty: "medium", url: "https://leetcode.com/problems/partition-labels/" },
     { id: 986, name: "Interval List Intersections",                difficulty: "medium", url: "https://leetcode.com/problems/interval-list-intersections/" },
     { id: 1288, name: "Remove Covered Intervals",                  difficulty: "medium", url: "https://leetcode.com/problems/remove-covered-intervals/" },
+{ id: 1851, name: "Minimum Interval to Include Each Query",      difficulty: "hard",   url: "https://leetcode.com/problems/minimum-interval-to-include-each-query/" },
+
   ],
   "Trie": [
     { id: 208, name: "Implement Trie (Prefix Tree)",               difficulty: "medium", url: "https://leetcode.com/problems/implement-trie-prefix-tree/" },
