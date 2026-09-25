@@ -197,7 +197,7 @@ Return ONLY a valid JSON object matching this schema with NO markdown code block
 }`;
 
   const data = await callGeminiApi({
-    contents: [{ parts: [{ text: prompt }] }],
+    contents: [{ role: 'user', parts: [{ text: prompt }] }],
     generationConfig: { temperature: 0.2, maxOutputTokens: 2500 }
   });
 
@@ -226,7 +226,7 @@ Return ONLY a valid JSON object matching this schema:
 }`;
 
   const data = await callGeminiApi({
-    contents: [{ parts: [{ text: prompt }] }],
+    contents: [{ role: 'user', parts: [{ text: prompt }] }],
     generationConfig: { temperature: 0.2, maxOutputTokens: 1500 }
   });
 
