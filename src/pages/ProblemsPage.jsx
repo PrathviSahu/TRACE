@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTraceStore } from '../store/traceStore.js';
-import { ALL_PROBLEMS, TOPICS, TOPIC_ORDER, ROADMAP_PROBLEMS } from '../data/roadmapProblems.js';
+import { ALL_PROBLEMS, TOPICS, TOPIC_ORDER, ROADMAP_PROBLEMS, BLIND_75_IDS, NEETCODE_150_IDS, STRIVER_SHEET_IDS } from '../data/roadmapProblems.js';
 import { getProblemTemplate, PRESET_SOLUTIONS } from '../data/problemTemplates.js';
 import { getProblemDescription } from '../data/problemDescriptions.js';
 import ProblemModal from '../components/ProblemModal.jsx';
