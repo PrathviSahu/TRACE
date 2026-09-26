@@ -222,9 +222,12 @@ export function normalizeStepData(stepData, prevStepData = null) {
     explanation = { lineText, summary, bullets, why };
   }
 
-  const slidingWindow = detectSlidingWindow(stepData, arrays);
   const dailyTemperatures = detectDailyTemperatures(stepData, arrays, collections, prevStepData);
   const coveredIntervals = detectCoveredIntervals(stepData, arrays, prevStepData);
+  // Domain-specific specialized visualizers take precedence over sliding window
+  const slidingWindow = (dailyTemperatures || coveredIntervals)
+    ? null
+    : detectSlidingWindow(stepData, arrays);
   const hasData = arrays.length > 0 || collections.length > 0 || objects.length > 0 || !!slidingWindow || !!dailyTemperatures || !!coveredIntervals;
 
   return {
@@ -304,38 +307,47 @@ export function detectSlidingWindow(stepData, arrays = []) {
   if (!stepData || !stepData.variables) return null;
   const vars = stepData.variables;
 
-  // 1. Find left and right window pointers first to determine search space bounds
-  // Only unambiguous two-pointer/sliding-window variable names.
-  // 'i', 'j', 'l', 'r' removed — they are generic loop counters used everywhere.
-  const leftNames = ['left', 'start', 'windowStart', 'lo', 'p1', 'low', 'lo'];
-  const rightNames = ['right', 'end', 'windowEnd', 'hi', 'p2', 'high', 'hi'];
+  // 1. Sliding window / two pointers MUST be an explicitly declared matching pair.
+  // Both pointers must exist simultaneously in the active variables scope.
+  // Generic single variables (like "i", "j") or unpaired pointers ("start" without "end")
+  // MUST NEVER trigger a false sliding window.
+  const POINTER_PAIRS = [
+    { left: "left", right: "right" },
+    { left: "l", right: "r" },
+    { left: "windowStart", right: "windowEnd" },
+    { left: "winStart", right: "winEnd" },
+    { left: "wStart", right: "wEnd" },
+    { left: "start", right: "end" },
+    { left: "p1", right: "p2" }
+  ];
 
   let leftPtr = null;
-  for (const name of leftNames) {
-    const rawVal = vars[name]?.value;
-    if (rawVal !== undefined && typeof rawVal === 'number' && Number.isInteger(rawVal)) {
-      leftPtr = { name, index: rawVal };
+  let rightPtr = null;
+
+  for (const pair of POINTER_PAIRS) {
+    const lVal = vars[pair.left]?.value;
+    const rVal = vars[pair.right]?.value;
+
+    if (
+      lVal !== undefined &&
+      typeof lVal === "number" &&
+      Number.isInteger(lVal) &&
+      rVal !== undefined &&
+      typeof rVal === "number" &&
+      Number.isInteger(rVal)
+    ) {
+      leftPtr = { name: pair.left, index: lVal };
+      rightPtr = { name: pair.right, index: rVal };
       break;
     }
   }
 
-  let rightPtr = null;
-  for (const name of rightNames) {
-    const rawVal = vars[name]?.value;
-    if (rawVal !== undefined && typeof rawVal === 'number' && Number.isInteger(rawVal)) {
-      if (!leftPtr || name !== leftPtr.name) {
-        rightPtr = { name, index: rawVal };
-        break;
-      }
-    }
-  }
+  // BOTH pointers MUST be present and valid
+  if (!leftPtr || !rightPtr) return null;
 
-  // Need at least one window pointer
-  if (!leftPtr && !rightPtr) return null;
+  const maxPtrVal = Math.max(leftPtr.index, rightPtr.index);
 
-  const maxPtrVal = Math.max(leftPtr?.index ?? 0, rightPtr?.index ?? 0);
-
-  // 2. Find sequence (string or array)
+  // 2. Find sequence (string or 1D array)
   let seqName = null;
   let seqType = null;
   let seqItems = [];
@@ -344,7 +356,7 @@ export function detectSlidingWindow(stepData, arrays = []) {
   const stringCandidates = [];
   for (const [vName, vInfo] of Object.entries(vars)) {
     const val = vInfo?.value;
-    if (typeof val === 'string' && val.length >= 2) {
+    if (typeof val === "string" && val.length >= 2) {
       stringCandidates.push({ name: vName, val });
     }
   }
@@ -356,22 +368,27 @@ export function detectSlidingWindow(stepData, arrays = []) {
       if (aFits && !bFits) return -1;
       if (!aFits && bFits) return 1;
       if (a.val.length !== b.val.length) return b.val.length - a.val.length;
-      const preferred = ['s', 's2', 'text', 'str', 'string', 'word', 'pattern', 's1'];
+      const preferred = ["s", "s2", "text", "str", "string", "word", "pattern", "s1"];
       const aRank = preferred.indexOf(a.name) !== -1 ? preferred.indexOf(a.name) : 99;
       const bRank = preferred.indexOf(b.name) !== -1 ? preferred.indexOf(b.name) : 99;
       return aRank - bRank;
     });
     seqName = stringCandidates[0].name;
-    seqType = 'string';
-    seqItems = stringCandidates[0].val.split('');
+    seqType = "string";
+    seqItems = stringCandidates[0].val.split("");
   }
 
-  // If no string sequence found, check arrays (skip frequency/counter arrays)
+  // If no string sequence found, check arrays (skip frequency/counter arrays, output arrays, and 2D arrays)
   if (!seqName && arrays && arrays.length > 0) {
     for (const arr of arrays) {
-      if (!/^(count|counts|freq|frequency|dp|memo)$/i.test(arr.name) && Array.isArray(arr.values) && arr.values.length >= 2) {
+      if (
+        !/^(count|counts|freq|frequency|dp|memo|res|result|ans|answer|output|stack|visited|tails)$/i.test(arr.name) &&
+        Array.isArray(arr.values) &&
+        arr.values.length >= 2 &&
+        !Array.isArray(arr.values[0])
+      ) {
         seqName = arr.name;
-        seqType = 'array';
+        seqType = "array";
         seqItems = [...arr.values];
         break;
       }
@@ -380,15 +397,25 @@ export function detectSlidingWindow(stepData, arrays = []) {
 
   if (!seqName || seqItems.length === 0) return null;
 
-  const leftIdx = leftPtr ? leftPtr.index : 0;
-  const rightIdx = rightPtr ? rightPtr.index : (seqItems.length - 1);
+  // Pointer indices must be within valid range of the sequence
+  if (
+    leftPtr.index < 0 ||
+    leftPtr.index >= seqItems.length ||
+    rightPtr.index < 0 ||
+    rightPtr.index >= seqItems.length
+  ) {
+    return null;
+  }
+
+  const leftIdx = leftPtr.index;
+  const rightIdx = rightPtr.index;
 
   // Clamp active slice
   const clampedL = Math.max(0, Math.min(leftIdx, seqItems.length - 1));
   const clampedR = Math.max(0, Math.min(rightIdx, seqItems.length - 1));
   const inWindow = rightIdx >= leftIdx && leftIdx >= 0 && rightIdx < seqItems.length;
   const windowItems = inWindow ? seqItems.slice(clampedL, clampedR + 1) : [];
-  const windowStr = seqType === 'string' ? windowItems.join('') : JSON.stringify(windowItems);
+  const windowStr = seqType === "string" ? windowItems.join("") : JSON.stringify(windowItems);
   const windowLen = inWindow ? (rightIdx - leftIdx + 1) : 0;
 
   // Window frequency breakdown
@@ -402,27 +429,27 @@ export function detectSlidingWindow(stepData, arrays = []) {
     }
   }
 
-  const kVal = vars.k?.value !== undefined && typeof vars.k.value === 'number' ? vars.k.value : null;
-  const maxCountVal = vars.maxCount?.value !== undefined && typeof vars.maxCount.value === 'number' ? vars.maxCount.value : null;
-  const maxLenVal = vars.maxLen?.value !== undefined && typeof vars.maxLen.value === 'number' ? vars.maxLen.value : null;
+  const kVal = vars.k?.value !== undefined && typeof vars.k.value === "number" ? vars.k.value : null;
+  const maxCountVal = vars.maxCount?.value !== undefined && typeof vars.maxCount.value === "number" ? vars.maxCount.value : null;
+  const maxLenVal = vars.maxLen?.value !== undefined && typeof vars.maxLen.value === "number" ? vars.maxLen.value : null;
 
   const matchVal = vars.match?.value !== undefined ? vars.match.value : (vars.matches?.value !== undefined ? vars.matches.value : null);
   let isValid = null;
-  let statusText = '';
+  let statusText = "";
   if (kVal !== null) {
     const effectiveMax = currentWindowMaxFreq > 0 ? currentWindowMaxFreq : (maxCountVal || 0);
     const replacements = Math.max(0, windowLen - effectiveMax);
     isValid = replacements <= kVal;
     statusText = isValid
-      ? `Valid Window: ${replacements} replacement${replacements === 1 ? '' : 's'} <= k (${kVal})`
+      ? `Valid Window: ${replacements} replacement${replacements === 1 ? "" : "s"} <= k (${kVal})`
       : `Invalid Window: ${replacements} replacements > k (${kVal}) → Shrink Left`;
   } else if (matchVal !== null) {
-    if (typeof matchVal === 'boolean') {
+    if (typeof matchVal === "boolean") {
       isValid = matchVal;
       statusText = matchVal ? `Permutation Found in Window "${windowStr}"!` : `Window "${windowStr}" — Frequency Mismatch`;
-    } else if (typeof matchVal === 'number') {
+    } else if (typeof matchVal === "number") {
       isValid = matchVal === 26;
-      statusText = isValid ? `All 26 Characters Match — Permutation Found!` : `Matches: ${matchVal}/26`;
+      statusText = isValid ? "All 26 Characters Match — Permutation Found!" : `Matches: ${matchVal}/26`;
     }
   } else if (maxCountVal !== null) {
     statusText = `Max Count: ${maxCountVal}`;
@@ -448,9 +475,6 @@ export function detectSlidingWindow(stepData, arrays = []) {
   };
 }
 
-/**
- * Detects whether current execution state corresponds to Daily Temperatures (LeetCode 739).
- */
 function detectDailyTemperatures(stepData, arrays, collections, prevStepData = null) {
   if (!stepData) return null;
   let tempArr = arrays.find(a => a.name.toLowerCase() === "temperatures");

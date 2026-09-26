@@ -1561,7 +1561,7 @@ export function DiagrammaticSlidingWindow({
                     whiteSpace: "nowrap"
                   }}
                 >
-                  {isLeft && isRight ? "L,R" : isLeft ? "L" : "R"}
+                  {isLeft && isRight ? `${leftName},${rightName}` : isLeft ? leftName : rightName}
                 </span>
               </div>
             );
