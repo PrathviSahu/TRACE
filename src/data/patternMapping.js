@@ -228,6 +228,7 @@ export const CURATED_PROBLEM_PATTERNS = {
   "142": { topic: "Linked List", patterns: ["Fast & Slow Pointers"] },
   "146": { topic: "Linked List", patterns: ["Doubly Linked List + HashMap", "Hash Table Design"] },
   "160": { topic: "Linked List", patterns: ["Two Pointers"] },
+  "203": { topic: "Linked List", patterns: ["Sentinel / Dummy Node", "In-place Traversal"] },
   "206": { topic: "Linked List", patterns: ["In-place Reversal"] },
   "234": { topic: "Linked List", patterns: ["Fast & Slow Pointers", "In-place Reversal"] },
 

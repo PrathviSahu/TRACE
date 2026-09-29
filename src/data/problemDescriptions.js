@@ -215,6 +215,32 @@ export const PROBLEM_DESCRIPTIONS = {
     companies: ["Facebook", "Amazon", "Apple"]
   },
 
+  203: {
+    title: "Remove Linked List Elements",
+    difficulty: "easy",
+    category: "Linked List",
+    acceptance: "48.2%",
+    description: `Given the <code>head</code> of a linked list and an integer <code>val</code>, remove all the nodes of the linked list that has <code>Node.val == val</code>, and return <em>the new head</em>.`,
+    examples: [
+      { input: "head = [1,2,6,3,4,5,6], val = 6", output: "[1,2,3,4,5]", explanation: "All nodes with value 6 are removed from the list." },
+      { input: "head = [], val = 1", output: "[]", explanation: "The list is empty, so return empty list." },
+      { input: "head = [7,7,7,7], val = 7", output: "[]", explanation: "All nodes have value 7, so removing them leaves an empty list." }
+    ],
+    constraints: [
+      "The number of nodes in the list is in the range [0, 10⁴].",
+      "1 ≤ Node.val ≤ 50",
+      "0 ≤ val ≤ 50"
+    ],
+    hints: [
+      "A dummy node pointing to the head simplifies handling edge cases where the head itself must be removed.",
+      "Traverse with a pointer curr. If curr.next.val == val, bypass it: curr.next = curr.next.next.",
+      "Only advance curr = curr.next when the next node does not match val."
+    ],
+    complexity: { time: "O(n)", space: "O(1)" },
+    topics: ["Linked List", "Recursion"],
+    companies: ["Amazon", "Microsoft", "Apple", "Facebook", "Google"]
+  },
+
   206: {
     title: "Reverse Linked List",
     difficulty: "easy",

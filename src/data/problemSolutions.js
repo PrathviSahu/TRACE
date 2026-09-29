@@ -437,6 +437,69 @@ export const PROBLEM_SOLUTIONS = {
     ]
   },
 
+  203: {
+    approaches: [
+      {
+        name: "Optimal",
+        label: "O(n) — Sentinel / Dummy Node",
+        idea: "Initialize a dummy node pointing to head. Traverse the list with curr; if curr.next.val == val, bypass it by setting curr.next = curr.next.next. Otherwise advance curr.",
+        complexity: { time: "O(n)", space: "O(1)" },
+        code: `class Solution {
+    public ListNode removeElements(ListNode head, int val) {
+        ListNode dummy = new ListNode(0);
+        dummy.next = head;
+        ListNode curr = dummy;
+        while (curr.next != null) {
+            if (curr.next.val == val) {
+                curr.next = curr.next.next;
+            } else {
+                curr = curr.next;
+            }
+        }
+        return dummy.next;
+    }
+}`
+      },
+      {
+        name: "Recursive",
+        label: "O(n) — Recursive",
+        idea: "Recursively process the rest of the list first. If the current node value matches val, return head.next; otherwise attach head.next and return head.",
+        complexity: { time: "O(n)", space: "O(n) — call stack" },
+        code: `class Solution {
+    public ListNode removeElements(ListNode head, int val) {
+        if (head == null) return null;
+        head.next = removeElements(head.next, val);
+        return head.val == val ? head.next : head;
+    }
+}`
+      },
+      {
+        name: "Two Pointers",
+        label: "O(n) — Two Pointers (Prev & Curr)",
+        idea: "Handle the head removals first while head != null and head.val == val. Then use prev and curr pointers to unlink matching nodes.",
+        complexity: { time: "O(n)", space: "O(1)" },
+        code: `class Solution {
+    public ListNode removeElements(ListNode head, int val) {
+        while (head != null && head.val == val) {
+            head = head.next;
+        }
+        ListNode curr = head;
+        ListNode prev = null;
+        while (curr != null) {
+            if (curr.val == val) {
+                prev.next = curr.next;
+            } else {
+                prev = curr;
+            }
+            curr = curr.next;
+        }
+        return head;
+    }
+}`
+      }
+    ]
+  },
+
   206: {
     approaches: [
       {
