@@ -140,7 +140,8 @@ export const DSA_PATTERNS = [
 export const CURATED_PROBLEM_PATTERNS = {
   // ── Problem #1 & #2 (Audit test cases)
   "1":   { topic: "Hash Table", patterns: ["Complement Lookup"] },
-  "2":   { topic: "Linked List", patterns: ["Merge Two Lists", "Linked List Traversal"] },
+  "2":   { topic: "Linked List", patterns: ["Sentinel / Dummy Node", "Math / Carry"] },
+  "24":  { topic: "Linked List", patterns: ["Sentinel / Dummy Node", "Pointer Manipulation"] },
 
   // ── Arrays, Two Pointers & Prefix/Suffix
   "3":   { topic: "String", patterns: ["Sliding Window"] },
@@ -230,7 +231,9 @@ export const CURATED_PROBLEM_PATTERNS = {
   "160": { topic: "Linked List", patterns: ["Two Pointers"] },
   "203": { topic: "Linked List", patterns: ["Sentinel / Dummy Node", "In-place Traversal"] },
   "206": { topic: "Linked List", patterns: ["In-place Reversal"] },
+  "83":  { topic: "Linked List", patterns: ["In-place Traversal"] },
   "234": { topic: "Linked List", patterns: ["Fast & Slow Pointers", "In-place Reversal"] },
+  "876": { topic: "Linked List", patterns: ["Fast & Slow Pointers"] },
 
   // ── Trees & BST
   "98":  { topic: "Tree", patterns: ["BST Inorder", "Tree DFS / Recursion"] },

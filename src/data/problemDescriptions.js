@@ -241,6 +241,111 @@ export const PROBLEM_DESCRIPTIONS = {
     companies: ["Amazon", "Microsoft", "Apple", "Facebook", "Google"]
   },
 
+
+  2: {
+    title: "Add Two Numbers",
+    difficulty: "medium",
+    category: "Linked List",
+    acceptance: "42.5%",
+    description: `You are given two <strong>non-empty</strong> linked lists representing two non-negative integers. The digits are stored in <strong>reverse order</strong>, and each of their nodes contains a single digit. Add the two numbers and return the sum as a linked list.`,
+    examples: [
+      { input: "l1 = [2,4,3], l2 = [5,6,4]", output: "[7,0,8]", explanation: "342 + 465 = 807." },
+      { input: "l1 = [0], l2 = [0]", output: "[0]", explanation: "0 + 0 = 0." },
+      { input: "l1 = [9,9,9,9,9,9,9], l2 = [9,9,9,9]", output: "[8,9,9,9,0,0,0,1]", explanation: "" }
+    ],
+    constraints: ["The number of nodes in each linked list is in the range [1, 100].", "0 ≤ Node.val ≤ 9", "It is guaranteed that the list represents a number that does not have leading zeros."],
+    hints: ["Keep track of the carry using carry = sum / 10.", "Create a new node with sum % 10 at each step.", "Don't forget to append a final node if carry > 0 after both lists end."],
+    complexity: { time: "O(max(m, n))", space: "O(1)" },
+    topics: ["Linked List", "Math", "Recursion"],
+    companies: ["Amazon", "Apple", "Google", "Facebook", "Microsoft", "Bloomberg"]
+  },
+
+  24: {
+    title: "Swap Nodes in Pairs",
+    difficulty: "medium",
+    category: "Linked List",
+    acceptance: "64.2%",
+    description: `Given a linked list, swap every two adjacent nodes and return its head. You must solve the problem without modifying the values in the list's nodes (i.e., only nodes themselves may be changed.)`,
+    examples: [
+      { input: "head = [1,2,3,4]", output: "[2,1,4,3]", explanation: "" },
+      { input: "head = []", output: "[]", explanation: "" },
+      { input: "head = [1]", output: "[1]", explanation: "" }
+    ],
+    constraints: ["The number of nodes in the list is in the range [0, 100].", "0 ≤ Node.val ≤ 100"],
+    hints: ["Use a dummy node before head.", "Identify first = prev.next and second = prev.next.next.", "Rewire links: first.next = second.next; second.next = first; prev.next = second."],
+    complexity: { time: "O(n)", space: "O(1)" },
+    topics: ["Linked List", "Recursion"],
+    companies: ["Amazon", "Microsoft", "Apple", "Facebook"]
+  },
+
+  83: {
+    title: "Remove Duplicates from Sorted List",
+    difficulty: "easy",
+    category: "Linked List",
+    acceptance: "52.4%",
+    description: `Given the <code>head</code> of a sorted linked list, <em>delete all duplicates such that each element appears only once</em>. Return <em>the linked list <strong>sorted</strong> as well</em>.`,
+    examples: [
+      { input: "head = [1,1,2]", output: "[1,2]", explanation: "The duplicate 1 is removed." },
+      { input: "head = [1,1,2,3,3]", output: "[1,2,3]", explanation: "Duplicates 1 and 3 are removed." }
+    ],
+    constraints: ["The number of nodes in the list is in the range [0, 300].", "-100 ≤ Node.val ≤ 100", "The list is guaranteed to be sorted in ascending order."],
+    hints: ["Since the list is sorted, duplicate nodes must be adjacent.", "Traverse with curr; if curr.val == curr.next.val, skip curr.next by setting curr.next = curr.next.next."],
+    complexity: { time: "O(n)", space: "O(1)" },
+    topics: ["Linked List"],
+    companies: ["Amazon", "Microsoft", "Apple", "Google"]
+  },
+
+  160: {
+    title: "Intersection of Two Linked Lists",
+    difficulty: "easy",
+    category: "Linked List",
+    acceptance: "57.3%",
+    description: `Given the heads of two singly linked-lists <code>headA</code> and <code>headB</code>, return <em>the node at which the two lists intersect</em>. If the two linked lists have no intersection at all, return <code>null</code>.`,
+    examples: [
+      { input: "intersectVal = 8, listA = [4,1,8,4,5], listB = [5,6,1,8,4,5], skipA = 2, skipB = 3", output: "Intersected at '8'", explanation: "The intersected node's value is 8." },
+      { input: "intersectVal = 2, listA = [1,9,1,2,4], listB = [3,2,4], skipA = 3, skipB = 1", output: "Intersected at '2'", explanation: "The intersected node's value is 2." },
+      { input: "intersectVal = 0, listA = [2,6,4], listB = [1,5], skipA = 3, skipB = 2", output: "No intersection", explanation: "From the head of A, it reads [2,6,4]. From the head of B, it reads [1,5]. There is no intersection." }
+    ],
+    constraints: ["The number of nodes of listA is in the m.", "The number of nodes of listB is in the n.", "1 ≤ m, n ≤ 3 * 10⁴", "1 ≤ Node.val ≤ 10⁵"],
+    hints: ["Use two pointers starting at headA and headB.", "When a pointer reaches the end, redirect it to the head of the other list.", "They will meet at the intersection node after at most 2 passes (lenA + lenB)."],
+    complexity: { time: "O(m + n)", space: "O(1)" },
+    topics: ["Linked List", "Two Pointers", "Hash Table"],
+    companies: ["Amazon", "Microsoft", "Apple", "Bloomberg", "Google"]
+  },
+
+  234: {
+    title: "Palindrome Linked List",
+    difficulty: "easy",
+    category: "Linked List",
+    acceptance: "51.8%",
+    description: `Given the <code>head</code> of a singly linked list, return <code>true</code> <em>if it is a palindrome or</em> <code>false</code> <em>otherwise</em>.`,
+    examples: [
+      { input: "head = [1,2,2,1]", output: "true", explanation: "The list reads the same forwards and backwards." },
+      { input: "head = [1,2]", output: "false", explanation: "The list is not a palindrome." }
+    ],
+    constraints: ["The number of nodes in the list is in the range [1, 10⁵].", "0 ≤ Node.val ≤ 9"],
+    hints: ["Find the middle node using slow and fast pointers.", "Reverse the second half of the linked list.", "Compare the first half with the reversed second half node by node."],
+    complexity: { time: "O(n)", space: "O(1)" },
+    topics: ["Linked List", "Two Pointers", "Stack", "Recursion"],
+    companies: ["Amazon", "Microsoft", "Facebook", "Apple"]
+  },
+
+  876: {
+    title: "Middle of the Linked List",
+    difficulty: "easy",
+    category: "Linked List",
+    acceptance: "77.5%",
+    description: `Given the <code>head</code> of a singly linked list, return <em>the middle node of the linked list</em>. If there are two middle nodes, return <strong>the second middle</strong> node.`,
+    examples: [
+      { input: "head = [1,2,3,4,5]", output: "[3,4,5]", explanation: "The middle node of the list is node 3." },
+      { input: "head = [1,2,3,4,5,6]", output: "[4,5,6]", explanation: "Since the list has two middle nodes with values 3 and 4, we return the second one." }
+    ],
+    constraints: ["The number of nodes in the list is in the range [1, 100].", "1 ≤ Node.val ≤ 100"],
+    hints: ["Use two pointers (fast and slow).", "Slow moves 1 step, fast moves 2 steps.", "When fast reaches the end, slow is at the middle."],
+    complexity: { time: "O(n)", space: "O(1)" },
+    topics: ["Linked List", "Two Pointers"],
+    companies: ["Amazon", "Adobe", "Apple", "Google"]
+  },
   206: {
     title: "Reverse Linked List",
     difficulty: "easy",

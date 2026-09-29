@@ -773,8 +773,20 @@ export const PRESET_SOLUTIONS = {
   206: {
     name: "Reverse Linked List",
     description: "Iterative reversal: maintain prev and curr pointers, redirect links.",
-    code: "class Solution {\n    public ListNode reverseList() {\n        // Build: 1 -> 2 -> 3 -> 4 -> 5\n        ListNode head = new ListNode(1);\n        head.next = new ListNode(2);\n        head.next.next = new ListNode(3);\n        head.next.next.next = new ListNode(4);\n        head.next.next.next.next = new ListNode(5);\n        return reverse(head);\n    }\n    ListNode reverse(ListNode head) {\n        ListNode prev = null;\n        ListNode curr = head;\n        while (curr != null) {\n            ListNode next = curr.next;\n            curr.next = prev;\n            prev = curr;\n            curr = next;\n        }\n        return prev;\n    }\n}",
-    inputs: {}
+    code: `class Solution {
+    public ListNode reverseList(ListNode head) {
+        ListNode prev = null;
+        ListNode curr = head;
+        while (curr != null) {
+            ListNode next = curr.next;
+            curr.next = prev;
+            prev = curr;
+            curr = next;
+        }
+        return prev;
+    }
+}`,
+    inputs: { head: "[1, 2, 3, 4, 5]" }
   },
 
   215: {
@@ -1048,6 +1060,175 @@ export const PRESET_SOLUTIONS = {
     code: "class Solution {\n    public int longestCommonSubsequence(String text1, String text2) {\n        int m = text1.length();\n        int n = text2.length();\n        int[][] dp = new int[m + 1][n + 1];\n        \n        for (int i = 1; i <= m; i++) {\n            char c1 = text1.charAt(i - 1);\n            for (int j = 1; j <= n; j++) {\n                char c2 = text2.charAt(j - 1);\n                if (c1 == c2) {\n                    dp[i][j] = dp[i - 1][j - 1] + 1;\n                } else {\n                    int top = dp[i - 1][j];\n                    int left = dp[i][j - 1];\n                    dp[i][j] = (top > left) ? top : left;\n                }\n            }\n        }\n        return dp[m][n];\n    }\n}",
     inputs: {"text1":"abcde","text2":"ace"}
   },
+
+  2: {
+    name: "Add Two Numbers",
+    description: "Simulate elementary addition with carry across two digit linked lists.",
+    code: `class Solution {
+    public ListNode addTwoNumbers(ListNode l1, ListNode l2) {
+        ListNode dummy = new ListNode(0);
+        ListNode curr = dummy;
+        int carry = 0;
+        
+        while (l1 != null || l2 != null || carry != 0) {
+            int sum = carry;
+            if (l1 != null) {
+                sum += l1.val;
+                l1 = l1.next;
+            }
+            if (l2 != null) {
+                sum += l2.val;
+                l2 = l2.next;
+            }
+            curr.next = new ListNode(sum % 10);
+            curr = curr.next;
+            carry = sum / 10;
+        }
+        return dummy.next;
+    }
+}`,
+    inputs: { l1: "[2, 4, 3]", l2: "[5, 6, 4]" }
+  },
+
+  24: {
+    name: "Swap Nodes in Pairs",
+    description: "Dummy node pointer manipulation: swap adjacent pairs in-place.",
+    code: `class Solution {
+    public ListNode swapPairs(ListNode head) {
+        ListNode dummy = new ListNode(0);
+        dummy.next = head;
+        ListNode curr = dummy;
+        
+        while (curr.next != null && curr.next.next != null) {
+            ListNode first = curr.next;
+            ListNode second = curr.next.next;
+            first.next = second.next;
+            second.next = first;
+            curr.next = second;
+            curr = first;
+        }
+        return dummy.next;
+    }
+}`,
+    inputs: { head: "[1, 2, 3, 4]" }
+  },
+
+  83: {
+    name: "Remove Duplicates from Sorted List",
+    description: "Linear scan: compare current node with next, skip duplicate values.",
+    code: `class Solution {
+    public ListNode deleteDuplicates(ListNode head) {
+        ListNode curr = head;
+        while (curr != null && curr.next != null) {
+            if (curr.val == curr.next.val) {
+                curr.next = curr.next.next;
+            } else {
+                curr = curr.next;
+            }
+        }
+        return head;
+    }
+}`,
+    inputs: { head: "[1, 1, 2, 3, 3]" }
+  },
+
+  160: {
+    name: "Intersection of Two Linked Lists",
+    description: "Two-pointer traversal: switch heads at tail to align traversal lengths.",
+    code: `class Solution {
+    public ListNode getIntersectionNode() {
+        // Shared intersection: 8 -> 4 -> 5
+        ListNode c1 = new ListNode(8);
+        ListNode c2 = new ListNode(4);
+        ListNode c3 = new ListNode(5);
+        c1.next = c2;
+        c2.next = c3;
+
+        // List A: 4 -> 1 -> [8 -> 4 -> 5]
+        ListNode headA = new ListNode(4);
+        ListNode a2 = new ListNode(1);
+        headA.next = a2;
+        a2.next = c1;
+
+        // List B: 5 -> 6 -> 1 -> [8 -> 4 -> 5]
+        ListNode headB = new ListNode(5);
+        ListNode b2 = new ListNode(6);
+        ListNode b3 = new ListNode(1);
+        headB.next = b2;
+        b2.next = b3;
+        b3.next = c1;
+
+        return findIntersection(headA, headB);
+    }
+
+    ListNode findIntersection(ListNode headA, ListNode headB) {
+        ListNode pA = headA;
+        ListNode pB = headB;
+        while (pA != pB) {
+            pA = (pA == null) ? headB : pA.next;
+            pB = (pB == null) ? headA : pB.next;
+        }
+        return pA;
+    }
+}`,
+    inputs: {}
+  },
+
+  234: {
+    name: "Palindrome Linked List",
+    description: "Find middle with fast/slow pointers, reverse second half, and compare values.",
+    code: `class Solution {
+    public boolean isPalindrome(ListNode head) {
+        if (head == null || head.next == null) return true;
+        
+        // 1. Find end of first half
+        ListNode slow = head;
+        ListNode fast = head;
+        while (fast != null && fast.next != null) {
+            slow = slow.next;
+            fast = fast.next.next;
+        }
+        
+        // 2. Reverse second half
+        ListNode prev = null;
+        ListNode curr = slow;
+        while (curr != null) {
+            ListNode next = curr.next;
+            curr.next = prev;
+            prev = curr;
+            curr = next;
+        }
+        
+        // 3. Check palindrome
+        ListNode p1 = head;
+        ListNode p2 = prev;
+        while (p2 != null) {
+            if (p1.val != p2.val) return false;
+            p1 = p1.next;
+            p2 = p2.next;
+        }
+        return true;
+    }
+}`,
+    inputs: { head: "[1, 2, 2, 1]" }
+  },
+
+  876: {
+    name: "Middle of the Linked List",
+    description: "Tortoise and Hare algorithm: slow moves 1 step, fast moves 2 steps.",
+    code: `class Solution {
+    public ListNode middleNode(ListNode head) {
+        ListNode slow = head;
+        ListNode fast = head;
+        while (fast != null && fast.next != null) {
+            slow = slow.next;
+            fast = fast.next.next;
+        }
+        return slow;
+    }
+}`,
+    inputs: { head: "[1, 2, 3, 4, 5]" }
+  },
 };
 
 /**
@@ -1185,6 +1366,22 @@ class Solution {
     }
 }`;
     inputs = { nums: '[2, 1, 5, 1, 3, 2]' };
+  } else if (topic.includes('Linked List')) {
+    code = `// ${idHeader}: ${rawName} (${difficulty})
+// Topic: ${topic}
+// URL: ${url}
+
+class Solution {
+    public ListNode ${methodName}(ListNode head) {
+        ListNode curr = head;
+        while (curr != null) {
+            // Live traversal inspection: watch curr advance
+            curr = curr.next;
+        }
+        return head;
+    }
+}`;
+    inputs = { head: '[1, 2, 3, 4, 5]' };
   } else if (topic.includes('Dynamic Programming') || topic.includes('Recursion')) {
     code = `// ${idHeader}: ${rawName} (${difficulty})
 // Topic: ${topic}

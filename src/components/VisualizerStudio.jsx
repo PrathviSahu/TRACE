@@ -494,8 +494,16 @@ export default function VisualizerStudio() {
                   const isTreeNode = obj.className === "TreeNode" || obj.type === "TreeNode" || (obj.value && (obj.value.__type === "TreeNode" || obj.value.left !== undefined || obj.value.right !== undefined));
 
                   if (isListNode) {
-                    // Prefer head or render first occurrence
-                    if (renderedLists.size > 0 && obj.name !== "head") return null;
+                    // If dummy is already rendered, skip duplicate pointers to the same chain
+                    if (renderedLists.has("dummy") && obj.name !== "dummy") return null;
+                    // In list reversal, when prev has nodes, prefer prev over depleted old head
+                    if (renderedLists.has("prev") && obj.name === "head") return null;
+                    // Max 2 primary lists rendered (e.g. l1 & l2, or prev & curr)
+                    if (renderedLists.size >= 2) return null;
+
+                    const PREFERRED_LIST_NAMES = ["dummy", "l1", "l2", "list1", "list2", "headA", "headB", "prev", "head", "curr"];
+                    if (!PREFERRED_LIST_NAMES.includes(obj.name) && renderedLists.size > 0) return null;
+
                     renderedLists.add(obj.name);
                     return (
                       <DiagrammaticLinkedList

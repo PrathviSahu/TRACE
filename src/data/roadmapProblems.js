@@ -168,6 +168,7 @@ export const ROADMAP_PROBLEMS = {
     { id: 148, name: "Sort List",                                  difficulty: "medium", url: "https://leetcode.com/problems/sort-list/" },
     { id: 61,  name: "Rotate List",                                  difficulty: "medium", url: "https://leetcode.com/problems/rotate-list/" },
     { id: 82,  name: "Remove Duplicates from Sorted List II",        difficulty: "medium", url: "https://leetcode.com/problems/remove-duplicates-from-sorted-list-ii/" },
+    { id: 83,  name: "Remove Duplicates from Sorted List",           difficulty: "easy",   url: "https://leetcode.com/problems/remove-duplicates-from-sorted-list/" },
     { id: 146, name: "LRU Cache",                                    difficulty: "medium", url: "https://leetcode.com/problems/lru-cache/" },
     { id: 430, name: "Flatten a Multilevel Doubly Linked List",      difficulty: "medium", url: "https://leetcode.com/problems/flatten-a-multilevel-doubly-linked-list/" },
     { id: 160, name: "Intersection of Two Linked Lists",           difficulty: "easy",   url: "https://leetcode.com/problems/intersection-of-two-linked-lists/" },

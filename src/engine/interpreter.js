@@ -212,10 +212,27 @@ class Interpreter {
       if (raw === undefined) {
         args.push(p.ptype?.isArray ? [] : 0);
       } else {
-        args.push(this.parseInput(raw, p.ptype));
+        let parsed = this.parseInput(raw, p.ptype);
+        if (p.ptype?.base === "ListNode" && Array.isArray(parsed)) {
+          parsed = this.arrayToListNode(parsed);
+        }
+        args.push(parsed);
       }
     }
     return args;
+  }
+
+  arrayToListNode(arr) {
+    if (!Array.isArray(arr) || arr.length === 0) return null;
+    const dummy = { __type: "ListNode", fields: { val: 0, next: null }, val: 0, next: null, args: [0] };
+    let curr = dummy;
+    for (const v of arr) {
+      const node = { __type: "ListNode", fields: { val: v, next: null }, val: v, next: null, args: [v] };
+      curr.next = node;
+      curr.fields.next = node;
+      curr = node;
+    }
+    return dummy.next;
   }
 
   parseInput(raw, ptype) {

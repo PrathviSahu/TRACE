@@ -3014,6 +3014,299 @@ export const PROBLEM_SOLUTIONS = {
               "code": "class Solution {\n    public int removeCoveredIntervals(int[][] intervals) {\n        int n = intervals.length;\n        for (int i = 0; i < n - 1; i++) {\n            for (int j = 0; j < n - i - 1; j++) {\n                if (intervals[j][0] > intervals[j + 1][0] || \n                   (intervals[j][0] == intervals[j + 1][0] && intervals[j][1] < intervals[j + 1][1])) {\n                    int[] temp = intervals[j];\n                    intervals[j] = intervals[j + 1];\n                    intervals[j + 1] = temp;\n                }\n            }\n        }\n        int count = 0;\n        int maxRight = 0;\n        for (int i = 0; i < n; i++) {\n            int start = intervals[i][0];\n            int end = intervals[i][1];\n            if (end > maxRight) {\n                count++;\n                maxRight = end;\n            }\n        }\n        return count;\n    }\n}"
           }
       ]
+  },
+
+  2: {
+    approaches: [
+      {
+        name: "Optimal",
+        label: "O(max(m, n)) — Elementary Addition with Dummy Node",
+        idea: "Iterate through both lists simultaneously while either list has nodes or a non-zero carry remains. Compute sum = val1 + val2 + carry, create a new node with sum % 10, update carry = sum / 10, and advance pointers.",
+        complexity: { time: "O(max(m, n))", space: "O(1) extra" },
+        code: `class Solution {
+    public ListNode addTwoNumbers(ListNode l1, ListNode l2) {
+        ListNode dummy = new ListNode(0);
+        ListNode curr = dummy;
+        int carry = 0;
+        while (l1 != null || l2 != null || carry != 0) {
+            int sum = carry;
+            if (l1 != null) {
+                sum += l1.val;
+                l1 = l1.next;
+            }
+            if (l2 != null) {
+                sum += l2.val;
+                l2 = l2.next;
+            }
+            curr.next = new ListNode(sum % 10);
+            curr = curr.next;
+            carry = sum / 10;
+        }
+        return dummy.next;
+    }
+}`
+      },
+      {
+        name: "Recursive",
+        label: "O(max(m, n)) — Recursive with Carry",
+        idea: "Add corresponding nodes recursively, propagating the carry to the next recursive invocation. Base case: if both lists are null and carry is 0, return null.",
+        complexity: { time: "O(max(m, n))", space: "O(max(m, n)) — call stack" },
+        code: `class Solution {
+    public ListNode addTwoNumbers(ListNode l1, ListNode l2) {
+        return helper(l1, l2, 0);
+    }
+    ListNode helper(ListNode l1, ListNode l2, int carry) {
+        if (l1 == null && l2 == null && carry == 0) return null;
+        int sum = carry;
+        if (l1 != null) {
+            sum += l1.val;
+            l1 = l1.next;
+        }
+        if (l2 != null) {
+            sum += l2.val;
+            l2 = l2.next;
+        }
+        ListNode node = new ListNode(sum % 10);
+        node.next = helper(l1, l2, sum / 10);
+        return node;
+    }
+}`
+      }
+    ]
+  },
+
+  24: {
+    approaches: [
+      {
+        name: "Optimal",
+        label: "O(n) — Iterative with Sentinel / Dummy Node",
+        idea: "Use a dummy node before head. In each iteration, swap the next two nodes (first and second) by rewiring pointers: curr.next = second, first.next = second.next, second.next = first, and advance curr to first.",
+        complexity: { time: "O(n)", space: "O(1)" },
+        code: `class Solution {
+    public ListNode swapPairs(ListNode head) {
+        ListNode dummy = new ListNode(0);
+        dummy.next = head;
+        ListNode curr = dummy;
+        while (curr.next != null && curr.next.next != null) {
+            ListNode first = curr.next;
+            ListNode second = curr.next.next;
+            first.next = second.next;
+            second.next = first;
+            curr.next = second;
+            curr = first;
+        }
+        return dummy.next;
+    }
+}`
+      },
+      {
+        name: "Recursive",
+        label: "O(n) — Recursive Pair Swapping",
+        idea: "If head or head.next is null, return head. Otherwise, let second = head.next. Recursively call swapPairs on second.next and attach to head.next, then point second.next to head, returning second.",
+        complexity: { time: "O(n)", space: "O(n) — call stack" },
+        code: `class Solution {
+    public ListNode swapPairs(ListNode head) {
+        if (head == null || head.next == null) return head;
+        ListNode first = head;
+        ListNode second = head.next;
+        first.next = swapPairs(second.next);
+        second.next = first;
+        return second;
+    }
+}`
+      }
+    ]
+  },
+
+  83: {
+    approaches: [
+      {
+        name: "Optimal",
+        label: "O(n) — In-place Single Pointer Scan",
+        idea: "Since the linked list is sorted, duplicate values are adjacent. Traverse with curr: while curr.next != null, if curr.val == curr.next.val, skip the duplicate by setting curr.next = curr.next.next. Otherwise advance curr.",
+        complexity: { time: "O(n)", space: "O(1)" },
+        code: `class Solution {
+    public ListNode deleteDuplicates(ListNode head) {
+        ListNode curr = head;
+        while (curr != null && curr.next != null) {
+            if (curr.val == curr.next.val) {
+                curr.next = curr.next.next;
+            } else {
+                curr = curr.next;
+            }
+        }
+        return head;
+    }
+}`
+      },
+      {
+        name: "Recursive",
+        label: "O(n) — Recursive",
+        idea: "Recursively delete duplicates from head.next. If head.val equals head.next.val, skip head and return head.next; otherwise keep head and return head.",
+        complexity: { time: "O(n)", space: "O(n) — call stack" },
+        code: `class Solution {
+    public ListNode deleteDuplicates(ListNode head) {
+        if (head == null || head.next == null) return head;
+        head.next = deleteDuplicates(head.next);
+        return head.val == head.next.val ? head.next : head;
+    }
+}`
+      }
+    ]
+  },
+
+  160: {
+    approaches: [
+      {
+        name: "Optimal",
+        label: "O(m + n) — Two Pointers (Cross-Switch Traversal)",
+        idea: "Initialize pointers pA = headA and pB = headB. When each pointer reaches the end of its list, redirect it to the head of the other list. They will traverse equal total distances (lenA + lenB) and meet either at the intersection node or at null.",
+        complexity: { time: "O(m + n)", space: "O(1)" },
+        code: `class Solution {
+    public ListNode getIntersectionNode(ListNode headA, ListNode headB) {
+        if (headA == null || headB == null) return null;
+        ListNode pA = headA;
+        ListNode pB = headB;
+        while (pA != pB) {
+            pA = (pA == null) ? headB : pA.next;
+            pB = (pB == null) ? headA : pB.next;
+        }
+        return pA;
+    }
+}`
+      },
+      {
+        name: "Better",
+        label: "O(m + n) — Length Difference Alignment",
+        idea: "Find the lengths lenA and lenB of both lists. Advance the pointer of the longer list by |lenA - lenB| steps so both pointers are equidistant from the end, then advance both together until they meet.",
+        complexity: { time: "O(m + n)", space: "O(1)" },
+        code: `class Solution {
+    public ListNode getIntersectionNode(ListNode headA, ListNode headB) {
+        int lenA = 0;
+        ListNode curr = headA;
+        while (curr != null) { lenA++; curr = curr.next; }
+        int lenB = 0;
+        curr = headB;
+        while (curr != null) { lenB++; curr = curr.next; }
+        
+        ListNode pA = headA;
+        ListNode pB = headB;
+        while (lenA > lenB) { pA = pA.next; lenA--; }
+        while (lenB > lenA) { pB = pB.next; lenB--; }
+        while (pA != pB) {
+            pA = pA.next;
+            pB = pB.next;
+        }
+        return pA;
+    }
+}`
+      }
+    ]
+  },
+
+  234: {
+    approaches: [
+      {
+        name: "Optimal",
+        label: "O(n) — Fast & Slow Pointers + In-Place Reversal",
+        idea: "Find the middle of the linked list using fast and slow pointers. Reverse the second half in-place. Compare values from the start and the reversed second half. Returns true if all values match.",
+        complexity: { time: "O(n)", space: "O(1)" },
+        code: `class Solution {
+    public boolean isPalindrome(ListNode head) {
+        if (head == null || head.next == null) return true;
+        ListNode slow = head;
+        ListNode fast = head;
+        while (fast != null && fast.next != null) {
+            slow = slow.next;
+            fast = fast.next.next;
+        }
+        ListNode prev = null;
+        ListNode curr = slow;
+        while (curr != null) {
+            ListNode next = curr.next;
+            curr.next = prev;
+            prev = curr;
+            curr = next;
+        }
+        ListNode p1 = head;
+        ListNode p2 = prev;
+        while (p2 != null) {
+            if (p1.val != p2.val) return false;
+            p1 = p1.next;
+            p2 = p2.next;
+        }
+        return true;
+    }
+}`
+      },
+      {
+        name: "Brute Force",
+        label: "O(n) — Copy to List & Two Pointers",
+        idea: "Traverse the linked list and copy values into an ArrayList. Use two pointers moving inward to verify palindrome property.",
+        complexity: { time: "O(n)", space: "O(n)" },
+        code: `class Solution {
+    public boolean isPalindrome(ListNode head) {
+        List<Integer> vals = new ArrayList<>();
+        ListNode curr = head;
+        while (curr != null) {
+            vals.add(curr.val);
+            curr = curr.next;
+        }
+        int left = 0;
+        int right = vals.size() - 1;
+        while (left < right) {
+            if (!vals.get(left).equals(vals.get(right))) return false;
+            left++;
+            right--;
+        }
+        return true;
+    }
+}`
+      }
+    ]
+  },
+
+  876: {
+    approaches: [
+      {
+        name: "Optimal",
+        label: "O(n) — Fast & Slow Pointers (Tortoise & Hare)",
+        idea: "Initialize two pointers slow and fast at head. Advance slow by 1 node and fast by 2 nodes per step. When fast reaches null or fast.next is null, slow points to the middle node.",
+        complexity: { time: "O(n)", space: "O(1)" },
+        code: `class Solution {
+    public ListNode middleNode(ListNode head) {
+        ListNode slow = head;
+        ListNode fast = head;
+        while (fast != null && fast.next != null) {
+            slow = slow.next;
+            fast = fast.next.next;
+        }
+        return slow;
+    }
+}`
+      },
+      {
+        name: "Better",
+        label: "O(n) — Two-Pass Counting Length",
+        idea: "Traverse the list once to count the total number of nodes n. In the second pass, advance from head by n / 2 steps to arrive at the middle node.",
+        complexity: { time: "O(n)", space: "O(1)" },
+        code: `class Solution {
+    public ListNode middleNode(ListNode head) {
+        int count = 0;
+        ListNode curr = head;
+        while (curr != null) {
+            count++;
+            curr = curr.next;
+        }
+        curr = head;
+        for (int i = 0; i < count / 2; i++) {
+            curr = curr.next;
+        }
+        return curr;
+    }
+}`
+      }
+    ]
   }
 };
 
